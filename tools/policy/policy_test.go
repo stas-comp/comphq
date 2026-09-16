@@ -314,3 +314,26 @@ func TestGoModAtMostFiveDirectRequirements(t *testing.T) {
 		t.Errorf("go.mod has %d direct requirements, want at most 5 (SPEC §2.8)", direct)
 	}
 }
+
+// TestReadmeHasRequiredHeadings covers gate 1.44's Phase 1 (P1-16) subset;
+// P1-37 extends this same list with the backing-up/restoring/troubleshooting
+// headings once Part 2 is written.
+func TestReadmeHasRequiredHeadings(t *testing.T) {
+	data, err := os.ReadFile(filepath.Join(repoRoot(t), "README.md"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	content := string(data)
+
+	for _, heading := range []string{
+		"## Opening Comp HQ",
+		"## Setting up an office computer",
+		"## Installing on TrueNAS",
+		"## Updating",
+		"## Undoing an update",
+	} {
+		if !strings.Contains(content, heading) {
+			t.Errorf("README.md is missing the required heading %q", heading)
+		}
+	}
+}
