@@ -26,6 +26,10 @@ npm scripts (`package.json`) are the single command surface for build and test, 
 
 Final image: `gcr.io/distroless/static-debian13:nonroot`, pinned by index digest `sha256:e2e927ec666bae08560abb3c55d0659eceabb657f56b6782ab500a9fc7f555e3` (SPEC said `distroless/static`; `-debian13` is the current variant, confirmed against `docker buildx imagetools inspect`). `deploy/truenas.yaml`'s `user: "568:568"` overrides the image's built-in `nonroot` user to TrueNAS SCALE's default apps UID/GID. Build image: `golang:1.27.1-bookworm`, pinned by index digest `sha256:648f440f42a0958804efb24df176f806f9d353b41f1c0627f666428e40310f6b` (also confirmed via `imagetools inspect`).
 
+## D-06b Skipped the `gh api .../versions` publish check (P1-06, 2026-09-16)
+
+PLAN.md suggests confirming the published image with `gh api /users/stas-comp/packages/container/comphq/versions`, but that needs the `read:packages` scope, which the S1 sign-in didn't grant (it asked only for `workflow`) and adding it needs another interactive browser step — not one of the plan's stop points, so not something to ask the owner for here. The `release.yml` `publish` job (which runs `docker/build-push-action`) completing successfully is itself the automated proof the image reached `ghcr.io`; that CI result is the evidence for this task's "Done when", not a manual follow-up call. P1-07 (making the package public) can also confirm it, anonymously, with no extra scope needed.
+
 ## D-06a Container-test data proof before People exists (P1-06, 2026-09-16)
 
 `deploy/test/container-test.sh`'s restart/recreate proof (gates 1.39, 1.40) needs some data to check survives. There's no HTTP endpoint that writes data yet — the People section (P1-13) is the first one — so the script writes a marker file directly into the bind-mounted `/data` folder and checksums the whole folder, instead of "create a person via HTTP" as later releases' copies of this proof will do once that's possible.
