@@ -1,8 +1,10 @@
 # Compose override for the offline test (P1-12): the app container joins
 # an internal-only network (no route to the internet), and a `runner`
 # service — the digest-pinned Playwright image, with the checked-out repo
-# mounted read-only — runs the smoke suite against it over that network
-# only. Applied with `docker compose -f truenas.yaml -f offline.override.yaml`.
+# mounted — runs the smoke suite against it over that network only.
+# Applied with `docker compose -f truenas.yaml -f offline.override.yaml`.
+# Not read-only: Playwright needs to write test-results/, and this
+# container is thrown away after every run either way.
 services:
   comphq:
     networks:
@@ -16,7 +18,7 @@ services:
       - internal_only
     working_dir: /work
     volumes:
-      - ${REPO_ROOT}:/work:ro
+      - ${REPO_ROOT}:/work
     environment:
       BASE_URL: "http://comphq:8080"
     entrypoint: ["npx"]
