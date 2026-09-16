@@ -1,0 +1,32 @@
+{{define "who.html"}}<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Comp HQ — Who's using this computer?</title>
+<link rel="stylesheet" href="/static/people/who.css">
+</head>
+<body>
+<main>
+<h1>Who's using this computer?</h1>
+{{if .Message}}<p class="message" role="alert">{{.Message}}</p>{{end}}
+<div class="people-grid">
+{{range .People}}
+<form method="post" action="/who/select">
+<input type="hidden" name="next" value="{{$.Next}}">
+<input type="hidden" name="person_id" value="{{.ID}}">
+<button type="submit" class="person-button">{{.Name}}</button>
+</form>
+{{end}}
+</div>
+<p><button type="button" id="add-name-link" class="link-button">My name isn't here</button></p>
+<form method="post" action="/who/add" id="add-name-form" hidden>
+<input type="hidden" name="next" value="{{.Next}}">
+<label for="add-name-input">Your name</label>
+<input type="text" id="add-name-input" name="name" required>
+<button type="submit">Add</button>
+</form>
+</main>
+<script src="/static/people/who.js"></script>
+</body>
+</html>
+{{end}}

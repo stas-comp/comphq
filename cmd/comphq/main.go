@@ -43,14 +43,18 @@ func run() error {
 	}
 	defer sqlDB.Close()
 
-	migrations, err := db.LoadMigrations(comphq.Migrations, "app")
-	if err != nil {
-		return fmt.Errorf("load migrations: %w", err)
-	}
-	if err := db.RunMigrations(sqlDB, version, migrations); err != nil {
-		// Refuse to start on a failed migration (SPEC §2.5), with a clear
-		// log line explaining why.
-		log.Fatalf("refusing to start: migration failed: %v", err)
+	// Sections registering their own migrations is generalised by the
+	// section registry (P1-14); until then, list them here.
+	for _, section := range []string{"app", "people"} {
+		migrations, err := db.LoadMigrations(comphq.Migrations, section)
+		if err != nil {
+			return fmt.Errorf("load %s migrations: %w", section, err)
+		}
+		if err := db.RunMigrations(sqlDB, version, migrations); err != nil {
+			// Refuse to start on a failed migration (SPEC §2.5), with a
+			// clear log line explaining why.
+			log.Fatalf("refusing to start: migration failed: %v", err)
+		}
 	}
 
 	srv, err := app.NewServer(sqlDB, version, cfg.TestMode)

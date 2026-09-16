@@ -5,25 +5,33 @@ import (
 	"html/template"
 	"io/fs"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/stas-comp/comphq"
+	"github.com/stas-comp/comphq/internal/people"
 )
 
 // Server holds what request handlers need: the database and the parsed
-// frame templates. Later tasks add the section registry (P1-14).
+// frame templates. Later tasks add the section registry (P1-14); until
+// then, each section's handlers are wired in directly here
+// (docs/decisions.md).
 type Server struct {
 	DB       *sql.DB
 	Version  string
 	TestMode bool
 	tmpl     *template.Template
 	static   http.Handler
+	people   *people.Handlers
 }
 
 // NewServer parses the embedded templates and builds a Server. testMode
 // gates test-only routes (SPEC P1-09): never true in deploy/truenas.yaml.
 func NewServer(sqlDB *sql.DB, version string, testMode bool) (*Server, error) {
-	tmpl, err := template.ParseFS(comphq.Templates, "web/templates/app/*.html")
+	tmpl, err := template.ParseFS(comphq.Templates,
+		"web/templates/app/*.html",
+		"web/templates/people/*.html",
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -39,6 +47,7 @@ func NewServer(sqlDB *sql.DB, version string, testMode bool) (*Server, error) {
 		TestMode: testMode,
 		tmpl:     tmpl,
 		static:   http.FileServerFS(staticFS),
+		people:   people.New(&people.Store{DB: sqlDB}, tmpl),
 	}, nil
 }
 
@@ -51,9 +60,16 @@ func (s *Server) Routes() http.Handler {
 	if s.TestMode {
 		mux.HandleFunc("GET /__test/editor", s.handleTestEditor)
 		mux.HandleFunc("GET /__test/egress", s.handleTestEgress)
+		mux.HandleFunc("POST /__test/people/deactivate", s.handleTestDeactivatePerson)
 	}
+	s.people.RegisterRoutes(mux)
 	mux.HandleFunc("GET /", s.handleFrame)
-	return securityHeaders(mux)
+
+	// Order: security headers outermost, then the CSRF-style origin check
+	// (SPEC B4 request safety), then person identity (SPEC B4 person
+	// identity) — a request needs to clear the origin check before the
+	// identity middleware ever renders the picker for it.
+	return securityHeaders(OriginCheck(s.people.Middleware(mux)))
 }
 
 // securityHeaders sets the headers SPEC B4 requires on every response.
@@ -98,6 +114,23 @@ func (s *Server) handleTestEgress(w http.ResponseWriter, r *http.Request) {
 	resp.Body.Close()
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("egress reachable"))
+}
+
+// handleTestDeactivatePerson calls the same store helper Settings → People
+// (P1-15) will use to remove a person, so gate 1.06 ("if the name chosen on
+// a computer is removed, that computer shows the picker next time") is
+// testable before that page exists.
+func (s *Server) handleTestDeactivatePerson(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.ParseInt(r.FormValue("person_id"), 10, 64)
+	if err != nil {
+		http.Error(w, "invalid person_id", http.StatusBadRequest)
+		return
+	}
+	if err := s.people.Store.Deactivate(id); err != nil {
+		http.Error(w, "internal error", http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
 }
 
 // handleHealthz answers 200 only once the database answers SELECT 1.
