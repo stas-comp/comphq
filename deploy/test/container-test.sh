@@ -204,12 +204,10 @@ OFFLINE_COMPOSE="$ROOT/deploy/test/offline.override.yaml"
 export REPO_ROOT="$ROOT"
 docker compose -f "$COMPOSE_FILE" -f "$OFFLINE_COMPOSE" -p "$PROJECT" up -d comphq
 wait_healthy
-EGRESS_STATUS="$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8080/__test/egress || echo 000)"
-if [ "$EGRESS_STATUS" = "200" ]; then
-  log "GET /__test/egress succeeded even though the network is internal-only"
-  exit 1
-fi
-log "  egress correctly blocked (HTTP $EGRESS_STATUS)"
+# A published port isn't reachable from the host once the service's
+# network is internal: true, so the egress and healthz checks run from
+# the "runner" service instead — it shares that internal network with
+# comphq (see e2e/smoke/offline.spec.ts).
 docker compose -f "$COMPOSE_FILE" -f "$OFFLINE_COMPOSE" -p "$PROJECT" run --rm runner
 docker compose -f "$COMPOSE_FILE" -f "$OFFLINE_COMPOSE" -p "$PROJECT" down
 
