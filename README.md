@@ -12,3 +12,7 @@ This README is being written as the app is built. The sections below will be fil
 - Backing up
 - Restoring
 - It won't open — what now?
+
+## Installing on TrueNAS
+
+(This section is filled in with full click-by-click steps once Phase 1 is ready to install — see PLAN.md task P1-16. For now, Comp HQ only has internal pre-release images used for testing, not something to install yet.)

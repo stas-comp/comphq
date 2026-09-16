@@ -22,6 +22,22 @@ CI runs layers 1, 2 and 6 (`go` and `browser` jobs) on every push. Layers 4, 5 a
 
 npm scripts (`package.json`) are the single command surface for build and test, in both PowerShell and Bash, matching CI exactly. Go HTTP integration tests are gated behind the `integration` build tag (`//go:build integration`) so `go test ./...` (unit, fast) and `go test -tags integration ./...` (integration, spawns real servers/binaries) stay separate.
 
+## D-02 Base image variant and digests (P1-06, 2026-09-16)
+
+Final image: `gcr.io/distroless/static-debian13:nonroot`, pinned by index digest `sha256:e2e927ec666bae08560abb3c55d0659eceabb657f56b6782ab500a9fc7f555e3` (SPEC said `distroless/static`; `-debian13` is the current variant, confirmed against `docker buildx imagetools inspect`). `deploy/truenas.yaml`'s `user: "568:568"` overrides the image's built-in `nonroot` user to TrueNAS SCALE's default apps UID/GID. Build image: `golang:1.27.1-bookworm`, pinned by index digest `sha256:648f440f42a0958804efb24df176f806f9d353b41f1c0627f666428e40310f6b` (also confirmed via `imagetools inspect`).
+
+## D-06a Container-test data proof before People exists (P1-06, 2026-09-16)
+
+`deploy/test/container-test.sh`'s restart/recreate proof (gates 1.39, 1.40) needs some data to check survives. There's no HTTP endpoint that writes data yet — the People section (P1-13) is the first one — so the script writes a marker file directly into the bind-mounted `/data` folder and checksums the whole folder, instead of "create a person via HTTP" as later releases' copies of this proof will do once that's possible.
+
+## D-08 Internal pre-release tags (P1-06, 2026-09-16)
+
+`v0.0.1` (this task) and `v0.0.2` (P1-28, once the Knowledge Base has real data) are internal pre-release tags, never installed by the owner. They exist so the upgrade-and-rollback test (gate 1.42) has a previous release to roll back to well before the real `v0.1.0` phase release.
+
+## D-04b Placeholder `e2e/speed` spec (P1-06, 2026-09-16)
+
+Playwright exits non-zero on "No tests found", and the `speed` CI job (P1-05) runs on a full dispatch or a release tag — both needed for this task's `v0.0.1` release. Real speed tests arrive in P1-27 with the test-library seeder; until then, `e2e/speed/placeholder.spec.ts` keeps the job green, the same pattern as D-04a.
+
 ## D-04a Placeholder `tools/policy` package (P1-04, 2026-09-16)
 
 `npm run check` (added in full at P1-04) includes `test:policy`, which runs `go test ./tools/policy/...`. That path must exist for the command to work at all — an absent package makes `go test` fail outright, not pass vacuously. P1-05 adds the real repository policy checks named in the plan; for now `tools/policy` holds one placeholder test so the command surface is complete and green from P1-04 onward, as the task requires.

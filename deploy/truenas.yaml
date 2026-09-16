@@ -1,0 +1,22 @@
+# Comp HQ — paste this into TrueNAS SCALE (Apps → Discover Apps → Install via YAML).
+# Change the three lines marked "← CHANGE THIS" below, then click Save.
+services:
+  comphq:
+    image: ghcr.io/stas-comp/comphq:0.0.1
+    restart: unless-stopped
+    user: "568:568"
+    ports:
+      - "8080:8080" # ← CHANGE THIS: the number before the colon is the port you open on your NAS. Only change it if TrueNAS says 8080 is already used by something else. Never use 80 or 443 — TrueNAS's own screen uses those.
+    volumes:
+      - /mnt/YOUR-POOL/comphq:/data # ← CHANGE THIS: replace YOUR-POOL with the name of your storage pool (TrueNAS → Storage).
+    environment:
+      TZ: "Europe/London" # ← CHANGE THIS: replace with your own time zone, e.g. "America/New_York". This is what "today" means for due dates and the Briefing.
+    healthcheck:
+      test: ["CMD", "/comphq", "healthcheck"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 15s
+    read_only: true
+    tmpfs:
+      - /tmp
