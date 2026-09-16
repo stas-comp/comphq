@@ -125,3 +125,53 @@ func TestGetUnknownPerson(t *testing.T) {
 		t.Error("Get() of an unknown id: active = true, want false")
 	}
 }
+
+func TestRenameChangesTheName(t *testing.T) {
+	store := &Store{DB: openTestDB(t)}
+
+	p, err := store.Create("Sam")
+	if err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+
+	if err := store.Rename(p.ID, "Samantha"); err != nil {
+		t.Fatalf("Rename: %v", err)
+	}
+
+	got, _, err := store.Get(p.ID)
+	if err != nil {
+		t.Fatalf("Get: %v", err)
+	}
+	if got.Name != "Samantha" {
+		t.Errorf("Get().Name = %q, want Samantha", got.Name)
+	}
+}
+
+func TestRenameToOwnCurrentNameIsNotADuplicate(t *testing.T) {
+	store := &Store{DB: openTestDB(t)}
+
+	p, err := store.Create("Sam")
+	if err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+
+	if err := store.Rename(p.ID, "sam"); err != nil {
+		t.Errorf("Rename to own name (different case) = %v, want nil", err)
+	}
+}
+
+func TestRenameRejectsDuplicateOfAnotherActivePerson(t *testing.T) {
+	store := &Store{DB: openTestDB(t)}
+
+	if _, err := store.Create("Sam"); err != nil {
+		t.Fatalf("Create(Sam): %v", err)
+	}
+	alex, err := store.Create("Alex")
+	if err != nil {
+		t.Fatalf("Create(Alex): %v", err)
+	}
+
+	if err := store.Rename(alex.ID, "sam"); err != ErrDuplicateName {
+		t.Errorf("Rename(Alex -> sam) error = %v, want ErrDuplicateName", err)
+	}
+}

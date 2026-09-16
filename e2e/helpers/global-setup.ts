@@ -15,7 +15,9 @@ export default async function globalSetup(): Promise<void> {
     process.platform === 'win32' ? 'comphq-e2e.exe' : 'comphq-e2e',
   );
 
-  execFileSync('go', ['build', '-o', bin, './cmd/comphq'], {
+  // -X main.version pins a known value so tests (e.g. the About page) can
+  // assert on it (PLAN.md P1-15: "test build uses -X main.version=0.0.0-test").
+  execFileSync('go', ['build', '-ldflags', '-X main.version=0.0.0-test', '-o', bin, './cmd/comphq'], {
     cwd: root,
     stdio: 'inherit',
   });

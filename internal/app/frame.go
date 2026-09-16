@@ -5,6 +5,7 @@ import (
 	"html/template"
 	"net/http"
 	"net/url"
+	"strings"
 
 	"github.com/stas-comp/comphq/internal/people"
 )
@@ -26,11 +27,12 @@ type navItemData struct {
 	Current bool
 }
 
-// renderFrame runs contentTemplate (a page's own named template) and
+// RenderFrame runs contentTemplate (a page's own named template) and
 // embeds the result in the shared layout: wordmark, nav, top bar with
 // search-box placeholder and "You: name · Change", and the current
-// section marked with aria-current (SPEC gate 1.07).
-func (s *Server) renderFrame(w http.ResponseWriter, r *http.Request, status int, contentTemplate, title string, pageData any) {
+// section marked with aria-current (SPEC gate 1.07). Exported so section
+// packages can render their own pages the same way ComingSoon does.
+func (s *Server) RenderFrame(w http.ResponseWriter, r *http.Request, status int, contentTemplate, title string, pageData any) {
 	var body bytes.Buffer
 	if err := s.tmpl.ExecuteTemplate(&body, contentTemplate, pageData); err != nil {
 		http.Error(w, "internal error", http.StatusInternalServerError)
@@ -45,10 +47,12 @@ func (s *Server) renderFrame(w http.ResponseWriter, r *http.Request, status int,
 	navItems := make([]navItemData, 0, len(s.registry.NavItems()))
 	for _, item := range s.registry.NavItems() {
 		navItems = append(navItems, navItemData{
-			Label:   item.Label,
-			Path:    item.Path,
-			Icon:    item.Icon,
-			Current: item.Path == r.URL.Path,
+			Label: item.Label,
+			Path:  item.Path,
+			Icon:  item.Icon,
+			// A sub-page (e.g. "/settings/people") still marks its
+			// section's nav item current, not just an exact match.
+			Current: r.URL.Path == item.Path || strings.HasPrefix(r.URL.Path, item.Path+"/"),
 		})
 	}
 
@@ -73,6 +77,6 @@ func (s *Server) renderFrame(w http.ResponseWriter, r *http.Request, status int,
 // change).
 func (s *Server) ComingSoon(title string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		s.renderFrame(w, r, http.StatusOK, "coming-soon.html", title, struct{ Title string }{Title: title})
+		s.RenderFrame(w, r, http.StatusOK, "coming-soon.html", title, struct{ Title string }{Title: title})
 	}
 }

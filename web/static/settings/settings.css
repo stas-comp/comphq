@@ -1,0 +1,57 @@
+.settings-subnav {
+  display: flex;
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: var(--space-2);
+}
+
+.settings-subnav a {
+  color: var(--color-text-muted);
+  text-decoration: none;
+  font-weight: 600;
+  padding-bottom: var(--space-1);
+}
+
+.settings-subnav a[aria-current="page"] {
+  color: var(--color-signal-orange-dark);
+  border-bottom: 2px solid var(--color-signal-orange);
+}
+
+.settings-people-list {
+  list-style: none;
+  padding: 0;
+  max-width: 32rem;
+}
+
+.settings-person-row {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.rename-form {
+  display: flex;
+  gap: var(--space-2);
+  flex: 1;
+}
+
+.rename-form input[type="text"] {
+  flex: 1;
+  font-family: var(--font-body);
+  font-size: 1rem;
+  padding: var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+
+#chrome-command,
+#brave-command {
+  background: var(--color-paper-muted);
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  overflow-x: auto;
+  font-size: var(--font-size-small);
+}

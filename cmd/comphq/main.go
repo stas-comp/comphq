@@ -19,6 +19,7 @@ import (
 	"github.com/stas-comp/comphq/internal/calendar"
 	"github.com/stas-comp/comphq/internal/db"
 	"github.com/stas-comp/comphq/internal/kb"
+	"github.com/stas-comp/comphq/internal/settings"
 	"github.com/stas-comp/comphq/internal/tasks"
 )
 
@@ -53,15 +54,12 @@ func run() error {
 	}
 
 	// Sidebar order (SPEC A4): Briefing, Knowledge Base, Tasks, Calendar,
-	// Settings. Settings has no route yet (P1-15); the nav label still
-	// shows, per gate 1.07.
+	// Settings.
 	srv.Registry().Add(briefing.Section(srv))
 	srv.Registry().Add(kb.Section(srv))
 	srv.Registry().Add(tasks.Section(srv))
 	srv.Registry().Add(calendar.Section(srv))
-	srv.Registry().Add(app.Section{
-		Nav: &app.NavItem{Label: "Settings", Path: "/settings", Icon: "/static/theme/icons/settings.svg"},
-	})
+	srv.Registry().Add(settings.Section(srv))
 
 	for _, section := range srv.Registry().MigrationNames() {
 		migrations, err := db.LoadMigrations(comphq.Migrations, section)

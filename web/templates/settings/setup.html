@@ -1,0 +1,22 @@
+{{define "settings-setup.html"}}
+{{template "settings-subnav" .}}
+<h1>Set up this computer</h1>
+<p>Create a desktop shortcut that opens Comp HQ in its own window, in Chrome or Brave.</p>
+
+<h2>Google Chrome</h2>
+<pre id="chrome-command">{{.ChromeCommand}}</pre>
+<button type="button" class="copy-button" data-target="chrome-command">Copy</button>
+
+<h2>Brave</h2>
+<pre id="brave-command">{{.BraveCommand}}</pre>
+<button type="button" class="copy-button" data-target="brave-command">Copy</button>
+
+<h2>Steps</h2>
+<ol>
+<li>Right-click an empty spot on the Desktop, then choose New → Shortcut.</li>
+<li>Paste the command above for your browser, then click Next, then Finish.</li>
+<li>If Windows says it can't find the program, right-click your browser's existing icon, choose Properties, and check the Target box for its real install path — then adjust the command above to match.</li>
+</ol>
+<p id="copy-status" role="status" aria-live="polite"></p>
+<script src="/static/settings/copy.js"></script>
+{{end}}

@@ -35,6 +35,7 @@ func NewServer(sqlDB *sql.DB, version string, testMode bool) (*Server, error) {
 	tmpl, err := template.ParseFS(comphq.Templates,
 		"web/templates/app/*.html",
 		"web/templates/people/*.html",
+		"web/templates/settings/*.html",
 	)
 	if err != nil {
 		return nil, err
@@ -65,6 +66,13 @@ func NewServer(sqlDB *sql.DB, version string, testMode bool) (*Server, error) {
 // Routes is called.
 func (s *Server) Registry() *Registry {
 	return s.registry
+}
+
+// PeopleStore gives other sections (Settings → People) the same store
+// instance the picker and identity middleware use, so a rename or removal
+// is visible everywhere immediately.
+func (s *Server) PeopleStore() *people.Store {
+	return s.people.Store
 }
 
 // Routes builds the HTTP handler: health, static assets, test-only
@@ -113,7 +121,7 @@ func (s *Server) handleRoot(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleNotFound(w http.ResponseWriter, r *http.Request) {
-	s.renderFrame(w, r, http.StatusNotFound, "404.html", "Page not found", nil)
+	s.RenderFrame(w, r, http.StatusNotFound, "404.html", "Page not found", nil)
 }
 
 // handleTestRoutes lists every path that renders inside the normal frame,

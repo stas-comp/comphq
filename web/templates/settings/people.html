@@ -1,0 +1,21 @@
+{{define "settings-people.html"}}
+{{template "settings-subnav" .}}
+<h1>People</h1>
+{{if .Message}}<p class="message" role="alert">{{.Message}}</p>{{end}}
+<ul class="settings-people-list">
+{{range .People}}
+<li class="settings-person-row">
+<form method="post" action="/settings/people/rename" class="rename-form">
+<input type="hidden" name="person_id" value="{{.ID}}">
+<label class="visually-hidden" for="name-{{.ID}}">Name</label>
+<input type="text" id="name-{{.ID}}" name="name" value="{{.Name}}" required>
+<button type="submit">Rename</button>
+</form>
+<form method="post" action="/settings/people/remove" class="remove-form">
+<input type="hidden" name="person_id" value="{{.ID}}">
+<button type="submit">Remove</button>
+</form>
+</li>
+{{end}}
+</ul>
+{{end}}

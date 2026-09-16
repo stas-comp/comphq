@@ -114,3 +114,28 @@ func (s *Store) Deactivate(id int64) error {
 	_, err := s.DB.Exec(`UPDATE people SET active = 0 WHERE id = ?`, id)
 	return err
 }
+
+// Rename changes a person's name everywhere it appears — history and
+// authorship always resolve through people.id, so this alone is enough
+// (SPEC gate 1.05). Renaming to the name already held (any case) is a
+// no-op, not a duplicate error.
+func (s *Store) Rename(id int64, newName string) error {
+	newName = strings.TrimSpace(newName)
+	if newName == "" {
+		return ErrEmptyName
+	}
+
+	var exists int
+	if err := s.DB.QueryRow(
+		`SELECT COUNT(*) FROM people WHERE active = 1 AND LOWER(name) = LOWER(?) AND id != ?`,
+		newName, id,
+	).Scan(&exists); err != nil {
+		return err
+	}
+	if exists > 0 {
+		return ErrDuplicateName
+	}
+
+	_, err := s.DB.Exec(`UPDATE people SET name = ? WHERE id = ?`, newName, id)
+	return err
+}
