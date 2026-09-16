@@ -60,7 +60,11 @@ wait_healthy() {
 }
 
 checksum_data_dir() {
-  find "$DATA_DIR" -type f -print0 | sort -z | xargs -0 sha256sum | sha256sum | awk '{print $1}'
+  # Exclude SQLite's WAL and shared-memory index files: they're working
+  # files, not data, and their bytes aren't stable across a clean restart
+  # even when the actual rows are unchanged.
+  find "$DATA_DIR" -type f ! -name '*-wal' ! -name '*-shm' -print0 |
+    sort -z | xargs -0 sha256sum | sha256sum | awk '{print $1}'
 }
 
 log "1. docker compose config validates"
