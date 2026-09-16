@@ -1,0 +1,9 @@
+{
+  "name": "comphq",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "test:unit": "go vet ./... && go test ./...",
+    "test:integration": "go test -tags integration ./..."
+  }
+}
