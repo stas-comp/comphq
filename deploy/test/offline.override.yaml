@@ -22,7 +22,11 @@ services:
     environment:
       BASE_URL: "http://comphq:8080"
     entrypoint: ["npx"]
-    command: ["playwright", "test", "--project=smoke"]
+    # --output keeps this container's own artifacts out of the (mounted,
+    # host-shared) test-results/: it runs as root, and root-owned files
+    # there would then block the host's own, non-root Playwright runs
+    # (e.g. the upgrade/rollback sub-test, right after this one).
+    command: ["playwright", "test", "--project=smoke", "--output=/tmp/test-results"]
 
 networks:
   internal_only:
