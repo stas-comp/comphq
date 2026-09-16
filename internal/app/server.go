@@ -5,6 +5,7 @@ import (
 	"html/template"
 	"io/fs"
 	"net/http"
+	"time"
 
 	"github.com/stas-comp/comphq"
 )
@@ -49,6 +50,7 @@ func (s *Server) Routes() http.Handler {
 	mux.Handle("GET /static/", http.StripPrefix("/static/", s.static))
 	if s.TestMode {
 		mux.HandleFunc("GET /__test/editor", s.handleTestEditor)
+		mux.HandleFunc("GET /__test/egress", s.handleTestEgress)
 	}
 	mux.HandleFunc("GET /", s.handleFrame)
 	return securityHeaders(mux)
@@ -79,6 +81,23 @@ func (s *Server) handleTestEditor(w http.ResponseWriter, r *http.Request) {
 	if err := s.tmpl.ExecuteTemplate(w, "test-editor.html", nil); err != nil {
 		http.Error(w, "internal error", http.StatusInternalServerError)
 	}
+}
+
+// handleTestEgress proves the container truly has no internet access
+// (SPEC P1-12 offline test): it tries one real outbound request and
+// reports whether it got through. deploy/test/offline.override.yaml is
+// the only place that sets COMPHQ_TEST_MODE=1 on a running container.
+func (s *Server) handleTestEgress(w http.ResponseWriter, r *http.Request) {
+	client := &http.Client{Timeout: 3 * time.Second}
+	resp, err := client.Get("https://example.com")
+	if err != nil {
+		w.WriteHeader(http.StatusServiceUnavailable)
+		w.Write([]byte("egress blocked: " + err.Error()))
+		return
+	}
+	resp.Body.Close()
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("egress reachable"))
 }
 
 // handleHealthz answers 200 only once the database answers SELECT 1.
