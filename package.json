@@ -2,8 +2,24 @@
   "name": "comphq",
   "version": "0.0.0",
   "private": true,
+  "engines": {
+    "node": ">=24 <25"
+  },
   "scripts": {
+    "build": "go build -trimpath -o bin/ ./cmd/comphq",
     "test:unit": "go vet ./... && go test ./...",
-    "test:integration": "go test -tags integration ./..."
+    "test:integration": "go test -tags integration ./...",
+    "test:e2e": "playwright test --project=e2e",
+    "test:a11y": "playwright test --project=a11y",
+    "test:speed": "playwright test --project=speed",
+    "test:screens": "playwright test --project=screens",
+    "test:policy": "go test ./tools/policy/...",
+    "check": "npm run build && npm run test:unit && npm run test:integration && npm run test:policy && npm run test:e2e && npm run test:a11y",
+    "vendor:editor": "node scripts/vendor-editor/build.mjs",
+    "fixtures:docx": "go run ./e2e/fixtures/docx/gen"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "4.13.0",
+    "@playwright/test": "1.63.0"
   }
 }

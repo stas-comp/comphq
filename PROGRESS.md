@@ -10,7 +10,7 @@ Status values: `todo` · `in-progress` · `blocked` · `done`.
 | P1-01 | Local tooling | done | | | go1.27.0, node v24.19.0, npm 11.17.0, git 2.37.1, gh 2.101.0; docker engine: not running (expected, container tests run in CI only). Installed via winget. Note: this machine's terminal tools (used by the build agent) don't pick up a freshly-installed program's PATH until the agent's own session restarts, so each command in this session that needs go/node/npm/gh explicitly adds their folders to PATH first; this doesn't affect the owner's own use of the computer. |
 | P1-02 | GitHub sign-in and repository (STOP S1) | done | 90a9caf | | Repo stas-comp/comphq created (private), pushed to main. D-01 recorded. |
 | P1-03 | Go skeleton: binary, config, health, migrations runner | done | 759f02f | no CI yet (added in P1-05) | go vet + go test and integration tests pass locally; `go run ./cmd/comphq` serves `/` with `<body data-ready>` and `/healthz` returns 200. D-02, D-03 recorded. |
-| P1-04 | Playwright and axe skeleton | todo | | | |
+| P1-04 | Playwright and axe skeleton | done | (pending) | no CI yet (added in P1-05) | `npm run check` passes locally from both PowerShell and Bash. Added placeholder `tools/policy` package so the command surface works before P1-05 (see D-04a). |
 | P1-05 | CI workflow and repository policy tests | todo | | | |
 | P1-06 | Dockerfile, TrueNAS YAML, container tests, tag v0.0.1 | todo | | | |
 | P1-07 | Make the image public (STOP S2) | todo | | | |
