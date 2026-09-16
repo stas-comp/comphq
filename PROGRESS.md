@@ -11,7 +11,7 @@ Status values: `todo` · `in-progress` · `blocked` · `done`.
 | P1-02 | GitHub sign-in and repository (STOP S1) | done | 90a9caf | | Repo stas-comp/comphq created (private), pushed to main. D-01 recorded. |
 | P1-03 | Go skeleton: binary, config, health, migrations runner | done | 759f02f | no CI yet (added in P1-05) | go vet + go test and integration tests pass locally; `go run ./cmd/comphq` serves `/` with `<body data-ready>` and `/healthz` returns 200. D-02, D-03 recorded. |
 | P1-04 | Playwright and axe skeleton | done | 0939f46 | no CI yet (added in P1-05) | `npm run check` passes locally from both PowerShell and Bash. Added placeholder `tools/policy` package so the command surface works before P1-05 (see D-04a). |
-| P1-05 | CI workflow and repository policy tests | todo | | | |
+| P1-05 | CI workflow and repository policy tests | done | (pending) | (pending) | `.github/workflows/ci.yml` added (go, browser always; container/speed/screens conditional). Real `tools/policy` checks replace the P1-04 placeholder. D-03, D-04 recorded. |
 | P1-06 | Dockerfile, TrueNAS YAML, container tests, tag v0.0.1 | todo | | | |
 | P1-07 | Make the image public (STOP S2) | todo | | | |
 | P1-08 | Spike: FTS5 search with block ids | todo | | | |
