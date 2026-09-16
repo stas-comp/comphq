@@ -1,0 +1,30 @@
+{{define "test-editor.html"}}<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Editor test harness</title>
+<link rel="stylesheet" href="/static/kb/editor.css">
+</head>
+<body>
+<div id="toolbar">
+  <button id="btn-h2" type="button">Heading 2</button>
+  <button id="btn-h3" type="button">Heading 3</button>
+  <button id="btn-bold" type="button">Bold</button>
+  <button id="btn-italic" type="button">Italic</button>
+  <button id="btn-bullet" type="button">Bullet list</button>
+  <button id="btn-ordered" type="button">Numbered list</button>
+  <button id="btn-link" type="button">Link</button>
+  <button id="btn-table" type="button">Table</button>
+  <button id="btn-add-row" type="button">Add row</button>
+  <button id="btn-remove-row" type="button">Remove row</button>
+  <button id="btn-add-col" type="button">Add column</button>
+  <button id="btn-remove-col" type="button">Remove column</button>
+  <button id="btn-image" type="button">Image</button>
+</div>
+<div id="editor"></div>
+<div id="paste-log"></div>
+<script src="/static/vendor/editor/editor-3.31.3.js"></script>
+<script src="/static/kb/test-editor.js"></script>
+</body>
+</html>
+{{end}}

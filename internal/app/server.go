@@ -3,6 +3,7 @@ package app
 import (
 	"database/sql"
 	"html/template"
+	"io/fs"
 	"net/http"
 
 	"github.com/stas-comp/comphq"
@@ -11,18 +12,33 @@ import (
 // Server holds what request handlers need: the database and the parsed
 // frame templates. Later tasks add the section registry (P1-14).
 type Server struct {
-	DB      *sql.DB
-	Version string
-	tmpl    *template.Template
+	DB       *sql.DB
+	Version  string
+	TestMode bool
+	tmpl     *template.Template
+	static   http.Handler
 }
 
-// NewServer parses the embedded templates and builds a Server.
-func NewServer(sqlDB *sql.DB, version string) (*Server, error) {
+// NewServer parses the embedded templates and builds a Server. testMode
+// gates test-only routes (SPEC P1-09): never true in deploy/truenas.yaml.
+func NewServer(sqlDB *sql.DB, version string, testMode bool) (*Server, error) {
 	tmpl, err := template.ParseFS(comphq.Templates, "web/templates/app/*.html")
 	if err != nil {
 		return nil, err
 	}
-	return &Server{DB: sqlDB, Version: version, tmpl: tmpl}, nil
+
+	staticFS, err := fs.Sub(comphq.Static, "web/static")
+	if err != nil {
+		return nil, err
+	}
+
+	return &Server{
+		DB:       sqlDB,
+		Version:  version,
+		TestMode: testMode,
+		tmpl:     tmpl,
+		static:   http.FileServerFS(staticFS),
+	}, nil
 }
 
 // Routes builds the HTTP handler. The frame route is a catch-all for now;
@@ -30,13 +46,37 @@ func NewServer(sqlDB *sql.DB, version string) (*Server, error) {
 func (s *Server) Routes() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", s.handleHealthz)
+	mux.Handle("GET /static/", http.StripPrefix("/static/", s.static))
+	if s.TestMode {
+		mux.HandleFunc("GET /__test/editor", s.handleTestEditor)
+	}
 	mux.HandleFunc("GET /", s.handleFrame)
-	return mux
+	return securityHeaders(mux)
+}
+
+// securityHeaders sets the headers SPEC B4 requires on every response.
+func securityHeaders(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Security-Policy",
+			"default-src 'self'; img-src 'self' data: blob:; object-src 'none'; frame-ancestors 'none'")
+		w.Header().Set("Referrer-Policy", "same-origin")
+		next.ServeHTTP(w, r)
+	})
 }
 
 func (s *Server) handleFrame(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	if err := s.tmpl.ExecuteTemplate(w, "frame.html", nil); err != nil {
+		http.Error(w, "internal error", http.StatusInternalServerError)
+	}
+}
+
+// handleTestEditor serves the P1-09 editor spike harness: proves the
+// vendored TipTap bundle runs, with every toolbar feature, under the same
+// CSP the real app serves.
+func (s *Server) handleTestEditor(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	if err := s.tmpl.ExecuteTemplate(w, "test-editor.html", nil); err != nil {
 		http.Error(w, "internal error", http.StatusInternalServerError)
 	}
 }

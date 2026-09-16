@@ -131,15 +131,20 @@ func TestVendorChecksumsMatch(t *testing.T) {
 	}
 
 	shaRe := regexp.MustCompile(`\b[0-9a-f]{64}\b`)
-	pathRe := regexp.MustCompile(`[\w./-]+\.(?:js|css|woff2)\b`)
+	// The path lives in its own backtick-quoted table cell, so a name cell
+	// mentioning the same filename (e.g. "editor-3.31.3.js" as the Name
+	// column, "editor/editor-3.31.3.js" as the Path column) can't be
+	// picked up by mistake.
+	pathRe := regexp.MustCompile("`([\\w./-]+\\.(?:js|css|woff2))`")
 
 	checked := 0
 	for i, line := range strings.Split(string(data), "\n") {
 		sha := shaRe.FindString(line)
-		rel := pathRe.FindString(line)
-		if sha == "" || rel == "" {
+		pathMatch := pathRe.FindStringSubmatch(line)
+		if sha == "" || pathMatch == nil {
 			continue
 		}
+		rel := pathMatch[1]
 		content, err := os.ReadFile(filepath.Join(vendorDir, rel))
 		if err != nil {
 			t.Errorf("VENDOR.md:%d: referenced file %s: %v", i+1, rel, err)

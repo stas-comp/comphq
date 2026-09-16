@@ -10,5 +10,8 @@ import "embed"
 //go:embed all:web/templates
 var Templates embed.FS
 
+//go:embed all:web/static
+var Static embed.FS
+
 //go:embed all:migrations
 var Migrations embed.FS

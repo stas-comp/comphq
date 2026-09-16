@@ -59,7 +59,7 @@ export const test = base.extend<{}, { server: Server }>({
     const addr = `127.0.0.1:${port}`;
 
     const child: ChildProcess = execFile(bin, [], {
-      env: { ...process.env, COMPHQ_DATA_DIR: dataDir, COMPHQ_ADDR: addr },
+      env: { ...process.env, COMPHQ_DATA_DIR: dataDir, COMPHQ_ADDR: addr, COMPHQ_TEST_MODE: '1' },
     });
     child.stderr?.on('data', (chunk) => process.stderr.write(`[comphq worker ${workerInfo.workerIndex}] ${chunk}`));
 

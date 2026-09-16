@@ -53,7 +53,7 @@ func run() error {
 		log.Fatalf("refusing to start: migration failed: %v", err)
 	}
 
-	srv, err := app.NewServer(sqlDB, version)
+	srv, err := app.NewServer(sqlDB, version, cfg.TestMode)
 	if err != nil {
 		return fmt.Errorf("build server: %w", err)
 	}

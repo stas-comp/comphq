@@ -32,6 +32,10 @@ jobs:
           node-version: 24.21.0
       - run: npm ci
       - run: npx playwright install --with-deps chromium
+      - name: editor bundle is reproducible (P1-09)
+        run: |
+          npm run vendor:editor
+          git diff --exit-code -- web/static/vendor
       - run: npm run test:e2e
       - run: npm run test:a11y
 
