@@ -15,7 +15,11 @@ import (
 
 	"github.com/stas-comp/comphq"
 	"github.com/stas-comp/comphq/internal/app"
+	"github.com/stas-comp/comphq/internal/briefing"
+	"github.com/stas-comp/comphq/internal/calendar"
 	"github.com/stas-comp/comphq/internal/db"
+	"github.com/stas-comp/comphq/internal/kb"
+	"github.com/stas-comp/comphq/internal/tasks"
 )
 
 // version is set by ldflags at release build time (SPEC P1-03 behaviour).
@@ -43,9 +47,23 @@ func run() error {
 	}
 	defer sqlDB.Close()
 
-	// Sections registering their own migrations is generalised by the
-	// section registry (P1-14); until then, list them here.
-	for _, section := range []string{"app", "people"} {
+	srv, err := app.NewServer(sqlDB, version, cfg.TestMode)
+	if err != nil {
+		return fmt.Errorf("build server: %w", err)
+	}
+
+	// Sidebar order (SPEC A4): Briefing, Knowledge Base, Tasks, Calendar,
+	// Settings. Settings has no route yet (P1-15); the nav label still
+	// shows, per gate 1.07.
+	srv.Registry().Add(briefing.Section(srv))
+	srv.Registry().Add(kb.Section(srv))
+	srv.Registry().Add(tasks.Section(srv))
+	srv.Registry().Add(calendar.Section(srv))
+	srv.Registry().Add(app.Section{
+		Nav: &app.NavItem{Label: "Settings", Path: "/settings", Icon: "/static/theme/icons/settings.svg"},
+	})
+
+	for _, section := range srv.Registry().MigrationNames() {
 		migrations, err := db.LoadMigrations(comphq.Migrations, section)
 		if err != nil {
 			return fmt.Errorf("load %s migrations: %w", section, err)
@@ -55,11 +73,6 @@ func run() error {
 			// clear log line explaining why.
 			log.Fatalf("refusing to start: migration failed: %v", err)
 		}
-	}
-
-	srv, err := app.NewServer(sqlDB, version, cfg.TestMode)
-	if err != nil {
-		return fmt.Errorf("build server: %w", err)
 	}
 
 	httpServer := &http.Server{

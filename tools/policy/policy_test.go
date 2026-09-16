@@ -120,14 +120,18 @@ func TestDeployYAMLRules(t *testing.T) {
 	}
 }
 
+// TestVendorChecksumsMatch checks every VENDOR.md anywhere under
+// web/static (there's one per asset group — e.g. web/static/vendor for
+// npm-sourced bundles, web/static/theme/fonts for the OFL font files —
+// each checksum resolved relative to its own VENDOR.md's directory).
 func TestVendorChecksumsMatch(t *testing.T) {
-	vendorDir := filepath.Join(repoRoot(t), "web", "static", "vendor")
-	data, err := os.ReadFile(filepath.Join(vendorDir, "VENDOR.md"))
-	if os.IsNotExist(err) {
-		t.Skip("web/static/vendor/VENDOR.md doesn't exist yet")
-	}
+	staticDir := filepath.Join(repoRoot(t), "web", "static")
+	vendorFiles, err := findVendorMDFiles(staticDir)
 	if err != nil {
 		t.Fatal(err)
+	}
+	if len(vendorFiles) == 0 {
+		t.Skip("no VENDOR.md under web/static yet")
 	}
 
 	shaRe := regexp.MustCompile(`\b[0-9a-f]{64}\b`)
@@ -138,31 +142,60 @@ func TestVendorChecksumsMatch(t *testing.T) {
 	pathRe := regexp.MustCompile("`([\\w./-]+\\.(?:js|css|woff2))`")
 
 	checked := 0
-	for i, line := range strings.Split(string(data), "\n") {
-		sha := shaRe.FindString(line)
-		pathMatch := pathRe.FindStringSubmatch(line)
-		if sha == "" || pathMatch == nil {
-			continue
-		}
-		rel := pathMatch[1]
-		content, err := os.ReadFile(filepath.Join(vendorDir, rel))
+	for _, vendorMD := range vendorFiles {
+		dir := filepath.Dir(vendorMD)
+		data, err := os.ReadFile(vendorMD)
 		if err != nil {
-			t.Errorf("VENDOR.md:%d: referenced file %s: %v", i+1, rel, err)
-			continue
+			t.Fatal(err)
 		}
-		sum := sha256.Sum256(content)
-		got := hex.EncodeToString(sum[:])
-		if got != sha {
-			t.Errorf("VENDOR.md:%d: %s checksum mismatch: VENDOR.md says %s, file hashes to %s", i+1, rel, sha, got)
+		for i, line := range strings.Split(string(data), "\n") {
+			sha := shaRe.FindString(line)
+			pathMatch := pathRe.FindStringSubmatch(line)
+			if sha == "" || pathMatch == nil {
+				continue
+			}
+			rel := pathMatch[1]
+			content, err := os.ReadFile(filepath.Join(dir, rel))
+			if err != nil {
+				t.Errorf("%s:%d: referenced file %s: %v", vendorMD, i+1, rel, err)
+				continue
+			}
+			sum := sha256.Sum256(content)
+			got := hex.EncodeToString(sum[:])
+			if got != sha {
+				t.Errorf("%s:%d: %s checksum mismatch: VENDOR.md says %s, file hashes to %s", vendorMD, i+1, rel, sha, got)
+			}
+			checked++
 		}
-		checked++
 	}
 	if checked == 0 {
-		t.Error("VENDOR.md exists but no name/checksum rows were recognised")
+		t.Error("VENDOR.md file(s) exist but no name/checksum rows were recognised")
 	}
 }
 
+func findVendorMDFiles(root string) ([]string, error) {
+	var found []string
+	err := filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if !d.IsDir() && d.Name() == "VENDOR.md" {
+			found = append(found, path)
+		}
+		return nil
+	})
+	if err != nil && !os.IsNotExist(err) {
+		return nil, err
+	}
+	return found, nil
+}
+
 var urlRe = regexp.MustCompile(`https?://`)
+
+// xmlnsRe strips XML namespace declarations before the URL scan: an SVG's
+// xmlns="http://www.w3.org/2000/svg" is a fixed namespace identifier,
+// never dereferenced over the network, not an asset URL.
+var xmlnsRe = regexp.MustCompile(`xmlns(:\w+)?="[^"]*"`)
 
 func TestNoRawURLsInTemplatesOrStatic(t *testing.T) {
 	root := repoRoot(t)
@@ -171,6 +204,13 @@ func TestNoRawURLsInTemplatesOrStatic(t *testing.T) {
 	// instructional text; it's allowed once it exists (P1-15).
 	allowed := map[string]bool{
 		filepath.Join(root, "web", "templates", "settings", "setup.html"): true,
+	}
+	// Third-party licence texts (OFL, MIT, ...) legitimately cite the
+	// licence's own URL, wherever the vendored asset they cover lives —
+	// not just under web/static/vendor (e.g. the theme's OFL font files).
+	isLicenceFile := func(name string) bool {
+		return name == "LICENSE" || name == "LICENSE.txt" || name == "LICENSES.txt" ||
+			strings.HasPrefix(name, "OFL")
 	}
 
 	for _, dir := range []string{
@@ -181,14 +221,15 @@ func TestNoRawURLsInTemplatesOrStatic(t *testing.T) {
 			if err != nil {
 				return err
 			}
-			if d.IsDir() || strings.HasPrefix(path, vendorPrefix) || allowed[path] {
+			if d.IsDir() || strings.HasPrefix(path, vendorPrefix) || allowed[path] || isLicenceFile(d.Name()) {
 				return nil
 			}
 			data, err := os.ReadFile(path)
 			if err != nil {
 				return err
 			}
-			if urlRe.Match(data) {
+			scrubbed := xmlnsRe.ReplaceAll(data, nil)
+			if urlRe.Match(scrubbed) {
 				t.Errorf("%s contains a raw http(s):// URL; not allowed outside web/static/vendor", path)
 			}
 			return nil

@@ -1,0 +1,44 @@
+{{define "layout.html"}}<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{.Title}} — Comp HQ</title>
+<link rel="stylesheet" href="/static/theme/theme.css">
+<link rel="stylesheet" href="/static/app/frame.css">
+<link rel="manifest" href="/static/app/manifest.webmanifest">
+</head>
+<body data-ready>
+<div class="frame">
+<aside class="sidebar">
+<div class="wordmark">Comp HQ</div>
+<nav aria-label="Sections">
+<ul>
+{{range .Nav}}
+<li><a href="{{.Path}}"{{if .Current}} aria-current="page" class="current"{{end}}>
+<img src="{{.Icon}}" alt="" width="20" height="20">
+<span>{{.Label}}</span>
+</a></li>
+{{end}}
+</ul>
+</nav>
+</aside>
+<div class="main-column">
+<header class="topbar">
+<form class="search" role="search" action="/kb/search" method="get">
+<label for="search-box" class="visually-hidden">Search</label>
+<input type="search" id="search-box" name="q" placeholder="Search">
+</form>
+<div class="who">
+<span>You: {{.PersonName}}</span>
+<a href="{{.ChangeHref}}">Change</a>
+</div>
+</header>
+<main>
+{{.BodyContent}}
+</main>
+</div>
+</div>
+</body>
+</html>
+{{end}}

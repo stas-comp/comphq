@@ -141,6 +141,26 @@ func TestPersonCookieAttributes(t *testing.T) {
 	}
 }
 
+func TestSecurityHeadersOnHTMLResponses(t *testing.T) {
+	ts, _ := newTestServer(t)
+
+	for _, path := range []string{"/who", "/does-not-exist"} {
+		resp, err := http.Get(ts.URL + path)
+		if err != nil {
+			t.Fatalf("GET %s: %v", path, err)
+		}
+		resp.Body.Close()
+
+		csp := resp.Header.Get("Content-Security-Policy")
+		if !strings.Contains(csp, "default-src 'self'") {
+			t.Errorf("%s: Content-Security-Policy = %q, missing default-src 'self'", path, csp)
+		}
+		if got := resp.Header.Get("Referrer-Policy"); got != "same-origin" {
+			t.Errorf("%s: Referrer-Policy = %q, want same-origin", path, got)
+		}
+	}
+}
+
 func TestOriginCheckRejectsCrossOriginPOST(t *testing.T) {
 	ts, _ := newTestServer(t)
 

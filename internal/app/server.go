@@ -2,6 +2,7 @@ package app
 
 import (
 	"database/sql"
+	"encoding/json"
 	"html/template"
 	"io/fs"
 	"net/http"
@@ -12,10 +13,8 @@ import (
 	"github.com/stas-comp/comphq/internal/people"
 )
 
-// Server holds what request handlers need: the database and the parsed
-// frame templates. Later tasks add the section registry (P1-14); until
-// then, each section's handlers are wired in directly here
-// (docs/decisions.md).
+// Server holds what request handlers need: the database, the parsed
+// templates, and the section registry (SPEC B2).
 type Server struct {
 	DB       *sql.DB
 	Version  string
@@ -23,10 +22,15 @@ type Server struct {
 	tmpl     *template.Template
 	static   http.Handler
 	people   *people.Handlers
+	registry *Registry
 }
 
-// NewServer parses the embedded templates and builds a Server. testMode
-// gates test-only routes (SPEC P1-09): never true in deploy/truenas.yaml.
+// NewServer parses the embedded templates and builds a Server, with the
+// "app" and "people" sections already registered. Callers add every other
+// section with Registry().Add(...) before calling Routes() (cmd/comphq
+// imports all of them; internal/app can't, since a section imports
+// internal/app itself — see docs/decisions.md D-14). testMode gates
+// test-only routes (SPEC P1-09): never true in deploy/truenas.yaml.
 func NewServer(sqlDB *sql.DB, version string, testMode bool) (*Server, error) {
 	tmpl, err := template.ParseFS(comphq.Templates,
 		"web/templates/app/*.html",
@@ -41,18 +45,32 @@ func NewServer(sqlDB *sql.DB, version string, testMode bool) (*Server, error) {
 		return nil, err
 	}
 
-	return &Server{
+	srv := &Server{
 		DB:       sqlDB,
 		Version:  version,
 		TestMode: testMode,
 		tmpl:     tmpl,
 		static:   http.FileServerFS(staticFS),
 		people:   people.New(&people.Store{DB: sqlDB}, tmpl),
-	}, nil
+	}
+
+	srv.registry = NewRegistry()
+	srv.registry.Add(Section{MigrationName: "app"})
+	srv.registry.Add(Section{MigrationName: "people", RegisterRoutes: srv.people.RegisterRoutes})
+
+	return srv, nil
 }
 
-// Routes builds the HTTP handler. The frame route is a catch-all for now;
-// P1-14 adds the section registry, navigation, and a real 404 page.
+// Registry lets the caller (cmd/comphq) add every other section before
+// Routes is called.
+func (s *Server) Registry() *Registry {
+	return s.registry
+}
+
+// Routes builds the HTTP handler: health, static assets, test-only
+// routes, every registered section, the "/" → "/kb" redirect (SPEC
+// P1-14: "in Phase 1"; the Briefing from P3-02), and a 404 fallback
+// inside the normal frame (SPEC gate 1.11).
 func (s *Server) Routes() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", s.handleHealthz)
@@ -60,10 +78,18 @@ func (s *Server) Routes() http.Handler {
 	if s.TestMode {
 		mux.HandleFunc("GET /__test/editor", s.handleTestEditor)
 		mux.HandleFunc("GET /__test/egress", s.handleTestEgress)
+		mux.HandleFunc("GET /__test/routes", s.handleTestRoutes)
 		mux.HandleFunc("POST /__test/people/deactivate", s.handleTestDeactivatePerson)
 	}
-	s.people.RegisterRoutes(mux)
-	mux.HandleFunc("GET /", s.handleFrame)
+
+	for _, section := range s.registry.Sections() {
+		if section.RegisterRoutes != nil {
+			section.RegisterRoutes(mux)
+		}
+	}
+
+	mux.HandleFunc("GET /{$}", s.handleRoot)
+	mux.HandleFunc("GET /", s.handleNotFound)
 
 	// Order: security headers outermost, then the CSRF-style origin check
 	// (SPEC B4 request safety), then person identity (SPEC B4 person
@@ -82,11 +108,27 @@ func securityHeaders(next http.Handler) http.Handler {
 	})
 }
 
-func (s *Server) handleFrame(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	if err := s.tmpl.ExecuteTemplate(w, "frame.html", nil); err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
+func (s *Server) handleRoot(w http.ResponseWriter, r *http.Request) {
+	http.Redirect(w, r, "/kb", http.StatusFound)
+}
+
+func (s *Server) handleNotFound(w http.ResponseWriter, r *http.Request) {
+	s.renderFrame(w, r, http.StatusNotFound, "404.html", "Page not found", nil)
+}
+
+// handleTestRoutes lists every path that renders inside the normal frame,
+// for the gate 1.07 E2E test ("frame elements on every registered
+// route"). /who is deliberately excluded: it's a full-screen page outside
+// the frame (SPEC A4).
+func (s *Server) handleTestRoutes(w http.ResponseWriter, r *http.Request) {
+	var paths []string
+	for _, section := range s.registry.Sections() {
+		if section.Nav != nil && section.RegisterRoutes != nil {
+			paths = append(paths, section.Nav.Path)
+		}
 	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(paths)
 }
 
 // handleTestEditor serves the P1-09 editor spike harness: proves the

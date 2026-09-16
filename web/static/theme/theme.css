@@ -1,0 +1,119 @@
+/* Comp HQ theme tokens (SPEC A10: "Bold and distinctive"). Every colour,
+   font, radius and spacing value used anywhere in the app is defined once
+   here as a CSS custom property — swapping the accent colour, for
+   instance, means editing one line (SPEC B2). Light theme only. */
+
+@font-face {
+  font-family: "Archivo";
+  src: url("/static/theme/fonts/archivo-variable.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Atkinson Hyperlegible Next";
+  src: url("/static/theme/fonts/atkinson-hyperlegible-next-variable.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  /* Colour: a deep ink-navy frame, one bold signal-orange accent, and a
+     warm off-white paper for reading areas (SPEC A10). The accent is
+     deliberately darker than a "pure" bright orange so white text on it
+     clears WCAG AA (4.5:1) — see docs/decisions.md D-09. Where the accent
+     is used as text on the navy sidebar, it's paired with a fill/border
+     instead of relying on the text contrast alone. */
+  --color-ink-navy: #14213d;
+  --color-ink-navy-light: #1e2f52;
+  --color-signal-orange: #c2410c;
+  --color-signal-orange-dark: #9a3409;
+  --color-paper: #fbf6ee;
+  --color-paper-muted: #f1ead9;
+  --color-ink-text: #1a1a1a;
+  --color-text-muted: #55524a;
+  --color-nav-text: #f5f1e8;
+  --color-nav-text-muted: #b9c2d6;
+  --color-border: #ddd5c7;
+  --color-danger: #a4222c;
+  --color-white: #ffffff;
+
+  /* Type: a confident, characterful headings face, and a very readable
+     body face — both stored inside the app (SPEC A10, B1). */
+  --font-heading: "Archivo", system-ui, sans-serif;
+  --font-body: "Atkinson Hyperlegible Next", system-ui, sans-serif;
+
+  --font-size-body: 1rem;
+  --font-size-small: 0.875rem;
+  --font-size-h1: 2rem;
+  --font-size-h2: 1.5rem;
+  --font-size-h3: 1.25rem;
+  --line-height-body: 1.5;
+
+  /* Radii and spacing, used everywhere instead of one-off values. */
+  --radius-sm: 0.25rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 1rem;
+
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+
+  --sidebar-width: 16rem;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: var(--font-size-body);
+  line-height: var(--line-height-body);
+  color: var(--color-ink-text);
+  background: var(--color-paper);
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+h1 {
+  font-size: var(--font-size-h1);
+}
+
+h2 {
+  font-size: var(--font-size-h2);
+}
+
+h3 {
+  font-size: var(--font-size-h3);
+}
+
+a {
+  color: var(--color-signal-orange-dark);
+}
+
+/* A stamp-style label (TODAY, OVERDUE, YOURS — SPEC A10 "HQ motifs"). */
+.stamp {
+  display: inline-block;
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: var(--font-size-small);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  background: var(--color-signal-orange);
+  color: var(--color-white);
+}
