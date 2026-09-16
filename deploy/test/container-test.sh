@@ -27,7 +27,9 @@ log() { echo "[container-test] $*"; }
 cleanup() {
   log "cleaning up"
   docker compose -f "$COMPOSE_FILE" -p "$PROJECT" down --remove-orphans >/dev/null 2>&1 || true
-  rm -rf "$WORK"
+  # The container writes as uid 568; this shell isn't, so removing its
+  # files needs the same escalation their creation did.
+  sudo rm -rf "$WORK"
 }
 trap cleanup EXIT
 
@@ -69,8 +71,9 @@ docker compose -f "$COMPOSE_FILE" -p "$PROJECT" up -d
 wait_healthy
 
 log "3. restart: writing a marker and checksumming the data folder"
-echo "comphq container test $(date -u +%FT%TZ)" > "$MARKER"
-sudo chown 568:568 "$MARKER"
+# The directory is owned by uid 568 (so the container can write to it);
+# this shell runs as a different user, so writing into it needs sudo too.
+echo "comphq container test $(date -u +%FT%TZ)" | sudo tee "$MARKER" >/dev/null
 CHECKSUM_BEFORE="$(checksum_data_dir)"
 
 docker compose -f "$COMPOSE_FILE" -p "$PROJECT" restart
