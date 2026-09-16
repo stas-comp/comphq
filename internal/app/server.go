@@ -36,6 +36,7 @@ func NewServer(sqlDB *sql.DB, version string, testMode bool) (*Server, error) {
 		"web/templates/app/*.html",
 		"web/templates/people/*.html",
 		"web/templates/settings/*.html",
+		"web/templates/kb/*.html",
 	)
 	if err != nil {
 		return nil, err
@@ -88,6 +89,7 @@ func (s *Server) Routes() http.Handler {
 		mux.HandleFunc("GET /__test/egress", s.handleTestEgress)
 		mux.HandleFunc("GET /__test/routes", s.handleTestRoutes)
 		mux.HandleFunc("POST /__test/people/deactivate", s.handleTestDeactivatePerson)
+		mux.HandleFunc("POST /__test/kb/seed-article", s.handleTestSeedKBArticle)
 	}
 
 	for _, section := range s.registry.Sections() {
@@ -177,6 +179,27 @@ func (s *Server) handleTestDeactivatePerson(w http.ResponseWriter, r *http.Reque
 		return
 	}
 	if err := s.people.Store.Deactivate(id); err != nil {
+		http.Error(w, "internal error", http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+}
+
+// handleTestSeedKBArticle inserts one minimal published article, so the
+// category delete-refusal gate (1.12) and the home page's tile counts
+// (1.13) are E2E-testable before the real editor/publish flow exists
+// (P1-19).
+func (s *Server) handleTestSeedKBArticle(w http.ResponseWriter, r *http.Request) {
+	categoryID, err := strconv.ParseInt(r.FormValue("category_id"), 10, 64)
+	if err != nil {
+		http.Error(w, "invalid category_id", http.StatusBadRequest)
+		return
+	}
+	now := time.Now().UTC().Format(time.RFC3339)
+	if _, err := s.DB.Exec(
+		`INSERT INTO kb_articles (category_id, title, status, created_at, updated_at) VALUES (?, ?, 'published', ?, ?)`,
+		categoryID, "Test article", now, now,
+	); err != nil {
 		http.Error(w, "internal error", http.StatusInternalServerError)
 		return
 	}

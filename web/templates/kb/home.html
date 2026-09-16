@@ -1,0 +1,28 @@
+{{define "kb-home.html"}}
+<h1>Knowledge Base</h1>
+<p><a href="/kb/categories">Manage categories</a></p>
+
+{{if .Categories}}
+<div class="kb-tiles">
+{{range .Categories}}
+<div class="kb-tile">
+<h2>{{.Name}}</h2>
+<p>{{.ArticleCount}} article{{if ne .ArticleCount 1}}s{{end}}</p>
+</div>
+{{end}}
+</div>
+{{else}}
+<p>No categories yet. <a href="/kb/categories">Add one</a> to get started.</p>
+{{end}}
+
+<h2>Recently updated</h2>
+{{if .Recent}}
+<ul class="kb-recent-list">
+{{range .Recent}}
+<li>{{.Title}} — updated by {{.UpdatedByName}}, {{.UpdatedAt}}</li>
+{{end}}
+</ul>
+{{else}}
+<p>No articles yet.</p>
+{{end}}
+{{end}}

@@ -1,0 +1,33 @@
+{{define "kb-categories.html"}}
+<h1>Categories</h1>
+<p><a href="/kb">Back to Knowledge Base</a></p>
+{{if .Message}}<p class="message" role="alert">{{.Message}}</p>{{end}}
+
+<form method="post" action="/kb/categories" class="create-category-form">
+<label for="new-category-name">New category</label>
+<input type="text" id="new-category-name" name="name" required>
+<button type="submit">Add</button>
+</form>
+
+<ul class="kb-category-list">
+{{range .Categories}}
+<li class="kb-category-row">
+<form method="post" action="/kb/categories/{{.ID}}/rename" class="rename-form">
+<label class="visually-hidden" for="category-name-{{.ID}}">Name</label>
+<input type="text" id="category-name-{{.ID}}" name="name" value="{{.Name}}" required>
+<button type="submit">Rename</button>
+</form>
+<form method="post" action="/kb/categories/{{.ID}}/move-up">
+<button type="submit" aria-label="Move {{.Name}} up">Move up</button>
+</form>
+<form method="post" action="/kb/categories/{{.ID}}/move-down">
+<button type="submit" aria-label="Move {{.Name}} down">Move down</button>
+</form>
+<span class="kb-category-count">{{.ArticleCount}} article{{if ne .ArticleCount 1}}s{{end}}</span>
+<form method="post" action="/kb/categories/{{.ID}}/delete">
+<button type="submit">Delete</button>
+</form>
+</li>
+{{end}}
+</ul>
+{{end}}

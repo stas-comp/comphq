@@ -10,6 +10,7 @@ export const pages: RegisteredPage[] = [
   { name: 'who', path: '/who', needsPerson: false },
   { name: 'briefing', path: '/briefing', needsPerson: true },
   { name: 'kb', path: '/kb', needsPerson: true },
+  { name: 'kb-categories', path: '/kb/categories', needsPerson: true },
   { name: 'tasks', path: '/tasks', needsPerson: true },
   { name: 'calendar', path: '/calendar', needsPerson: true },
   { name: 'settings-people', path: '/settings/people', needsPerson: true },
