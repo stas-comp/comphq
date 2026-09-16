@@ -1,0 +1,162 @@
+package kb
+
+import (
+	"context"
+	"database/sql"
+	"errors"
+	"strings"
+	"time"
+
+	kbhtml "github.com/stas-comp/comphq/internal/kb/html"
+)
+
+// Article is one row of kb_articles.
+type Article struct {
+	ID         int64
+	CategoryID int64
+	Title      string
+	BodyHTML   string
+	Status     string
+	VersionNo  int
+}
+
+// ArticleInput is what a publish form submits. ID is 0 for a new article.
+type ArticleInput struct {
+	ID         int64
+	CategoryID int64
+	Title      string
+	BodyHTML   string
+}
+
+// ErrArticleEmptyTitle is returned by Publish for blank input.
+var ErrArticleEmptyTitle = errors.New("title can't be empty")
+
+type ArticleStore struct {
+	DB *sql.DB
+}
+
+// Publish sanitises the body, assigns block ids, saves the article (a new
+// row for a new article, or an incremented version for an existing one),
+// records a version, and rewrites its search rows — all in one transaction
+// (SPEC B3/B4: "Rows are rewritten in the same transaction as the article
+// save").
+func (s *ArticleStore) Publish(ctx context.Context, input ArticleInput, personID int64) (Article, error) {
+	title := strings.TrimSpace(input.Title)
+	if title == "" {
+		return Article{}, ErrArticleEmptyTitle
+	}
+
+	withBlocks := kbhtml.AssignBlocks(kbhtml.Sanitize(input.BodyHTML))
+	blockTexts := kbhtml.BlockTexts(withBlocks)
+
+	tx, err := s.DB.BeginTx(ctx, nil)
+	if err != nil {
+		return Article{}, err
+	}
+	defer tx.Rollback()
+
+	now := time.Now().UTC().Format(time.RFC3339)
+	action := "edited"
+	article := Article{
+		ID: input.ID, CategoryID: input.CategoryID, Title: title,
+		BodyHTML: withBlocks, Status: "published",
+	}
+
+	if input.ID == 0 {
+		action = "created"
+		article.VersionNo = 1
+		res, err := tx.ExecContext(ctx,
+			`INSERT INTO kb_articles (category_id, title, body_html, status, version_no, created_by, created_at, updated_by, updated_at)
+			 VALUES (?, ?, ?, 'published', 1, ?, ?, ?, ?)`,
+			input.CategoryID, title, withBlocks, personID, now, personID, now,
+		)
+		if err != nil {
+			return Article{}, err
+		}
+		article.ID, err = res.LastInsertId()
+		if err != nil {
+			return Article{}, err
+		}
+	} else {
+		var currentVersion int
+		if err := tx.QueryRowContext(ctx, `SELECT version_no FROM kb_articles WHERE id = ?`, input.ID).Scan(&currentVersion); err != nil {
+			return Article{}, err
+		}
+		article.VersionNo = currentVersion + 1
+		if _, err := tx.ExecContext(ctx,
+			`UPDATE kb_articles SET category_id = ?, title = ?, body_html = ?, version_no = ?, updated_by = ?, updated_at = ? WHERE id = ?`,
+			input.CategoryID, title, withBlocks, article.VersionNo, personID, now, input.ID,
+		); err != nil {
+			return Article{}, err
+		}
+	}
+
+	if _, err := tx.ExecContext(ctx,
+		`INSERT INTO kb_article_versions (article_id, version_no, title, category_id, body_html, action, edited_by, edited_at)
+		 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+		article.ID, article.VersionNo, title, input.CategoryID, withBlocks, action, personID, now,
+	); err != nil {
+		return Article{}, err
+	}
+
+	if _, err := tx.ExecContext(ctx, `DELETE FROM kb_search WHERE article_id = ?`, article.ID); err != nil {
+		return Article{}, err
+	}
+	if _, err := tx.ExecContext(ctx,
+		`INSERT INTO kb_search (title, body, article_id, block_id) VALUES (?, '', ?, 0)`,
+		title, article.ID,
+	); err != nil {
+		return Article{}, err
+	}
+	for blockID, text := range blockTexts {
+		if _, err := tx.ExecContext(ctx,
+			`INSERT INTO kb_search (title, body, article_id, block_id) VALUES ('', ?, ?, ?)`,
+			text, article.ID, blockID,
+		); err != nil {
+			return Article{}, err
+		}
+	}
+
+	if err := tx.Commit(); err != nil {
+		return Article{}, err
+	}
+	return article, nil
+}
+
+// Get returns one article by id, regardless of status.
+func (s *ArticleStore) Get(id int64) (Article, error) {
+	var a Article
+	err := s.DB.QueryRow(
+		`SELECT id, category_id, title, body_html, status, version_no FROM kb_articles WHERE id = ?`, id,
+	).Scan(&a.ID, &a.CategoryID, &a.Title, &a.BodyHTML, &a.Status, &a.VersionNo)
+	return a, err
+}
+
+// CategoryArticle is one row of a category's published article listing.
+type CategoryArticle struct {
+	ID    int64
+	Title string
+}
+
+// ListByCategory returns a category's published articles, most recently
+// updated first.
+func (s *ArticleStore) ListByCategory(categoryID int64) ([]CategoryArticle, error) {
+	rows, err := s.DB.Query(
+		`SELECT id, title FROM kb_articles WHERE category_id = ? AND status = 'published' ORDER BY updated_at DESC`,
+		categoryID,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var out []CategoryArticle
+	for rows.Next() {
+		var a CategoryArticle
+		if err := rows.Scan(&a.ID, &a.Title); err != nil {
+			return nil, err
+		}
+		out = append(out, a)
+	}
+	return out, rows.Err()
+}

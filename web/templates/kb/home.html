@@ -1,14 +1,14 @@
 {{define "kb-home.html"}}
 <h1>Knowledge Base</h1>
-<p><a href="/kb/categories">Manage categories</a></p>
+<p><a href="/kb/categories">Manage categories</a> · <a href="/kb/new">New article</a></p>
 
 {{if .Categories}}
 <div class="kb-tiles">
 {{range .Categories}}
-<div class="kb-tile">
+<a class="kb-tile" href="/kb/categories/{{.ID}}">
 <h2>{{.Name}}</h2>
 <p>{{.ArticleCount}} article{{if ne .ArticleCount 1}}s{{end}}</p>
-</div>
+</a>
 {{end}}
 </div>
 {{else}}
@@ -19,7 +19,7 @@
 {{if .Recent}}
 <ul class="kb-recent-list">
 {{range .Recent}}
-<li>{{.Title}} — updated by {{.UpdatedByName}}, {{.UpdatedAt}}</li>
+<li><a href="/kb/articles/{{.ID}}">{{.Title}}</a> — updated by {{.UpdatedByName}}, {{.UpdatedAt}}</li>
 {{end}}
 </ul>
 {{else}}

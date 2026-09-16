@@ -11,21 +11,27 @@ import (
 type Handlers struct {
 	srv        *app.Server
 	categories *CategoryStore
+	articles   *ArticleStore
 }
 
 func Section(srv *app.Server) app.Section {
-	h := &Handlers{srv: srv, categories: &CategoryStore{DB: srv.DB}}
+	h := &Handlers{srv: srv, categories: &CategoryStore{DB: srv.DB}, articles: &ArticleStore{DB: srv.DB}}
 	return app.Section{
-		MigrationName: "kb", // migrations/kb/0001_search.sql (P1-08), 0002_categories.sql (P1-17)
+		MigrationName: "kb", // migrations/kb/0001_search.sql (P1-08), 0002_categories.sql (P1-17), 0003_article_versions.sql (P1-19)
 		Nav:           &app.NavItem{Label: "Knowledge Base", Path: "/kb", Icon: "/static/theme/icons/kb.svg"},
 		RegisterRoutes: func(mux *http.ServeMux) {
 			mux.HandleFunc("GET /kb", h.handleHome)
 			mux.HandleFunc("GET /kb/categories", h.handleCategories)
 			mux.HandleFunc("POST /kb/categories", h.handleCreateCategory)
+			mux.HandleFunc("GET /kb/categories/{id}", h.handleViewCategory)
 			mux.HandleFunc("POST /kb/categories/{id}/rename", h.handleRenameCategory)
 			mux.HandleFunc("POST /kb/categories/{id}/move-up", h.handleMoveCategoryUp)
 			mux.HandleFunc("POST /kb/categories/{id}/move-down", h.handleMoveCategoryDown)
 			mux.HandleFunc("POST /kb/categories/{id}/delete", h.handleDeleteCategory)
+			mux.HandleFunc("GET /kb/new", h.handleNewArticle)
+			mux.HandleFunc("GET /kb/articles/{id}", h.handleViewArticle)
+			mux.HandleFunc("GET /kb/articles/{id}/edit", h.handleEditArticle)
+			mux.HandleFunc("POST /kb/articles", h.handleSaveArticle)
 		},
 	}
 }

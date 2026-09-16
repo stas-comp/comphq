@@ -1,0 +1,15 @@
+{{define "kb-category.html"}}
+<p><a href="/kb">Back to Knowledge Base</a></p>
+<h1>{{.Category.Name}}</h1>
+<p><a href="/kb/new">New article</a></p>
+
+{{if .Articles}}
+<ul class="kb-article-list">
+{{range .Articles}}
+<li><a href="/kb/articles/{{.ID}}">{{.Title}}</a></li>
+{{end}}
+</ul>
+{{else}}
+<p>No articles in this category yet.</p>
+{{end}}
+{{end}}

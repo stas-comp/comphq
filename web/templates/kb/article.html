@@ -1,0 +1,7 @@
+{{define "kb-article.html"}}
+<p><a href="/kb/categories/{{.Category.ID}}">{{.Category.Name}}</a></p>
+<h1>{{.Article.Title}}</h1>
+<p><a href="/kb/articles/{{.Article.ID}}/edit">Edit</a></p>
+
+<div class="kb-article-body">{{.BodyHTML}}</div>
+{{end}}

@@ -53,6 +53,19 @@ func (s *CategoryStore) List() ([]Category, error) {
 	return categories, rows.Err()
 }
 
+// Get returns one category by id (its published article count included,
+// as in List).
+func (s *CategoryStore) Get(id int64) (Category, error) {
+	var c Category
+	err := s.DB.QueryRow(`
+		SELECT c.id, c.name, c.sort_order,
+			(SELECT COUNT(*) FROM kb_articles a WHERE a.category_id = c.id AND a.status = 'published')
+		FROM kb_categories c
+		WHERE c.id = ?
+	`, id).Scan(&c.ID, &c.Name, &c.SortOrder, &c.ArticleCount)
+	return c, err
+}
+
 // Create adds a category at the end of the sort order.
 func (s *CategoryStore) Create(name string) (Category, error) {
 	name = strings.TrimSpace(name)

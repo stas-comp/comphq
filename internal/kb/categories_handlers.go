@@ -1,6 +1,7 @@
 package kb
 
 import (
+	"database/sql"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -24,6 +25,39 @@ func (h *Handlers) renderCategories(w http.ResponseWriter, r *http.Request, stat
 	h.srv.RenderFrame(w, r, status, "kb-categories.html", "Categories", categoriesPageData{
 		Categories: categories,
 		Message:    message,
+	})
+}
+
+// categoryPageData is the SPEC gate 1.14 destination: a category's own
+// page, listing its published articles.
+type categoryPageData struct {
+	Category Category
+	Articles []CategoryArticle
+}
+
+func (h *Handlers) handleViewCategory(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil {
+		http.Error(w, "invalid id", http.StatusBadRequest)
+		return
+	}
+	category, err := h.categories.Get(id)
+	if err == sql.ErrNoRows {
+		h.srv.RenderFrame(w, r, http.StatusNotFound, "404.html", "Page not found", nil)
+		return
+	}
+	if err != nil {
+		http.Error(w, "internal error", http.StatusInternalServerError)
+		return
+	}
+	articles, err := h.articles.ListByCategory(id)
+	if err != nil {
+		http.Error(w, "internal error", http.StatusInternalServerError)
+		return
+	}
+	h.srv.RenderFrame(w, r, http.StatusOK, "kb-category.html", category.Name, categoryPageData{
+		Category: category,
+		Articles: articles,
 	})
 }
 
