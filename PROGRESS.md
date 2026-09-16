@@ -13,7 +13,7 @@ Status values: `todo` · `in-progress` · `blocked` · `done`.
 | P1-04 | Playwright and axe skeleton | done | 0939f46 | no CI yet (added in P1-05) | `npm run check` passes locally from both PowerShell and Bash. Added placeholder `tools/policy` package so the command surface works before P1-05 (see D-04a). |
 | P1-05 | CI workflow and repository policy tests | done | d8cd122 | https://github.com/stas-comp/comphq/actions/runs/35113839555 | First CI run (12f0ef7) and the follow-up PROGRESS.md update (d8cd122) both green: `go` and `browser` jobs pass; `container`/`speed`/`screens` correctly skipped (no flag/tag). `.github/workflows/ci.yml` added. Real `tools/policy` checks replace the P1-04 placeholder. D-03, D-04 recorded. |
 | P1-06 | Dockerfile, TrueNAS YAML, container tests, tag v0.0.1 | done | 2e8094b | https://github.com/stas-comp/comphq/actions/runs/35115590961 | Container job green (2 fixes needed: sudo for uid-568-owned files; excluded SQLite -wal/-shm from the data checksum, see docs/decisions.md). Full dispatch green (run 35116031926). Tag v0.0.1 pushed; both CI (35116427243) and Release (35116427158, incl. publish) green. CHANGES.md has the 0.0.1 entry. D-02, D-04b, D-06a, D-06b, D-08 recorded. |
-| P1-07 | Make the image public (STOP S2) | blocked | | | Waiting on owner to make the ghcr.io package public. Sent stop message S2. |
+| P1-07 | Make the image public (STOP S2) | done | c3028bc | | Owner made the ghcr.io package public. Verified anonymously: token request + HEAD/GET on the 0.0.1 manifest both return 200 with no auth header. |
 | P1-08 | Spike: FTS5 search with block ids | todo | | | |
 | P1-09 | Spike: editor bundle | todo | | | |
 | P1-10 | Spike: clipboard paste in headless Chromium (send N1) | todo | | | |
@@ -77,7 +77,7 @@ Status values: `todo` · `in-progress` · `blocked` · `done`.
 | Date | Stop point | Message sent | Owner reply |
 |---|---|---|---|
 | 2026-09-15 | S1 (P1-02) | GitHub sign-in instructions sent in chat | done (confirmed 2026-09-16) |
-| 2026-09-16 | S2 (P1-07) | Make-the-package-public instructions sent in chat | waiting |
+| 2026-09-16 | S2 (P1-07) | Make-the-package-public instructions sent in chat | done |
 
 ## Owner feedback
 
