@@ -19,6 +19,10 @@ jobs:
       - run: go test ./...
       - run: go test -tags integration ./...
       - run: go test ./tools/policy/...
+      - name: docx fixtures are reproducible (P1-11)
+        run: |
+          go run ./e2e/fixtures/docx/gen
+          git diff --exit-code -- e2e/fixtures/docx
 
   browser:
     runs-on: ubuntu-24.04
