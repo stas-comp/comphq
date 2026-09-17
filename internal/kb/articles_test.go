@@ -84,10 +84,11 @@ func TestPublishEditCreatesVersion2AndReplacesSearchRows(t *testing.T) {
 	}
 
 	edited, err := store.Publish(context.Background(), ArticleInput{
-		ID:         article.ID,
-		CategoryID: cat.ID,
-		Title:      "Changing the toner",
-		BodyHTML:   "<p>New instructions about the drum.</p>",
+		ID:              article.ID,
+		CategoryID:      cat.ID,
+		Title:           "Changing the toner",
+		BodyHTML:        "<p>New instructions about the drum.</p>",
+		ExpectedVersion: article.VersionNo,
 	}, personID)
 	if err != nil {
 		t.Fatalf("Publish (edit): %v", err)
@@ -149,10 +150,11 @@ func TestPublishRollsBackFullyOnError(t *testing.T) {
 
 	const missingCategoryID = 999999
 	_, err = store.Publish(context.Background(), ArticleInput{
-		ID:         article.ID,
-		CategoryID: missingCategoryID,
-		Title:      "Printer help",
-		BodyHTML:   "<p>Edited text that must not be saved.</p>",
+		ID:              article.ID,
+		CategoryID:      missingCategoryID,
+		Title:           "Printer help",
+		BodyHTML:        "<p>Edited text that must not be saved.</p>",
+		ExpectedVersion: article.VersionNo,
 	}, personID)
 	if err == nil {
 		t.Fatal("Publish with a missing category succeeded, want an error")
@@ -203,6 +205,98 @@ func TestPublishRejectsEmptyTitle(t *testing.T) {
 	}, personID)
 	if err != ErrArticleEmptyTitle {
 		t.Errorf("Publish(blank title) error = %v, want ErrArticleEmptyTitle", err)
+	}
+}
+
+// TestPublishDetectsVersionConflict covers SPEC gate 1.21: a second
+// publisher whose edit started from a now-stale version_no is refused,
+// without touching the article.
+func TestPublishDetectsVersionConflict(t *testing.T) {
+	sqlDB := openTestDB(t)
+	catStore := &CategoryStore{DB: sqlDB}
+	cat, err := catStore.Create("Printers")
+	if err != nil {
+		t.Fatalf("Create category: %v", err)
+	}
+	personID := testPerson(t, sqlDB)
+	store := &ArticleStore{DB: sqlDB}
+
+	article, err := store.Publish(context.Background(), ArticleInput{
+		CategoryID: cat.ID, Title: "Toner", BodyHTML: "<p>original</p>",
+	}, personID)
+	if err != nil {
+		t.Fatalf("Publish (create): %v", err)
+	}
+
+	// First editor publishes based on version 1: succeeds, becomes v2.
+	if _, err := store.Publish(context.Background(), ArticleInput{
+		ID: article.ID, CategoryID: cat.ID, Title: "Toner", BodyHTML: "<p>first edit</p>",
+		ExpectedVersion: 1,
+	}, personID); err != nil {
+		t.Fatalf("Publish (first editor): %v", err)
+	}
+
+	// Second editor also started from version 1, which is now stale.
+	_, err = store.Publish(context.Background(), ArticleInput{
+		ID: article.ID, CategoryID: cat.ID, Title: "Toner", BodyHTML: "<p>second edit</p>",
+		ExpectedVersion: 1,
+	}, personID)
+	if err != ErrVersionConflict {
+		t.Errorf("Publish (stale version) error = %v, want ErrVersionConflict", err)
+	}
+
+	current, err := store.Get(article.ID)
+	if err != nil {
+		t.Fatalf("Get: %v", err)
+	}
+	if current.BodyHTML != `<p data-b="1">first edit</p>` {
+		t.Errorf("article after refused conflict = %q, want the first editor's text unchanged", current.BodyHTML)
+	}
+}
+
+// TestPublishOverrideBypassesConflictAndKeepsBothInHistory covers SPEC
+// gate 1.21's "Publish mine anyway": it saves despite the stale version,
+// and both edits remain in History.
+func TestPublishOverrideBypassesConflictAndKeepsBothInHistory(t *testing.T) {
+	sqlDB := openTestDB(t)
+	catStore := &CategoryStore{DB: sqlDB}
+	cat, err := catStore.Create("Printers")
+	if err != nil {
+		t.Fatalf("Create category: %v", err)
+	}
+	personID := testPerson(t, sqlDB)
+	store := &ArticleStore{DB: sqlDB}
+
+	article, err := store.Publish(context.Background(), ArticleInput{
+		CategoryID: cat.ID, Title: "Toner", BodyHTML: "<p>original</p>",
+	}, personID)
+	if err != nil {
+		t.Fatalf("Publish (create): %v", err)
+	}
+	if _, err := store.Publish(context.Background(), ArticleInput{
+		ID: article.ID, CategoryID: cat.ID, Title: "Toner", BodyHTML: "<p>first edit</p>",
+		ExpectedVersion: 1,
+	}, personID); err != nil {
+		t.Fatalf("Publish (first editor): %v", err)
+	}
+
+	overridden, err := store.Publish(context.Background(), ArticleInput{
+		ID: article.ID, CategoryID: cat.ID, Title: "Toner", BodyHTML: "<p>second edit</p>",
+		ExpectedVersion: 1, Override: true,
+	}, personID)
+	if err != nil {
+		t.Fatalf("Publish (override): %v", err)
+	}
+	if overridden.BodyHTML != `<p data-b="1">second edit</p>` {
+		t.Errorf("article after override = %q, want the second editor's text", overridden.BodyHTML)
+	}
+
+	history, err := store.History(article.ID)
+	if err != nil {
+		t.Fatalf("History: %v", err)
+	}
+	if len(history) != 3 {
+		t.Fatalf("History rows = %d, want 3 (created, first edit, overriding edit)", len(history))
 	}
 }
 

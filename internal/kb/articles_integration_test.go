@@ -73,6 +73,7 @@ func TestEditArticleHTTPRecordsSecondVersion(t *testing.T) {
 		"category_id": {strconv.FormatInt(categoryID, 10)},
 		"title":       {"Changing the toner"},
 		"body_html":   {"<p>Edited text.</p>"},
+		"version_no":  {"1"},
 	}).Body.Close()
 
 	var versionCount int
@@ -86,6 +87,61 @@ func TestEditArticleHTTPRecordsSecondVersion(t *testing.T) {
 	articlePage := readBody(t, mustGet(t, client, ts, "/kb/articles/"+strconv.FormatInt(articleID, 10)))
 	if !strings.Contains(articlePage, "Edited text.") {
 		t.Errorf("article page doesn't show the edited text; got:\n%s", articlePage)
+	}
+}
+
+// TestPublishArticleHTTPConflictReturnsEditorNotRedirect covers SPEC gate
+// 1.21: a stale version_no gets the editor back (with the posted text and
+// a "Publish mine anyway" retry), not the usual redirect to the article.
+func TestPublishArticleHTTPConflictReturnsEditorNotRedirect(t *testing.T) {
+	ts, sqlDB := newTestServer(t)
+	client := &http.Client{Jar: mustCookieJar(t)}
+	signIn(t, client, ts)
+
+	postForm(t, client, ts, "/kb/categories", url.Values{"name": {"Printers"}}).Body.Close()
+	var categoryID int64
+	if err := sqlDB.QueryRow(`SELECT id FROM kb_categories WHERE name = 'Printers'`).Scan(&categoryID); err != nil {
+		t.Fatalf("find category: %v", err)
+	}
+	postForm(t, client, ts, "/kb/articles", url.Values{
+		"category_id": {strconv.FormatInt(categoryID, 10)}, "title": {"Toner"}, "body_html": {"<p>original</p>"},
+	}).Body.Close()
+	var articleID int64
+	if err := sqlDB.QueryRow(`SELECT id FROM kb_articles WHERE title = 'Toner'`).Scan(&articleID); err != nil {
+		t.Fatalf("find article: %v", err)
+	}
+
+	// One editor publishes based on version 1, becoming version 2.
+	postForm(t, client, ts, "/kb/articles", url.Values{
+		"id": {strconv.FormatInt(articleID, 10)}, "category_id": {strconv.FormatInt(categoryID, 10)},
+		"title": {"Toner"}, "body_html": {"<p>first edit</p>"}, "version_no": {"1"},
+	}).Body.Close()
+
+	// A second editor, still holding version 1, tries to publish.
+	resp := postForm(t, client, ts, "/kb/articles", url.Values{
+		"id": {strconv.FormatInt(articleID, 10)}, "category_id": {strconv.FormatInt(categoryID, 10)},
+		"title": {"Toner"}, "body_html": {"<p>second edit</p>"}, "version_no": {"1"},
+	})
+	if resp.Request.URL.Path != "/kb/articles" {
+		t.Errorf("conflict response URL = %s, want to stay on /kb/articles (no redirect)", resp.Request.URL.Path)
+	}
+	body := readBody(t, resp)
+	if !strings.Contains(body, "Someone else changed this article while you were editing.") {
+		t.Errorf("response missing the exact conflict message; got:\n%s", body)
+	}
+	if !strings.Contains(body, "second edit") {
+		t.Errorf("response lost the second editor's text; got:\n%s", body)
+	}
+	if !strings.Contains(body, "Publish mine anyway") {
+		t.Errorf("response missing the override button; got:\n%s", body)
+	}
+
+	var currentBody string
+	if err := sqlDB.QueryRow(`SELECT body_html FROM kb_articles WHERE id = ?`, articleID).Scan(&currentBody); err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(currentBody, "first edit") {
+		t.Errorf("article body after refused conflict = %q, want the first editor's text unchanged", currentBody)
 	}
 }
 

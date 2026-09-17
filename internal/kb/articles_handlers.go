@@ -11,8 +11,12 @@ import (
 )
 
 // articleFormData backs the shared new/edit editor template (SPEC gates
-// 1.14, 1.15, 1.20). VersionNo is carried as a hidden field for P1-25's
-// edit-conflict detection; nothing reads it back yet.
+// 1.14, 1.15, 1.20, 1.21). VersionNo is carried as a hidden field so a
+// resubmission can be compared against the article's current version_no.
+// Conflict is set only when that comparison just failed: the template
+// shows "Publish mine anyway" instead of "Publish" and carries an
+// override flag, so resubmitting the same (still-posted) content bypasses
+// the check.
 type articleFormData struct {
 	ID         int64
 	VersionNo  int
@@ -22,6 +26,7 @@ type articleFormData struct {
 	CategoryID int64
 	Categories []Category
 	Message    string
+	Conflict   bool
 }
 
 func newArticleFormData(id int64, versionNo int, title, bodyHTML string, categoryID int64, categories []Category, message string) (articleFormData, error) {
@@ -152,12 +157,16 @@ func (h *Handlers) handleSaveArticle(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "invalid category_id", http.StatusBadRequest)
 		return
 	}
+	expectedVersion, _ := strconv.Atoi(r.FormValue("version_no")) // 0 for a new article; harmless either way
+	override := r.FormValue("override") == "1"
 
 	article, err := h.articles.Publish(r.Context(), ArticleInput{
-		ID:         id,
-		CategoryID: categoryID,
-		Title:      r.FormValue("title"),
-		BodyHTML:   r.FormValue("body_html"),
+		ID:              id,
+		CategoryID:      categoryID,
+		Title:           r.FormValue("title"),
+		BodyHTML:        r.FormValue("body_html"),
+		ExpectedVersion: expectedVersion,
+		Override:        override,
 	}, person.ID)
 	if err == ErrArticleEmptyTitle {
 		categories, listErr := h.categories.List()
@@ -165,12 +174,30 @@ func (h *Handlers) handleSaveArticle(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "internal error", http.StatusInternalServerError)
 			return
 		}
-		data, dataErr := newArticleFormData(id, 0, r.FormValue("title"), r.FormValue("body_html"), categoryID, categories, "Please type a title.")
+		data, dataErr := newArticleFormData(id, expectedVersion, r.FormValue("title"), r.FormValue("body_html"), categoryID, categories, "Please type a title.")
 		if dataErr != nil {
 			http.Error(w, "internal error", http.StatusInternalServerError)
 			return
 		}
 		h.srv.RenderFrame(w, r, http.StatusOK, "kb-editor.html", "New article", data)
+		return
+	}
+	// SPEC gate 1.21: keep the text just typed, on screen, with a plain
+	// explanation and a way to publish it anyway.
+	if err == ErrVersionConflict {
+		categories, listErr := h.categories.List()
+		if listErr != nil {
+			http.Error(w, "internal error", http.StatusInternalServerError)
+			return
+		}
+		data, dataErr := newArticleFormData(id, expectedVersion, r.FormValue("title"), r.FormValue("body_html"), categoryID, categories,
+			"Someone else changed this article while you were editing.")
+		if dataErr != nil {
+			http.Error(w, "internal error", http.StatusInternalServerError)
+			return
+		}
+		data.Conflict = true
+		h.srv.RenderFrame(w, r, http.StatusOK, "kb-editor.html", "Edit article", data)
 		return
 	}
 	if err != nil {

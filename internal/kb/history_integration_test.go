@@ -33,7 +33,7 @@ func TestHistoryHTTPListsVersionsNewestFirst(t *testing.T) {
 	}
 	postForm(t, client, ts, "/kb/articles", url.Values{
 		"id": {strconv.FormatInt(articleID, 10)}, "category_id": {strconv.FormatInt(categoryID, 10)},
-		"title": {"Toner"}, "body_html": {"<p>v2</p>"},
+		"title": {"Toner"}, "body_html": {"<p>v2</p>"}, "version_no": {"1"},
 	}).Body.Close()
 
 	body := readBody(t, mustGet(t, client, ts, "/kb/articles/"+strconv.FormatInt(articleID, 10)+"/history"))
@@ -72,7 +72,7 @@ func TestVersionAndRestoreHTTP(t *testing.T) {
 	}
 	postForm(t, client, ts, "/kb/articles", url.Values{
 		"id": {strconv.FormatInt(articleID, 10)}, "category_id": {strconv.FormatInt(categoryID, 10)},
-		"title": {"Toner"}, "body_html": {"<p>edited</p>"},
+		"title": {"Toner"}, "body_html": {"<p>edited</p>"}, "version_no": {"1"},
 	}).Body.Close()
 
 	versionPage := readBody(t, mustGet(t, client, ts, "/kb/articles/"+strconv.FormatInt(articleID, 10)+"/versions/1"))

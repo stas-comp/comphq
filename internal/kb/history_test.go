@@ -7,10 +7,21 @@ import (
 	"github.com/stas-comp/comphq/internal/people"
 )
 
+// publishForHistoryTest publishes without worrying about SPEC gate 1.21's
+// conflict check: these tests are about history/restore/archive, not
+// conflicts, so it always fetches the article's current version_no first
+// (a no-op query when id is 0, a new article) rather than making every
+// caller track version numbers by hand.
 func publishForHistoryTest(t *testing.T, store *ArticleStore, categoryID, id, personID int64, title, body string) Article {
 	t.Helper()
+	var expectedVersion int
+	if id != 0 {
+		if err := store.DB.QueryRow(`SELECT version_no FROM kb_articles WHERE id = ?`, id).Scan(&expectedVersion); err != nil {
+			t.Fatalf("look up current version: %v", err)
+		}
+	}
 	article, err := store.Publish(context.Background(), ArticleInput{
-		ID: id, CategoryID: categoryID, Title: title, BodyHTML: body,
+		ID: id, CategoryID: categoryID, Title: title, BodyHTML: body, ExpectedVersion: expectedVersion,
 	}, personID)
 	if err != nil {
 		t.Fatalf("Publish: %v", err)

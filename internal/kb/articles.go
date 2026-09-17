@@ -25,15 +25,24 @@ type Article struct {
 }
 
 // ArticleInput is what a publish form submits. ID is 0 for a new article.
+// ExpectedVersion is the version_no the editor started from — checked
+// against the article's current version_no on an edit (ID != 0) unless
+// Override is set (SPEC gate 1.21: "Publish mine anyway").
 type ArticleInput struct {
-	ID         int64
-	CategoryID int64
-	Title      string
-	BodyHTML   string
+	ID              int64
+	CategoryID      int64
+	Title           string
+	BodyHTML        string
+	ExpectedVersion int
+	Override        bool
 }
 
 // ErrArticleEmptyTitle is returned by Publish for blank input.
 var ErrArticleEmptyTitle = errors.New("title can't be empty")
+
+// ErrVersionConflict is returned by Publish when someone else published a
+// newer version of the same article first (SPEC gate 1.21).
+var ErrVersionConflict = errors.New("someone else changed this article while you were editing")
 
 type ArticleStore struct {
 	DB     *sql.DB
@@ -90,6 +99,9 @@ func (s *ArticleStore) Publish(ctx context.Context, input ArticleInput, personID
 		var currentVersion int
 		if err := tx.QueryRowContext(ctx, `SELECT version_no FROM kb_articles WHERE id = ?`, input.ID).Scan(&currentVersion); err != nil {
 			return Article{}, err
+		}
+		if !input.Override && currentVersion != input.ExpectedVersion {
+			return Article{}, ErrVersionConflict
 		}
 		article.VersionNo = currentVersion + 1
 		if _, err := tx.ExecContext(ctx,
