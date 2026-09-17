@@ -12,6 +12,7 @@ type styleDefXML struct {
 		Val string `xml:"val,attr"`
 	} `xml:"basedOn"`
 	ParagraphProps paragraphPropsXML `xml:"pPr"`
+	RunProps       runPropsXML       `xml:"rPr"`
 }
 
 type stylesXML struct {
@@ -96,4 +97,68 @@ func (s styleSheet) headingLevel(styleID string, directOutlineLvl *int) (htmlTag
 // isTitleStyle reports whether styleID resolves to Word's "Title" style.
 func (s styleSheet) isTitleStyle(styleID string) bool {
 	return strings.EqualFold(strings.TrimSpace(s.name(styleID)), "Title")
+}
+
+// runProps walks styleID's basedOn chain looking for the nearest explicit
+// bold/italic in each style's own top-level rPr (SPEC B4: "style
+// inheritance"): the first explicit setting found while walking up wins,
+// and a chain further up is only consulted for whichever of bold/italic
+// the nearer style left unset. Returns nil for either that no style in
+// the chain sets at all.
+func (s styleSheet) runProps(styleID string) (bold, italic *bool) {
+	seen := map[string]bool{}
+	for styleID != "" && !seen[styleID] {
+		seen[styleID] = true
+		def, ok := s.byID[styleID]
+		if !ok {
+			return bold, italic
+		}
+		if bold == nil && def.RunProps.Bold != nil {
+			v := def.RunProps.Bold.bool()
+			bold = &v
+		}
+		if italic == nil && def.RunProps.Italic != nil {
+			v := def.RunProps.Italic.bool()
+			italic = &v
+		}
+		if bold != nil && italic != nil {
+			return bold, italic
+		}
+		styleID = def.BasedOn.Val
+	}
+	return bold, italic
+}
+
+// resolveMarks combines a run's direct bold/italic (nil if the run's own
+// rPr doesn't mention it) with its paragraph style's and, if set, its own
+// character style's (SPEC B4: "bold/italic toggles ... honouring
+// w:val=0/false and style inheritance"). Precedence, weakest first:
+// paragraph style, then character style (w:rStyle), then the run's own
+// direct formatting — each level only overrides what the levels below it
+// left unset, except the run's own direct formatting, which always wins
+// when present, including to explicitly turn something off.
+func (s styleSheet) resolveMarks(paragraphStyleID, runStyleID string, directBold, directItalic *bool) (bold, italic bool) {
+	pBold, pItalic := s.runProps(paragraphStyleID)
+	if pBold != nil {
+		bold = *pBold
+	}
+	if pItalic != nil {
+		italic = *pItalic
+	}
+	if runStyleID != "" {
+		cBold, cItalic := s.runProps(runStyleID)
+		if cBold != nil {
+			bold = *cBold
+		}
+		if cItalic != nil {
+			italic = *cItalic
+		}
+	}
+	if directBold != nil {
+		bold = *directBold
+	}
+	if directItalic != nil {
+		italic = *directItalic
+	}
+	return bold, italic
 }

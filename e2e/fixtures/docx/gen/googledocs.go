@@ -20,7 +20,7 @@ func writeGoogleDocsDocx(path string) error {
 		p("", hyperlinkRun("rIdHyperlink1", "network policy")) +
 		googleTable() +
 		p("", run("Router location:")) +
-		image("rIdImage1", "Router in the server cupboard", 1828800, 1371600) +
+		p("", image("rIdImage1", "Router in the server cupboard", 1828800, 1371600)) +
 		p("", run("End of document."))
 
 	docXML := documentXML(body, false)

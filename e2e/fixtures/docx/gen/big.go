@@ -46,7 +46,7 @@ func writeBig20PagesDocx(path string) error {
 			docRelEntries = append(docRelEntries, rel(relID, "image", mediaName))
 			mediaParts = append(mediaParts, part{"word/" + mediaName, mediaBytes})
 			body.WriteString(p("", run("Figure "+itoa(pictureCount)+":")))
-			body.WriteString(image(relID, "Figure "+itoa(pictureCount), 1000000, 750000))
+			body.WriteString(p("", image(relID, "Figure "+itoa(pictureCount), 1000000, 750000)))
 		}
 	}
 

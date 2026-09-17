@@ -31,9 +31,14 @@ var ErrUnreadable = errors.New("this file can't be read as a Word document")
 var ErrTooLarge = errors.New("this Word document is too large")
 
 // Result is what the KB editor needs to insert the converted document.
+// Notes lists one entry per thing left out of the conversion (SPEC B4:
+// comments, footnotes, endnotes, headers and footers today; P1-32 adds
+// unsupported items like charts and pictures in other formats) — the
+// editor turns len(Notes) and its entries into the 1.49 summary message.
 type Result struct {
 	Title string
 	HTML  string
+	Notes []string
 }
 
 // Convert reads a .docx from r (size bytes long) and returns its title and
@@ -83,12 +88,18 @@ func Convert(r io.ReaderAt, size int64, filename string) (Result, error) {
 		return Result{}, err
 	}
 
-	doc, err := parseDocument(docXML)
+	parsed, err := parseDocument(docXML, sheet)
 	if err != nil {
 		return Result{}, err
 	}
 
-	return buildResult(doc, sheet, filename), nil
+	hfNotes, err := pkg.headerFooterNotes(mainPart)
+	if err != nil {
+		return Result{}, err
+	}
+	notes := append(hfNotes, parsed.notes...)
+
+	return buildResult(parsed.paragraphs, notes, sheet, filename), nil
 }
 
 // pkgReader reads parts of the zip package, enforcing the uncompressed-size
@@ -186,6 +197,48 @@ func (p *pkgReader) mainDocumentPart() (string, error) {
 		}
 	}
 	return "", ErrUnreadable
+}
+
+// headerFooterNotes returns one note per header or footer relationship
+// found for mainPart (SPEC B4: "left out, and counted in notes"). Headers
+// and footers are separate parts referenced by relationship, unlike
+// comments/footnotes/endnotes, which parseDocument already counts from
+// their inline references in document.xml.
+func (p *pkgReader) headerFooterNotes(mainPart string) ([]string, error) {
+	data, err := p.readPartIfExists(relsPathFor(mainPart))
+	if err != nil {
+		return nil, err
+	}
+	if data == nil {
+		return nil, nil
+	}
+	rels, err := parseRelationships(data)
+	if err != nil {
+		return nil, err
+	}
+	var notes []string
+	for _, rel := range rels {
+		switch {
+		case hasSuffixFold(rel.Type, "/header"):
+			notes = append(notes, "the header")
+		case hasSuffixFold(rel.Type, "/footer"):
+			notes = append(notes, "the footer")
+		}
+	}
+	return notes, nil
+}
+
+// relsPathFor returns the relationships part for part, e.g.
+// "word/document.xml" -> "word/_rels/document.xml.rels".
+func relsPathFor(part string) string {
+	dir, base := "", part
+	for i := len(part) - 1; i >= 0; i-- {
+		if part[i] == '/' {
+			dir, base = part[:i+1], part[i+1:]
+			break
+		}
+	}
+	return dir + "_rels/" + base + ".rels"
 }
 
 func isOfficeDocumentRelType(relType string) bool {

@@ -33,17 +33,17 @@ func writeSampleDocx(path string) error {
 		p("", commentedRun("0", "the current stock levels")) +
 		p("", run("Prices last checked")+footnoteRun(" last quarter")) +
 		p("", run("Diagram of the toner compartment:")) +
-		image("rIdImage1", "Diagram of the printer's toner compartment", 2286000, 1714500) +
+		p("", image("rIdImage1", "Diagram of the printer's toner compartment", 2286000, 1714500)) +
 		p("", run("Photo of a spare cartridge:")) +
-		image("rIdImage2", "Spare toner cartridge on a shelf", 1828800, 1371600) +
+		p("", image("rIdImage2", "Spare toner cartridge on a shelf", 1828800, 1371600)) +
 		p("", run("A scanned label (EMF):")) +
-		image("rIdImage3", "Scanned supplier label", 1000000, 500000) +
+		p("", image("rIdImage3", "Scanned supplier label", 1000000, 500000)) +
 		p("", run("Monthly usage:")) +
-		chartFrame("rIdChart") +
+		p("", chartFrame("rIdChart")) +
 		p("", run("Office structure:")) +
-		smartArtWithFallback() +
+		p("", smartArtWithFallback()) +
 		p("", run("A decorative shape:")) +
-		drawnShapeNoText() +
+		p("", drawnShapeNoText()) +
 		p("", run("A quick calculation:")) +
 		p("", equationParagraph()) +
 		p("", textBox("Note: check toner levels weekly.")) +
