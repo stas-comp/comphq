@@ -2,6 +2,7 @@ package kb
 
 import (
 	"database/sql"
+	"encoding/json"
 	"html/template"
 	"net/http"
 	"strconv"
@@ -9,16 +10,35 @@ import (
 	"github.com/stas-comp/comphq/internal/people"
 )
 
-// articleFormData backs the shared new/edit article template (SPEC gate
-// 1.14). The body field is a plain textarea until the real editor arrives
-// in P1-20 (PLAN.md: "a plain contenteditable stub is fine until P1-20").
+// articleFormData backs the shared new/edit editor template (SPEC gates
+// 1.14, 1.15, 1.20). VersionNo is carried as a hidden field for P1-25's
+// edit-conflict detection; nothing reads it back yet.
 type articleFormData struct {
 	ID         int64
+	VersionNo  int
 	Title      string
 	BodyHTML   string
+	BodyHTMLJS template.JS // BodyHTML, JSON-encoded, for the editor's initial content
 	CategoryID int64
 	Categories []Category
 	Message    string
+}
+
+func newArticleFormData(id int64, versionNo int, title, bodyHTML string, categoryID int64, categories []Category, message string) (articleFormData, error) {
+	encoded, err := json.Marshal(bodyHTML)
+	if err != nil {
+		return articleFormData{}, err
+	}
+	return articleFormData{
+		ID:         id,
+		VersionNo:  versionNo,
+		Title:      title,
+		BodyHTML:   bodyHTML,
+		BodyHTMLJS: template.JS(encoded),
+		CategoryID: categoryID,
+		Categories: categories,
+		Message:    message,
+	}, nil
 }
 
 func (h *Handlers) handleNewArticle(w http.ResponseWriter, r *http.Request) {
@@ -27,9 +47,12 @@ func (h *Handlers) handleNewArticle(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "internal error", http.StatusInternalServerError)
 		return
 	}
-	h.srv.RenderFrame(w, r, http.StatusOK, "kb-article-form.html", "New article", articleFormData{
-		Categories: categories,
-	})
+	data, err := newArticleFormData(0, 0, "", "", 0, categories, "")
+	if err != nil {
+		http.Error(w, "internal error", http.StatusInternalServerError)
+		return
+	}
+	h.srv.RenderFrame(w, r, http.StatusOK, "kb-editor.html", "New article", data)
 }
 
 type articlePageData struct {
@@ -87,13 +110,12 @@ func (h *Handlers) handleEditArticle(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "internal error", http.StatusInternalServerError)
 		return
 	}
-	h.srv.RenderFrame(w, r, http.StatusOK, "kb-article-form.html", "Edit "+article.Title, articleFormData{
-		ID:         article.ID,
-		Title:      article.Title,
-		BodyHTML:   article.BodyHTML,
-		CategoryID: article.CategoryID,
-		Categories: categories,
-	})
+	data, err := newArticleFormData(article.ID, article.VersionNo, article.Title, article.BodyHTML, article.CategoryID, categories, "")
+	if err != nil {
+		http.Error(w, "internal error", http.StatusInternalServerError)
+		return
+	}
+	h.srv.RenderFrame(w, r, http.StatusOK, "kb-editor.html", "Edit "+article.Title, data)
 }
 
 // handleSaveArticle handles both a new article and an edit: the form
@@ -133,14 +155,12 @@ func (h *Handlers) handleSaveArticle(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "internal error", http.StatusInternalServerError)
 			return
 		}
-		h.srv.RenderFrame(w, r, http.StatusOK, "kb-article-form.html", "New article", articleFormData{
-			ID:         id,
-			Title:      r.FormValue("title"),
-			BodyHTML:   r.FormValue("body_html"),
-			CategoryID: categoryID,
-			Categories: categories,
-			Message:    "Please type a title.",
-		})
+		data, dataErr := newArticleFormData(id, 0, r.FormValue("title"), r.FormValue("body_html"), categoryID, categories, "Please type a title.")
+		if dataErr != nil {
+			http.Error(w, "internal error", http.StatusInternalServerError)
+			return
+		}
+		h.srv.RenderFrame(w, r, http.StatusOK, "kb-editor.html", "New article", data)
 		return
 	}
 	if err != nil {

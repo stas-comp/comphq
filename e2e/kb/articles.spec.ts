@@ -12,18 +12,24 @@ async function createCategory(page: import('@playwright/test').Page, baseURL: st
   await ready(page);
 }
 
+async function goToNewArticle(page: import('@playwright/test').Page, baseURL: string) {
+  await page.goto(baseURL + '/kb/new');
+  await page.waitForSelector('body[data-editor-ready]');
+}
+
 async function publishArticle(
   page: import('@playwright/test').Page,
   baseURL: string,
   category: string,
   title: string,
-  body: string,
+  bodyText: string,
 ) {
-  await page.goto(baseURL + '/kb/new');
+  await goToNewArticle(page, baseURL);
   await page.selectOption('#article-category', { label: category });
   await page.fill('#article-title', title);
-  await page.fill('#article-body', body);
-  await page.click('.article-form button[type="submit"]');
+  await page.click('#article-editor');
+  await page.keyboard.type(bodyText);
+  await page.click('#btn-publish');
   await ready(page);
 }
 
@@ -36,7 +42,7 @@ test('publishing an article makes it appear in its category straight away', asyn
   const category = uniqueName('Printers');
   const title = uniqueName('Changing the toner');
   await createCategory(page, server.baseURL, category);
-  await publishArticle(page, server.baseURL, category, title, '<p>Open the front cover and pull the cartridge out.</p>');
+  await publishArticle(page, server.baseURL, category, title, 'Open the front cover and pull the cartridge out.');
 
   // Landed on the article page itself.
   await expect(page.locator('h1')).toHaveText(title);
@@ -58,7 +64,7 @@ test('the Knowledge Base home recent list shows who updated it and when', async 
   const category = uniqueName('Printers');
   const title = uniqueName('Changing the toner');
   await createCategory(page, server.baseURL, category);
-  await publishArticle(page, server.baseURL, category, title, '<p>Some content.</p>');
+  await publishArticle(page, server.baseURL, category, title, 'Some content.');
 
   await page.goto(server.baseURL + '/kb');
   await ready(page);
@@ -75,12 +81,14 @@ test('editing a published article records a new version and shows the new text',
   const category = uniqueName('Printers');
   const title = uniqueName('Changing the toner');
   await createCategory(page, server.baseURL, category);
-  await publishArticle(page, server.baseURL, category, title, '<p>Original text.</p>');
+  await publishArticle(page, server.baseURL, category, title, 'Original text.');
 
   await page.locator('a', { hasText: 'Edit' }).click();
-  await ready(page);
-  await page.fill('#article-body', '<p>Edited text.</p>');
-  await page.click('.article-form button[type="submit"]');
+  await page.waitForSelector('body[data-editor-ready]');
+  await page.click('#article-editor');
+  await page.keyboard.press('Control+a');
+  await page.keyboard.type('Edited text.');
+  await page.click('#btn-publish');
   await ready(page);
 
   await expect(page.locator('.kb-article-body')).toContainText('Edited text.');
@@ -93,7 +101,7 @@ test('standard page checks for the article and category pages', async ({ page, s
   const category = uniqueName('Printers');
   const title = uniqueName('Changing the toner');
   await createCategory(page, server.baseURL, category);
-  await publishArticle(page, server.baseURL, category, title, '<p>Some content.</p>');
+  await publishArticle(page, server.baseURL, category, title, 'Some content.');
 
   await ready(page);
   await axeCheck(page);
