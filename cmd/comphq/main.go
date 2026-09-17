@@ -48,7 +48,7 @@ func run() error {
 	}
 	defer sqlDB.Close()
 
-	srv, err := app.NewServer(sqlDB, version, cfg.TestMode)
+	srv, err := app.NewServer(sqlDB, version, cfg.DataDir, cfg.TestMode)
 	if err != nil {
 		return fmt.Errorf("build server: %w", err)
 	}

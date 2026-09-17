@@ -18,6 +18,7 @@ import (
 type Server struct {
 	DB       *sql.DB
 	Version  string
+	DataDir  string // SPEC B3: uploaded images live under DataDir/images/
 	TestMode bool
 	tmpl     *template.Template
 	static   http.Handler
@@ -31,7 +32,7 @@ type Server struct {
 // imports all of them; internal/app can't, since a section imports
 // internal/app itself — see docs/decisions.md D-14). testMode gates
 // test-only routes (SPEC P1-09): never true in deploy/truenas.yaml.
-func NewServer(sqlDB *sql.DB, version string, testMode bool) (*Server, error) {
+func NewServer(sqlDB *sql.DB, version, dataDir string, testMode bool) (*Server, error) {
 	tmpl, err := template.ParseFS(comphq.Templates,
 		"web/templates/app/*.html",
 		"web/templates/people/*.html",
@@ -50,6 +51,7 @@ func NewServer(sqlDB *sql.DB, version string, testMode bool) (*Server, error) {
 	srv := &Server{
 		DB:       sqlDB,
 		Version:  version,
+		DataDir:  dataDir,
 		TestMode: testMode,
 		tmpl:     tmpl,
 		static:   http.FileServerFS(staticFS),

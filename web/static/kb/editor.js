@@ -1,9 +1,5 @@
-// The real Knowledge Base editor (SPEC gates 1.15, 1.20), built on the
-// P1-09 bundle. Image upload is P1-21's job: for now the toolbar button
-// inserts a local preview so the button and file chooser exist and work,
-// but a blob: URL never survives Sanitize (SPEC B4 drops any img not
-// already under /images/), so publishing without a real upload in place
-// loses the picture — expected until P1-21 lands.
+// The real Knowledge Base editor (SPEC gates 1.15, 1.16, 1.17, 1.20),
+// built on the P1-09 bundle.
 document.addEventListener('DOMContentLoaded', () => {
   const container = document.getElementById('article-editor')
   const form = document.getElementById('article-form')
@@ -18,8 +14,51 @@ document.addEventListener('DOMContentLoaded', () => {
   const initialContentEl = document.getElementById('article-initial-body-html')
   const initialContent = initialContentEl ? JSON.parse(initialContentEl.textContent) : ''
 
+  const WORD_MIME = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+  const isWordFile = (file) => file.type === WORD_MIME || /\.docx$/i.test(file.name)
+
+  // Uploads one file and inserts it as an image (SPEC gates 1.16, 1.17).
+  // pos is given for a drop (insert exactly where it landed) and omitted
+  // for a paste or the toolbar's file chooser (insert at the cursor). A
+  // .docx is routed to Import from Word, not upload — that command isn't
+  // built until P1-33, so it shows a "coming soon" message for now.
+  async function uploadAndInsert(file, pos) {
+    if (isWordFile(file)) {
+      window.ComphqUI.showMessage(window.ComphqMessages.WORD_IMPORT_COMING_SOON)
+      return
+    }
+    try {
+      const res = await fetch('/kb/images', {
+        method: 'POST',
+        body: file,
+        headers: { 'Content-Type': file.type || 'application/octet-stream' },
+      })
+      if (!res.ok) {
+        window.ComphqUI.showMessage(await res.text())
+        return
+      }
+      const data = await res.json()
+      window.ComphqUI.clearMessage()
+      markDirty()
+      const chain = editor.chain().focus()
+      if (typeof pos === 'number') {
+        chain.insertContentAt(pos, { type: 'image', attrs: { src: data.src, alt: file.name } }).run()
+      } else {
+        chain.setImage({ src: data.src, alt: file.name }).run()
+      }
+    } catch (err) {
+      window.ComphqUI.showMessage('That file could not be uploaded.')
+    }
+  }
+
   const editor = window.ComphqEditor.create(container, {
     content: initialContent,
+    onPaste: (_editor, files) => {
+      for (const file of files) uploadAndInsert(file)
+    },
+    onDrop: (_editor, files, pos) => {
+      for (const file of files) uploadAndInsert(file, pos)
+    },
   })
   editor.on('update', markDirty)
   titleInput.addEventListener('input', markDirty)
@@ -49,8 +88,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const file = imageFileInput.files && imageFileInput.files[0]
     imageFileInput.value = ''
     if (!file) return
-    const src = URL.createObjectURL(file)
-    editor.chain().focus().setImage({ src, alt: file.name }).run()
+    uploadAndInsert(file)
   })
 
   // The four table-editing buttons only make sense with the cursor inside

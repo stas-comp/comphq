@@ -39,6 +39,12 @@ func readBody(t *testing.T, resp *http.Response) string {
 
 func newTestServer(t *testing.T) (*httptest.Server, *sql.DB) {
 	t.Helper()
+	ts, sqlDB, _ := newTestServerWithDataDir(t)
+	return ts, sqlDB
+}
+
+func newTestServerWithDataDir(t *testing.T) (*httptest.Server, *sql.DB, string) {
+	t.Helper()
 	sqlDB, err := db.Open(":memory:")
 	if err != nil {
 		t.Fatalf("Open: %v", err)
@@ -55,7 +61,8 @@ func newTestServer(t *testing.T) (*httptest.Server, *sql.DB) {
 		}
 	}
 
-	srv, err := app.NewServer(sqlDB, "test", false)
+	dataDir := t.TempDir()
+	srv, err := app.NewServer(sqlDB, "test", dataDir, false)
 	if err != nil {
 		t.Fatalf("NewServer: %v", err)
 	}
@@ -63,7 +70,7 @@ func newTestServer(t *testing.T) (*httptest.Server, *sql.DB) {
 
 	ts := httptest.NewServer(srv.Routes())
 	t.Cleanup(ts.Close)
-	return ts, sqlDB
+	return ts, sqlDB, dataDir
 }
 
 // postForm issues an authenticated (origin-matching), person-identified

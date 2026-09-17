@@ -5,7 +5,7 @@ import net from 'node:net';
 import os from 'node:os';
 import path from 'node:path';
 
-export type Server = { baseURL: string };
+export type Server = { baseURL: string; dataDir: string };
 
 async function freePort(): Promise<number> {
   return new Promise((resolve, reject) => {
@@ -45,7 +45,11 @@ export const test = base.extend<{}, { server: Server }>({
   server: [async ({}, use, workerInfo) => {
     const baseURLFromEnv = process.env.BASE_URL;
     if (baseURLFromEnv) {
-      await use({ baseURL: baseURLFromEnv });
+      // dataDir is empty here: BASE_URL points at an already-running,
+      // separately-hosted server (e.g. a container), so this process
+      // can't see its filesystem. Tests that check a file landed on disk
+      // are tagged @fresh and excluded from this mode (see below).
+      await use({ baseURL: baseURLFromEnv, dataDir: '' });
       return;
     }
 
@@ -66,7 +70,7 @@ export const test = base.extend<{}, { server: Server }>({
     const baseURL = `http://${addr}`;
     await waitForHealthy(baseURL);
 
-    await use({ baseURL });
+    await use({ baseURL, dataDir });
 
     child.kill();
   }, { scope: 'worker' }],

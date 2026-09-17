@@ -6,18 +6,25 @@ import (
 	"net/http"
 
 	"github.com/stas-comp/comphq/internal/app"
+	"github.com/stas-comp/comphq/internal/kb/images"
 )
 
 type Handlers struct {
 	srv        *app.Server
 	categories *CategoryStore
 	articles   *ArticleStore
+	images     *images.Store
 }
 
 func Section(srv *app.Server) app.Section {
-	h := &Handlers{srv: srv, categories: &CategoryStore{DB: srv.DB}, articles: &ArticleStore{DB: srv.DB}}
+	h := &Handlers{
+		srv:        srv,
+		categories: &CategoryStore{DB: srv.DB},
+		articles:   &ArticleStore{DB: srv.DB},
+		images:     &images.Store{DB: srv.DB, DataDir: srv.DataDir},
+	}
 	return app.Section{
-		MigrationName: "kb", // migrations/kb/0001_search.sql (P1-08), 0002_categories.sql (P1-17), 0003_article_versions.sql (P1-19)
+		MigrationName: "kb", // migrations/kb/0001_search.sql (P1-08), 0002_categories.sql (P1-17), 0003_article_versions.sql (P1-19), 0004_images.sql (P1-21)
 		Nav:           &app.NavItem{Label: "Knowledge Base", Path: "/kb", Icon: "/static/theme/icons/kb.svg"},
 		RegisterRoutes: func(mux *http.ServeMux) {
 			mux.HandleFunc("GET /kb", h.handleHome)
@@ -32,6 +39,8 @@ func Section(srv *app.Server) app.Section {
 			mux.HandleFunc("GET /kb/articles/{id}", h.handleViewArticle)
 			mux.HandleFunc("GET /kb/articles/{id}/edit", h.handleEditArticle)
 			mux.HandleFunc("POST /kb/articles", h.handleSaveArticle)
+			mux.HandleFunc("POST /kb/images", h.handleUploadImage)
+			mux.HandleFunc("GET /images/{filename}", h.handleServeImage)
 		},
 	}
 }

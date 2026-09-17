@@ -33,7 +33,7 @@ func newTestServer(t *testing.T) (*httptest.Server, *sql.DB) {
 		}
 	}
 
-	srv, err := NewServer(sqlDB, "test", false)
+	srv, err := NewServer(sqlDB, "test", t.TempDir(), false)
 	if err != nil {
 		t.Fatalf("NewServer: %v", err)
 	}
