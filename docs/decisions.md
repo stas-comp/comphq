@@ -2,6 +2,10 @@
 
 Non-obvious choices made while building Comp HQ, in the format required by `PLAN.md` §2.4: one short paragraph each, headed `D-NN Title (task ID, date)`.
 
+## D-35 Content check E2E scopes to its own article, not a sitewide count (P1-36, 2026-09-17)
+
+PLAN.md's own test description for gate 1.36 says "a clean library shows 0," but every E2E spec file in a run shares one server per Playwright worker (`e2e/helpers/fixtures.ts`), and `ListContentCheck` scans every published/archived article in the whole database — so a test asserting a literal sitewide "0" would be one flagged article away from failing depending on what else that worker happened to run first, with no way to control that ordering. The exact count is instead a Go-level test (`internal/kb`'s `TestListContentCheck*`, run against an isolated in-memory database per test); the E2E layer only proves the real HTTP/UI wiring, scoped to each test's own uniquely named article — the same pattern `e2e/kb/categories.spec.ts`'s tile-count test already uses (asserting "1 article" on its own category's tile, never a sitewide total).
+
 ## D-34 A Go helper to unzip the export in E2E, not an npm dependency (P1-35, 2026-09-17)
 
 Gate 1.34's E2E check needs the downloaded export's contents as real files under a `file://` URL (an offline browser context, following links between actual pages) — Node has no built-in ZIP-format reader (only gzip/deflate streams), and adding a package like `adm-zip` just for one test would be the project's first npm devDependency added purely for test plumbing. `e2e/unzip` is a ~15-line Go program using the standard library's `archive/zip`, built once in `global-setup.ts` next to the existing `e2e/seed` binary and invoked the same way. Keeps the "at most five direct requirements" discipline (`tools/policy`'s `TestGoModAtMostFiveDirectRequirements`) working in spirit for the JS side too, and matches the project's existing preference for a small Go helper over a new dependency wherever the standard library already does the job.

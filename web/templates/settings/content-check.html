@@ -1,0 +1,12 @@
+{{define "settings-content-check.html"}}
+{{template "settings-subnav" .}}
+<h1>Content check</h1>
+<p id="content-check-count">{{len .Articles}} article(s) have something that couldn't be brought in.</p>
+{{if .Articles}}
+<ul class="kb-article-list">
+{{range .Articles}}
+<li><a href="/kb/articles/{{.ID}}">{{.Title}}</a></li>
+{{end}}
+</ul>
+{{end}}
+{{end}}

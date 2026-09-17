@@ -18,6 +18,7 @@ export const pages: RegisteredPage[] = [
   { name: 'calendar', path: '/calendar', needsPerson: true },
   { name: 'settings-people', path: '/settings/people', needsPerson: true },
   { name: 'settings-backups', path: '/settings/backups', needsPerson: true },
+  { name: 'settings-content-check', path: '/settings/content-check', needsPerson: true },
   { name: 'settings-about', path: '/settings/about', needsPerson: true },
   { name: 'settings-setup', path: '/settings/setup', needsPerson: true },
   { name: '404', path: '/this-page-does-not-exist', needsPerson: true },

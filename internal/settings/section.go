@@ -35,6 +35,7 @@ func Section(srv *app.Server) app.Section {
 			mux.HandleFunc("POST /settings/people/remove", h.handleRemove)
 			mux.HandleFunc("GET /settings/export", h.handleExport)
 			mux.HandleFunc("GET /settings/backups", h.handleBackups)
+			mux.HandleFunc("GET /settings/content-check", h.handleContentCheck)
 			mux.HandleFunc("GET /settings/about", h.handleAbout)
 			mux.HandleFunc("GET /settings/setup", h.handleSetup)
 		},
