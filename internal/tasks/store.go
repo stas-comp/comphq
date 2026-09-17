@@ -348,21 +348,43 @@ func renumber(ctx context.Context, tx *sql.Tx, orderedIDs []int64) error {
 	return nil
 }
 
+// BoardFilter narrows ListBoard (SPEC gate 2.07): PersonID (0 = no
+// filter) is resolved by the caller from either "My tasks" or a chosen
+// person — the store only ever filters by one concrete id — and Query
+// (empty = no filter) matches anywhere in the title, case-insensitive.
+type BoardFilter struct {
+	PersonID int64
+	Query    string
+}
+
 // ListBoard returns every task that belongs on the Board (SPEC gate
 // 2.01): not removed, and not done for more than 14 days (gate 2.08),
-// ordered by stage then position.
-func (s *Store) ListBoard(ctx context.Context, today time.Time) ([]Task, error) {
+// ordered by stage then position, narrowed by filter (SPEC gate 2.07).
+func (s *Store) ListBoard(ctx context.Context, today time.Time, filter BoardFilter) ([]Task, error) {
 	cutoff := today.AddDate(0, 0, -doneRetentionDays).UTC().Format(time.RFC3339)
 
-	rows, err := s.DB.QueryContext(ctx, `
+	query := `
 		SELECT id, title, notes, size, stage, position, due_date, done_at
 		FROM tasks
 		WHERE removed_at IS NULL
 		  AND NOT (stage = 'done' AND done_at IS NOT NULL AND done_at < ?)
+	`
+	args := []any{cutoff}
+	if filter.PersonID != 0 {
+		query += ` AND id IN (SELECT task_id FROM task_assignees WHERE person_id = ?)`
+		args = append(args, filter.PersonID)
+	}
+	if filter.Query != "" {
+		query += ` AND LOWER(title) LIKE '%' || LOWER(?) || '%'`
+		args = append(args, filter.Query)
+	}
+	query += `
 		ORDER BY
 			CASE stage WHEN 'idea' THEN 0 WHEN 'todo' THEN 1 WHEN 'doing' THEN 2 WHEN 'done' THEN 3 END,
 			position
-	`, cutoff)
+	`
+
+	rows, err := s.DB.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, err
 	}

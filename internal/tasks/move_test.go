@@ -17,7 +17,7 @@ func createNamed(t *testing.T, store *Store, ctx context.Context, creator int64,
 
 func boardTitlesByStage(t *testing.T, store *Store, ctx context.Context, stage string) []string {
 	t.Helper()
-	tasks, err := store.ListBoard(ctx, fixedNow)
+	tasks, err := store.ListBoard(ctx, fixedNow, BoardFilter{})
 	if err != nil {
 		t.Fatalf("ListBoard: %v", err)
 	}

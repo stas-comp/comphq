@@ -25,9 +25,13 @@ type boardColumn struct {
 }
 
 type boardPageData struct {
-	Columns []boardColumn
-	People  []people.Person
-	Message string
+	Columns        []boardColumn
+	People         []people.Person
+	Message        string
+	FilterMine     bool
+	FilterPersonID int64
+	FilterQuery    string
+	FilterActive   bool
 }
 
 // assigneeView adds the display-only initials/colour html/template can't
@@ -101,9 +105,33 @@ func (h *Handlers) handleBoard(w http.ResponseWriter, r *http.Request) {
 	h.renderBoard(w, r, http.StatusOK, "")
 }
 
+// boardFilterFromRequest reads ?mine=1, ?person= and ?q= (SPEC gate
+// 2.07's filter state living in the URL). "My tasks" takes priority
+// over a chosen person if somehow both are present — they express the
+// same kind of filter, and the store only ever filters by one id.
+func boardFilterFromRequest(r *http.Request) (mine bool, personID int64, query string) {
+	mine = r.URL.Query().Get("mine") == "1"
+	if v := r.URL.Query().Get("person"); v != "" {
+		personID, _ = strconv.ParseInt(v, 10, 64)
+	}
+	query = r.URL.Query().Get("q")
+	return mine, personID, query
+}
+
 func (h *Handlers) renderBoard(w http.ResponseWriter, r *http.Request, status int, message string) {
 	today := app.Today(h.srv.TestMode)
-	tasks, err := h.tasks.ListBoard(r.Context(), today)
+	mine, personID, query := boardFilterFromRequest(r)
+
+	filter := BoardFilter{Query: query}
+	if mine {
+		if person, ok := people.FromContext(r.Context()); ok {
+			filter.PersonID = person.ID
+		}
+	} else {
+		filter.PersonID = personID
+	}
+
+	tasks, err := h.tasks.ListBoard(r.Context(), today, filter)
 	if err != nil {
 		http.Error(w, "internal error", http.StatusInternalServerError)
 		return
@@ -135,9 +163,13 @@ func (h *Handlers) renderBoard(w http.ResponseWriter, r *http.Request, status in
 	}
 
 	h.srv.RenderFrame(w, r, status, "tasks-board.html", "Tasks", boardPageData{
-		Columns: columns,
-		People:  activePeople,
-		Message: message,
+		Columns:        columns,
+		People:         activePeople,
+		Message:        message,
+		FilterMine:     mine,
+		FilterPersonID: personID,
+		FilterQuery:    query,
+		FilterActive:   mine || personID != 0 || query != "",
 	})
 }
 

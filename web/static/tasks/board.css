@@ -19,6 +19,23 @@
   flex: 1 1 16rem;
 }
 
+.task-filter-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: center;
+  margin: 0 0 var(--space-6);
+}
+
+.task-filter-form select,
+.task-filter-form input[type="search"] {
+  font-family: var(--font-body);
+  font-size: 1rem;
+  padding: var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+
 .task-board {
   display: flex;
   gap: var(--space-3);

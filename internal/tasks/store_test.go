@@ -176,7 +176,7 @@ func TestListBoardOrdersByStageThenPosition(t *testing.T) {
 	mustCreate("Todo 1", StageTodo)
 	mustCreate("Idea 2", StageIdea)
 
-	tasks, err := store.ListBoard(ctx, fixedNow)
+	tasks, err := store.ListBoard(ctx, fixedNow, BoardFilter{})
 	if err != nil {
 		t.Fatalf("ListBoard: %v", err)
 	}
@@ -195,6 +195,58 @@ func TestListBoardOrdersByStageThenPosition(t *testing.T) {
 	}
 }
 
+// SPEC gate 2.07: "My tasks"/a chosen person narrows the board to
+// exactly the cards assigned to that one person.
+func TestListBoardFilterByPersonShowsOnlyTheirTasks(t *testing.T) {
+	sqlDB := openTestDB(t)
+	store := &Store{DB: sqlDB}
+	creator := testPerson(t, sqlDB, "Sam")
+	alex := testPerson(t, sqlDB, "Alex")
+	ctx := context.Background()
+
+	if _, err := store.Create(ctx, CreateInput{Title: "Sam's task", PersonIDs: []int64{creator}}, creator, fixedNow); err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+	if _, err := store.Create(ctx, CreateInput{Title: "Alex's task", PersonIDs: []int64{alex}}, creator, fixedNow); err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+	if _, err := store.Create(ctx, CreateInput{Title: "Unassigned task"}, creator, fixedNow); err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+
+	tasks, err := store.ListBoard(ctx, fixedNow, BoardFilter{PersonID: alex})
+	if err != nil {
+		t.Fatalf("ListBoard: %v", err)
+	}
+	if len(tasks) != 1 || tasks[0].Title != "Alex's task" {
+		t.Errorf("filtered by Alex = %+v, want just Alex's task", tasks)
+	}
+}
+
+// SPEC gate 2.07: typing a word shows only cards with that word in the
+// title, case-insensitive.
+func TestListBoardFilterByQueryMatchesTitleCaseInsensitively(t *testing.T) {
+	sqlDB := openTestDB(t)
+	store := &Store{DB: sqlDB}
+	creator := testPerson(t, sqlDB, "Sam")
+	ctx := context.Background()
+
+	if _, err := store.Create(ctx, CreateInput{Title: "Fix the PRINTER"}, creator, fixedNow); err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+	if _, err := store.Create(ctx, CreateInput{Title: "Order paper"}, creator, fixedNow); err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+
+	tasks, err := store.ListBoard(ctx, fixedNow, BoardFilter{Query: "printer"})
+	if err != nil {
+		t.Fatalf("ListBoard: %v", err)
+	}
+	if len(tasks) != 1 || tasks[0].Title != "Fix the PRINTER" {
+		t.Errorf("filtered by %q = %+v, want just the printer task", "printer", tasks)
+	}
+}
+
 func TestListBoardExcludesTasksDoneOverTwoWeeksAgo(t *testing.T) {
 	sqlDB := openTestDB(t)
 	store := &Store{DB: sqlDB}
@@ -210,7 +262,7 @@ func TestListBoardExcludesTasksDoneOverTwoWeeksAgo(t *testing.T) {
 		t.Fatalf("set done_at: %v", err)
 	}
 
-	tasks, err := store.ListBoard(ctx, fixedNow)
+	tasks, err := store.ListBoard(ctx, fixedNow, BoardFilter{})
 	if err != nil {
 		t.Fatalf("ListBoard: %v", err)
 	}

@@ -18,6 +18,23 @@
 <button type="submit">Add task</button>
 </form>
 
+<form method="get" action="/tasks/board" class="task-filter-form">
+<label for="filter-mine">
+<input type="checkbox" id="filter-mine" name="mine" value="1"{{if .FilterMine}} checked{{end}}>
+My tasks
+</label>
+<label class="visually-hidden" for="filter-person">Person</label>
+<select id="filter-person" name="person">
+<option value="">Everyone</option>
+{{$personID := .FilterPersonID}}
+{{range .People}}<option value="{{.ID}}"{{if eq .ID $personID}} selected{{end}}>{{.Name}}</option>{{end}}
+</select>
+<label class="visually-hidden" for="filter-q">Search titles</label>
+<input type="search" id="filter-q" name="q" placeholder="Search titles" value="{{.FilterQuery}}">
+<button type="submit">Filter</button>
+{{if .FilterActive}}<a href="/tasks/board">Clear filter</a>{{end}}
+</form>
+
 <div class="task-board">
 {{range .Columns}}
 <div class="task-column" data-stage="{{.Stage}}">
