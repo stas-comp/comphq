@@ -19,7 +19,13 @@ WORK="$(mktemp -d)"
 DATA_DIR="$WORK/data"
 COMPOSE_FILE="$WORK/truenas.yaml"
 PROJECT="comphq-container-test"
-IMAGE_REF="ghcr.io/stas-comp/comphq:0.0.1"
+# Read from deploy/truenas.yaml rather than hardcoding it a second time
+# here: a hardcoded copy silently goes stale at every release (it did,
+# exactly this way, at P1-28 — deploy/truenas.yaml moved to 0.0.2 but this
+# script still built and looked for an 0.0.1 image, so `up -d` tried to
+# pull a real 0.0.2 that doesn't exist in the registry yet).
+IMAGE_TAG="$(grep 'image: ghcr.io/stas-comp/comphq:' "$ROOT/deploy/truenas.yaml" | sed -E 's#.*/comphq:([^ ]+).*#\1#')"
+IMAGE_REF="ghcr.io/stas-comp/comphq:${IMAGE_TAG}"
 MARKER="$DATA_DIR/container-test-marker.txt"
 
 log() { echo "[container-test] $*"; }
@@ -49,7 +55,7 @@ sed \
   "$ROOT/deploy/truenas.yaml" > "$COMPOSE_FILE"
 
 log "building the image and tagging it as the Compose file's reference"
-docker build --build-arg VERSION=0.0.1-container-test -t "$IMAGE_REF" "$ROOT"
+docker build --build-arg VERSION="${IMAGE_TAG}-container-test" -t "$IMAGE_REF" "$ROOT"
 
 wait_healthy() {
   local container="${1:-${PROJECT}-comphq-1}"
@@ -189,7 +195,7 @@ fi
 log "4. recreate: remove the container and the image, then bring it back up"
 docker compose -f "$COMPOSE_FILE" -p "$PROJECT" down
 docker image rm "$IMAGE_REF"
-docker build --build-arg VERSION=0.0.1-container-test -t "$IMAGE_REF" "$ROOT"
+docker build --build-arg VERSION="${IMAGE_TAG}-container-test" -t "$IMAGE_REF" "$ROOT"
 docker compose -f "$COMPOSE_FILE" -p "$PROJECT" up -d
 wait_healthy
 if [ ! -f "$MARKER" ] || [ "$(checksum_data_dir)" != "$CHECKSUM_BEFORE" ]; then
