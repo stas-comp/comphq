@@ -674,3 +674,117 @@ func TestConvertInternalAnchorKeepsTextDropsLink(t *testing.T) {
 		t.Errorf("HTML = %q, want %q", result.HTML, want)
 	}
 }
+
+func cellPara(text string) string {
+	if text == "" {
+		return `<w:p/>`
+	}
+	return `<w:p><w:r><w:t xml:space="preserve">` + text + `</w:t></w:r></w:p>`
+}
+
+// TestConvert3x3TableWithMergesAndHeaderRow covers SPEC B4: "w:tblHeader
+// rows -> th", "gridSpan -> colspan", "vMerge restart/continue -> rowspan
+// computed per column" — a horizontal merge in the header row and a
+// vertical merge spanning two data rows, each column's rowspan computed
+// independently of the others.
+func TestConvert3x3TableWithMergesAndHeaderRow(t *testing.T) {
+	body := `<w:tbl>` +
+		`<w:tblGrid><w:gridCol/><w:gridCol/><w:gridCol/></w:tblGrid>` +
+		`<w:tr><w:trPr><w:tblHeader/></w:trPr>` +
+		`<w:tc><w:tcPr><w:gridSpan w:val="2"/></w:tcPr>` + cellPara("A") + `</w:tc>` +
+		`<w:tc>` + cellPara("B") + `</w:tc>` +
+		`</w:tr>` +
+		`<w:tr>` +
+		`<w:tc>` + cellPara("C") + `</w:tc>` +
+		`<w:tc>` + cellPara("D") + `</w:tc>` +
+		`<w:tc><w:tcPr><w:vMerge w:val="restart"/></w:tcPr>` + cellPara("E") + `</w:tc>` +
+		`</w:tr>` +
+		`<w:tr>` +
+		`<w:tc>` + cellPara("F") + `</w:tc>` +
+		`<w:tc>` + cellPara("G") + `</w:tc>` +
+		`<w:tc><w:tcPr><w:vMerge/></w:tcPr>` + cellPara("") + `</w:tc>` +
+		`</w:tr>` +
+		`</w:tbl>`
+	data := buildDocx(t, "", body)
+
+	result, err := Convert(bytes.NewReader(data), int64(len(data)), "test.docx")
+	if err != nil {
+		t.Fatalf("Convert: %v", err)
+	}
+	want := "<table>\n" +
+		"<tr>\n" +
+		`<th colspan="2"><p>A</p>` + "\n</th>\n" +
+		"<th><p>B</p>\n</th>\n" +
+		"</tr>\n" +
+		"<tr>\n" +
+		"<td><p>C</p>\n</td>\n" +
+		"<td><p>D</p>\n</td>\n" +
+		`<td rowspan="2"><p>E</p>` + "\n</td>\n" +
+		"</tr>\n" +
+		"<tr>\n" +
+		"<td><p>F</p>\n</td>\n" +
+		"<td><p>G</p>\n</td>\n" +
+		"</tr>\n" +
+		"</table>\n"
+	if result.HTML != want {
+		t.Errorf("HTML = %q, want %q", result.HTML, want)
+	}
+}
+
+// TestConvertNestedTableFlattenedIntoCellParagraphs covers SPEC B4: "A
+// table nested in a cell is flattened into paragraphs in that cell" — the
+// nested table's own cell paragraphs must appear in reading order, right
+// where the nested table was, not as a nested <table>.
+func TestConvertNestedTableFlattenedIntoCellParagraphs(t *testing.T) {
+	nestedTable := `<w:tbl>` +
+		`<w:tr><w:tc>` + cellPara("Nested A") + `</w:tc></w:tr>` +
+		`<w:tr><w:tc>` + cellPara("Nested B") + `</w:tc></w:tr>` +
+		`</w:tbl>`
+	outerTable := `<w:tbl><w:tr><w:tc>` +
+		cellPara("Before nested table") + nestedTable + cellPara("After nested table") +
+		`</w:tc></w:tr></w:tbl>`
+	data := buildDocx(t, "", outerTable)
+
+	result, err := Convert(bytes.NewReader(data), int64(len(data)), "test.docx")
+	if err != nil {
+		t.Fatalf("Convert: %v", err)
+	}
+	want := "<table>\n<tr>\n<td>" +
+		"<p>Before nested table</p>\n" +
+		"<p>Nested A</p>\n" +
+		"<p>Nested B</p>\n" +
+		"<p>After nested table</p>\n" +
+		"</td>\n</tr>\n</table>\n"
+	if result.HTML != want {
+		t.Errorf("HTML = %q, want %q", result.HTML, want)
+	}
+}
+
+// TestConvertTextBoxInChoiceWithVMLFallbackAppearsOnce covers SPEC B4:
+// "Inside mc:AlternateContent, use the one branch that yields an image or
+// text, never both" — here a text box appears in both a modern
+// (mc:Choice) and legacy VML (mc:Fallback) shape, and its text must come
+// through exactly once, not twice.
+func TestConvertTextBoxInChoiceWithVMLFallbackAppearsOnce(t *testing.T) {
+	body := `<w:p><w:r><mc:AlternateContent ` +
+		`xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" ` +
+		`xmlns:wps="http://schemas.microsoft.com/office/word/2010/wordprocessingShape" ` +
+		`xmlns:v="urn:schemas-microsoft-com:vml">` +
+		`<mc:Choice Requires="wps">` +
+		`<wps:txbx><w:txbxContent>` + cellPara("Reminder text") + `</w:txbxContent></wps:txbx>` +
+		`</mc:Choice>` +
+		`<mc:Fallback>` +
+		`<w:pict><v:shape><v:textbox><w:txbxContent>` + cellPara("Reminder text") + `</w:txbxContent></v:textbox></v:shape></w:pict>` +
+		`</mc:Fallback>` +
+		`</mc:AlternateContent></w:r></w:p>`
+	data := buildDocx(t, "", body)
+
+	result, err := Convert(bytes.NewReader(data), int64(len(data)), "test.docx")
+	if err != nil {
+		t.Fatalf("Convert: %v", err)
+	}
+	want := "<p>Reminder text</p>\n"
+	if result.HTML != want {
+		t.Errorf("HTML = %q, want %q", result.HTML, want)
+	}
+}

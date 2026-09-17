@@ -90,26 +90,56 @@ func (p paragraph) plainText() string {
 	return b.String()
 }
 
-// parsedDocument is parseDocument's result: the paragraphs, plus one note
-// per comment, footnote or endnote reference found (SPEC B4: "left out,
-// and counted in notes" — headers and footers, being separate parts
-// rather than inline references, are added by the caller instead).
-type parsedDocument struct {
-	paragraphs []paragraph
-	notes      []string
+type blockKind int
+
+const (
+	blockParagraph blockKind = iota
+	blockTable
+)
+
+// block is one body-level (or table-cell-level) item: a paragraph or a
+// table (SPEC B4). Images join this in P1-32.
+type block struct {
+	kind      blockKind
+	paragraph paragraph
+	table     tableBlock
 }
 
-// parseDocument walks document.xml as a token stream rather than
-// modelling every element type, so wrapper elements that need no special
-// handling (w:sdt/w:sdtContent, w:smartTag, w:customXml, VML text
-// boxes...) are simply passed through: the token stream doesn't care
-// about ancestors this walker isn't matching on, so a <w:p> nested inside
-// any of them is still found by its own start/end tokens (SPEC B4:
+// parsedDocument is parseBlocks's result: the blocks, plus one note per
+// comment, footnote or endnote reference found (SPEC B4: "left out, and
+// counted in notes" — headers and footers, being separate parts rather
+// than inline references, are added by the caller instead).
+type parsedDocument struct {
+	blocks []block
+	notes  []string
+}
+
+// parseBlocks walks a WordprocessingML body (document.xml, or a table
+// cell's or text box's own captured fragment, re-parsed recursively) as a
+// token stream rather than modelling every element type, so wrapper
+// elements that need no special handling (w:sdt/w:sdtContent, w:smartTag,
+// w:customXml...) are simply passed through: the token stream doesn't
+// care about ancestors this walker isn't matching on, so a <w:p> nested
+// inside any of them is still found by its own start/end tokens (SPEC B4:
 // "descend into w:sdt/w:sdtContent, w:smartTag, w:customXml and
 // w:fldSimple"). hyperlinkRels maps a relationship id to its target URL,
 // for w:hyperlink r:id lookups (SPEC B4: "w:hyperlink with an external
 // relationship").
-func parseDocument(data []byte, styles styleSheet, hyperlinkRels map[string]string) (parsedDocument, error) {
+//
+// A <w:tbl> is decoded whole, via encoding/xml's struct-based
+// DecodeElement rather than more token-matching, since a table's row/cell
+// nesting is naturally tree-shaped; each cell's own content is captured
+// as raw XML and fed back into this same function, so a cell (or a
+// table nested inside one, which SPEC B4 flattens into that cell's own
+// paragraphs) gets exactly the same marks/links/list handling as any
+// other paragraph. A <w:txbxContent> (a text box's paragraphs) is
+// likewise decoded whole and queued to be appended right after the
+// paragraph that anchors it (SPEC B4), rather than processed inline,
+// since a text box's own <w:p> would otherwise be encountered while the
+// anchor's <w:p> is still open — this walker has no nesting counter for
+// w:p, by design, so a genuinely nested one needs to be routed around it,
+// not through it.
+func parseBlocks(data []byte, styles styleSheet, hyperlinkRels map[string]string) (parsedDocument, error) {
 	if err := checkXMLDepth(data); err != nil {
 		if err == errXMLTooDeep {
 			return parsedDocument{}, ErrTooLarge
@@ -153,6 +183,11 @@ func parseDocument(data []byte, styles styleSheet, hyperlinkRels map[string]stri
 	fieldPushedHref := false
 	var inInstrText bool
 	fldSimplePushedHref := false
+
+	// pendingTextBoxParagraphs holds a text box's already-parsed
+	// paragraphs (SPEC B4: "output their paragraphs after the paragraph
+	// that anchors them") until the currently-open anchor paragraph closes.
+	var pendingTextBoxParagraphs []paragraph
 
 	flushRun := func() {
 		if runText.Len() > 0 {
@@ -270,10 +305,55 @@ func parseDocument(data []byte, styles styleSheet, hyperlinkRels map[string]stri
 					v := onOffXML{Val: attrVal(t, "val")}.bool()
 					runItalic = &v
 				}
-			case "del", "delText", "moveFrom", "instrText":
+			case "del", "delText", "moveFrom", "instrText", "Choice":
+				// Choice is mc:Choice: SPEC B4 says AlternateContent must
+				// use exactly one branch, and this converter understands
+				// none of the extensions a Choice branch Requires, so it
+				// always prefers mc:Fallback — skipping Choice's text the
+				// same way deleted/field-instruction text is skipped
+				// keeps that simple, without a second mechanism.
 				skipDepth++
 				if t.Name.Local == "instrText" {
 					inInstrText = true
+				}
+			case "tbl":
+				// Always consumed via DecodeElement so the decoder's
+				// position ends up past the whole element either way, but
+				// only turned into a block when not inside a skipped
+				// mc:Choice branch (or similar) — otherwise a table
+				// present in both a Choice and its Fallback, or inside a
+				// deleted region, would be counted twice or kept at all.
+				var raw tblXML
+				if err := dec.DecodeElement(&raw, &t); err != nil {
+					return parsedDocument{}, ErrUnreadable
+				}
+				if skipDepth == 0 {
+					tbl, tblNotes, err := buildTableBlock(raw, styles, hyperlinkRels)
+					if err != nil {
+						return parsedDocument{}, err
+					}
+					out.blocks = append(out.blocks, block{kind: blockTable, table: tbl})
+					out.notes = append(out.notes, tblNotes...)
+				}
+			case "txbxContent":
+				// Same reasoning as "tbl" above: a text box can appear in
+				// both an mc:Choice branch and its Fallback (e.g. a
+				// modern DrawingML text box alongside its VML fallback),
+				// and only the one actually walked (skipDepth == 0)
+				// should contribute paragraphs.
+				var raw struct {
+					InnerXML string `xml:",innerxml"`
+				}
+				if err := dec.DecodeElement(&raw, &t); err != nil {
+					return parsedDocument{}, ErrUnreadable
+				}
+				if skipDepth == 0 {
+					tbDoc, err := parseBlocks(wrapInnerXML(raw.InnerXML), styles, hyperlinkRels)
+					if err != nil {
+						return parsedDocument{}, err
+					}
+					pendingTextBoxParagraphs = append(pendingTextBoxParagraphs, flattenBlocksToParagraphs(tbDoc.blocks)...)
+					out.notes = append(out.notes, tbDoc.notes...)
 				}
 			case "tab":
 				if inRun && skipDepth == 0 {
@@ -299,7 +379,11 @@ func parseDocument(data []byte, styles styleSheet, hyperlinkRels map[string]stri
 			case "p":
 				if inParagraph {
 					flushRun()
-					out.paragraphs = append(out.paragraphs, cur)
+					out.blocks = append(out.blocks, block{kind: blockParagraph, paragraph: cur})
+					for _, tp := range pendingTextBoxParagraphs {
+						out.blocks = append(out.blocks, block{kind: blockParagraph, paragraph: tp})
+					}
+					pendingTextBoxParagraphs = nil
 				}
 				inParagraph = false
 			case "r":
@@ -307,7 +391,7 @@ func parseDocument(data []byte, styles styleSheet, hyperlinkRels map[string]stri
 				inRun = false
 			case "rPr":
 				inRunProps = false
-			case "del", "delText", "moveFrom", "instrText":
+			case "del", "delText", "moveFrom", "instrText", "Choice":
 				if skipDepth > 0 {
 					skipDepth--
 				}

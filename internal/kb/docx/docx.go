@@ -102,7 +102,7 @@ func Convert(r io.ReaderAt, size int64, filename string) (Result, error) {
 		return Result{}, err
 	}
 
-	parsed, err := parseDocument(docXML, sheet, hyperlinkRels)
+	parsed, err := parseBlocks(docXML, sheet, hyperlinkRels)
 	if err != nil {
 		return Result{}, err
 	}
@@ -113,7 +113,7 @@ func Convert(r io.ReaderAt, size int64, filename string) (Result, error) {
 	}
 	notes := append(hfNotes, parsed.notes...)
 
-	return buildResult(parsed.paragraphs, notes, sheet, numSheet, filename), nil
+	return buildResult(parsed.blocks, notes, sheet, numSheet, filename), nil
 }
 
 // pkgReader reads parts of the zip package, enforcing the uncompressed-size
@@ -216,7 +216,7 @@ func (p *pkgReader) mainDocumentPart() (string, error) {
 // headerFooterNotes returns one note per header or footer relationship
 // found for mainPart (SPEC B4: "left out, and counted in notes"). Headers
 // and footers are separate parts referenced by relationship, unlike
-// comments/footnotes/endnotes, which parseDocument already counts from
+// comments/footnotes/endnotes, which parseBlocks already counts from
 // their inline references in document.xml.
 func (p *pkgReader) headerFooterNotes(mainPart string) ([]string, error) {
 	data, err := p.readPartIfExists(relsPathFor(mainPart))

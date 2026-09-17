@@ -2,23 +2,54 @@ package docx
 
 import (
 	"html"
+	"strconv"
 	"strings"
 )
 
 // buildResult determines the title (SPEC B4: "Title, or a first non-empty
 // paragraph in heading 1, becomes the article title and is removed from
 // the body. Otherwise the title is the file name without its extension.")
-// and renders the remaining paragraphs, grouping consecutive list items
-// into nested ul/ol structures. Tables and images are added in P1-31–P1-32.
-func buildResult(paragraphs []paragraph, notes []string, styles styleSheet, numbering numberingSheet, filename string) Result {
-	title, body := extractTitle(paragraphs, styles, filename)
+// and renders the remaining blocks. Images are added in P1-32.
+func buildResult(blocks []block, notes []string, styles styleSheet, numbering numberingSheet, filename string) Result {
+	title, body := extractTitle(blocks, styles, filename)
 
-	// SPEC B4: "Drop empty paragraphs." Filtered up front, before list
-	// grouping, so a blank paragraph between two list items (common
-	// visual spacing in Word, not a real interruption) doesn't split them
-	// into two separate lists.
-	nonEmpty := make([]paragraph, 0, len(body))
-	for _, p := range body {
+	var htmlBuilder strings.Builder
+	i := 0
+	for i < len(body) {
+		if body[i].kind == blockTable {
+			htmlBuilder.WriteString(renderTable(body[i].table, styles, numbering))
+			i++
+			continue
+		}
+
+		// A run of consecutive paragraph blocks, so list grouping (which
+		// needs to see neighbouring items) works the same regardless of
+		// what comes after it — a table ends a list exactly like an
+		// ordinary interrupting paragraph does, simply by not being one.
+		j := i
+		var paragraphs []paragraph
+		for j < len(body) && body[j].kind == blockParagraph {
+			paragraphs = append(paragraphs, body[j].paragraph)
+			j++
+		}
+		htmlBuilder.WriteString(renderParagraphSequence(paragraphs, styles, numbering))
+		i = j
+	}
+
+	return Result{Title: title, HTML: htmlBuilder.String(), Notes: notes}
+}
+
+// renderParagraphSequence renders a run of paragraphs — the top-level
+// body between tables, or one table cell's own content — dropping empty
+// paragraphs (SPEC B4) and grouping consecutive same-numId list items
+// into nested ul/ol structures before rendering everything else as
+// headings or plain paragraphs.
+func renderParagraphSequence(paragraphs []paragraph, styles styleSheet, numbering numberingSheet) string {
+	// Filtered up front, before list grouping, so a blank paragraph
+	// between two list items (common visual spacing in Word, not a real
+	// interruption) doesn't split them into two separate lists.
+	nonEmpty := make([]paragraph, 0, len(paragraphs))
+	for _, p := range paragraphs {
 		if strings.TrimSpace(p.plainText()) != "" {
 			nonEmpty = append(nonEmpty, p)
 		}
@@ -57,8 +88,84 @@ func buildResult(paragraphs []paragraph, notes []string, styles styleSheet, numb
 		htmlBuilder.WriteString(renderParagraphHTML(p, tag, isHeading))
 		i++
 	}
+	return htmlBuilder.String()
+}
 
-	return Result{Title: title, HTML: htmlBuilder.String(), Notes: notes}
+// positionedCell is one row's cell together with its 0-indexed starting
+// grid column, computed from the colSpans of the cells before it in the
+// same row (including a vMerge "continue" cell, which still occupies a
+// real column even though it renders nothing of its own).
+type positionedCell struct {
+	startCol int
+	cell     tableCell
+}
+
+func positionRow(row tableRow) []positionedCell {
+	col := 0
+	out := make([]positionedCell, 0, len(row.cells))
+	for _, c := range row.cells {
+		out = append(out, positionedCell{startCol: col, cell: c})
+		col += c.colSpan
+	}
+	return out
+}
+
+// renderTable renders a table (SPEC B4: "w:tbl -> table", "w:tblHeader
+// rows -> th", "w:gridSpan -> colspan", "w:vMerge restart/continue ->
+// rowspan computed per column"). A vMerge "continue" cell is dropped
+// entirely; a "restart" cell's rowspan is however many further rows have
+// a "continue" cell at that same starting column.
+func renderTable(tbl tableBlock, styles styleSheet, numbering numberingSheet) string {
+	positioned := make([][]positionedCell, len(tbl.rows))
+	for i, row := range tbl.rows {
+		positioned[i] = positionRow(row)
+	}
+
+	var b strings.Builder
+	b.WriteString("<table>\n")
+	for i, row := range tbl.rows {
+		b.WriteString("<tr>\n")
+		cellTag := "td"
+		if row.header {
+			cellTag = "th"
+		}
+		for _, pc := range positioned[i] {
+			if pc.cell.vMergeKind == "continue" {
+				continue
+			}
+
+			rowspan := 1
+			if pc.cell.vMergeKind == "restart" {
+				for k := i + 1; k < len(tbl.rows); k++ {
+					continues := false
+					for _, pc2 := range positioned[k] {
+						if pc2.startCol == pc.startCol && pc2.cell.vMergeKind == "continue" {
+							continues = true
+							break
+						}
+					}
+					if !continues {
+						break
+					}
+					rowspan++
+				}
+			}
+
+			b.WriteString("<" + cellTag)
+			if pc.cell.colSpan > 1 {
+				b.WriteString(` colspan="` + strconv.Itoa(pc.cell.colSpan) + `"`)
+			}
+			if rowspan > 1 {
+				b.WriteString(` rowspan="` + strconv.Itoa(rowspan) + `"`)
+			}
+			b.WriteString(">")
+			b.WriteString(renderParagraphSequence(pc.cell.paragraphs, styles, numbering))
+			b.WriteString("</" + cellTag + ">\n")
+		}
+		b.WriteString("</tr>\n")
+	}
+	b.WriteString("</table>\n")
+	return b.String()
 }
 
 // effectiveListInfo resolves a paragraph's list membership: direct
@@ -126,25 +233,36 @@ func renderList(items []paragraph, levels []int, numbering numberingSheet, numID
 	return b.String()
 }
 
-func extractTitle(paragraphs []paragraph, styles styleSheet, filename string) (string, []paragraph) {
-	for i, p := range paragraphs {
+// extractTitle looks only at paragraph blocks — a title can't come from
+// inside a table (SPEC B4 doesn't say otherwise, and a table's own first
+// cell being silently promoted to the document title would be surprising).
+func extractTitle(blocks []block, styles styleSheet, filename string) (string, []block) {
+	for i, b := range blocks {
+		if b.kind != blockParagraph {
+			continue
+		}
+		p := b.paragraph
 		if styles.isTitleStyle(p.styleID) && strings.TrimSpace(p.plainText()) != "" {
-			return strings.TrimSpace(p.plainText()), removeAt(paragraphs, i)
+			return strings.TrimSpace(p.plainText()), removeBlockAt(blocks, i)
 		}
 	}
-	for i, p := range paragraphs {
+	for i, b := range blocks {
+		if b.kind != blockParagraph {
+			continue
+		}
+		p := b.paragraph
 		tag, isHeading := styles.headingLevel(p.styleID, p.directOutlineLvl)
 		if isHeading && tag == "h2" && strings.TrimSpace(p.plainText()) != "" {
-			return strings.TrimSpace(p.plainText()), removeAt(paragraphs, i)
+			return strings.TrimSpace(p.plainText()), removeBlockAt(blocks, i)
 		}
 	}
-	return titleFromFilename(filename), paragraphs
+	return titleFromFilename(filename), blocks
 }
 
-func removeAt(paragraphs []paragraph, i int) []paragraph {
-	out := make([]paragraph, 0, len(paragraphs)-1)
-	out = append(out, paragraphs[:i]...)
-	out = append(out, paragraphs[i+1:]...)
+func removeBlockAt(blocks []block, i int) []block {
+	out := make([]block, 0, len(blocks)-1)
+	out = append(out, blocks[:i]...)
+	out = append(out, blocks[i+1:]...)
 	return out
 }
 
