@@ -1,6 +1,7 @@
 package db
 
 import (
+	"database/sql"
 	"os"
 	"path/filepath"
 	"testing"
@@ -80,17 +81,29 @@ type blockingClock struct{ now time.Time }
 func (c blockingClock) Now() time.Time                         { return c.now }
 func (c blockingClock) After(time.Duration) <-chan time.Time { return make(chan time.Time) }
 
-func waitForDailyBackupFile(t *testing.T, dataDir string, timeout time.Duration) {
+// waitForBackupStatus polls GetBackupStatus rather than the daily
+// backup file's mere existence: backupAndRecord writes the file (via
+// VACUUM INTO + rename) and then records app_meta as two separate
+// steps, so a test that only waited for the file could read app_meta in
+// the narrow window before that second step lands (caught for real on
+// CI's Linux runner, where the whole test finished in under 10ms).
+func waitForBackupStatus(t *testing.T, sqlDB *sql.DB, timeout time.Duration) BackupStatus {
 	t.Helper()
-	dir := filepath.Join(dataDir, "backups", "daily")
 	deadline := time.Now().Add(timeout)
+	var last BackupStatus
 	for time.Now().Before(deadline) {
-		if entries, err := os.ReadDir(dir); err == nil && len(entries) > 0 {
-			return
+		status, err := GetBackupStatus(sqlDB)
+		if err != nil {
+			t.Fatalf("GetBackupStatus: %v", err)
 		}
+		if status.HasRun {
+			return status
+		}
+		last = status
 		time.Sleep(10 * time.Millisecond)
 	}
-	t.Fatalf("no daily backup appeared in %s within %v", dir, timeout)
+	t.Fatalf("no backup status recorded within %v (last read: %+v)", timeout, last)
+	return BackupStatus{}
 }
 
 func TestRunBackupSchedulerRunsImmediatelyWhenStale(t *testing.T) {
@@ -100,14 +113,15 @@ func TestRunBackupSchedulerRunsImmediatelyWhenStale(t *testing.T) {
 
 	go RunBackupScheduler(sqlDB, dataDir, clock)
 
-	waitForDailyBackupFile(t, dataDir, 2*time.Second)
-
-	status, err := GetBackupStatus(sqlDB)
-	if err != nil {
-		t.Fatalf("GetBackupStatus: %v", err)
-	}
-	if !status.HasRun || !status.LastBackupOK {
+	status := waitForBackupStatus(t, sqlDB, 2*time.Second)
+	if !status.LastBackupOK {
 		t.Fatalf("status = %+v, want a successful backup recorded", status)
+	}
+
+	dir := filepath.Join(dataDir, "backups", "daily")
+	entries, err := os.ReadDir(dir)
+	if err != nil || len(entries) == 0 {
+		t.Fatalf("no daily backup file found in %s (err: %v)", dir, err)
 	}
 }
 
