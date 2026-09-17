@@ -37,4 +37,18 @@ export default async function globalSetup(): Promise<void> {
     stdio: 'inherit',
   });
   process.env.COMPHQ_SEED_BINARY = seedBin;
+
+  // e2e/settings/export.spec.ts (SPEC gate 1.34) needs to inspect the
+  // downloaded export as real files under a file:// URL, so it extracts
+  // the zip with this small Go helper rather than an npm dependency.
+  const unzipBin = path.join(
+    root,
+    'bin',
+    process.platform === 'win32' ? 'comphq-unzip-e2e.exe' : 'comphq-unzip-e2e',
+  );
+  execFileSync('go', ['build', '-o', unzipBin, './e2e/unzip'], {
+    cwd: root,
+    stdio: 'inherit',
+  });
+  process.env.COMPHQ_UNZIP_BINARY = unzipBin;
 }
