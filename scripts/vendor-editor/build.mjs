@@ -82,7 +82,7 @@ function writeVendorEntry() {
   const sha256 = createHash('sha256').update(bytes).digest('hex')
   const vendorMdPath = path.join(root, 'web', 'static', 'vendor', 'VENDOR.md')
 
-  const row = `| editor-3.31.3.js | TipTap 3.31.3 (+ ProseMirror, linkifyjs) | MIT | npm: @tiptap/* | \`editor/editor-3.31.3.js\` | ${sha256} |\n`
+  const row = `| editor-3.31.3.js | TipTap 3.31.3 (+ ProseMirror, linkifyjs) | MIT | npm: @tiptap/* | \`editor/editor-3.31.3.js\` | ${sha256} |`
 
   const header =
     '# Vendored third-party files\n\n' +
@@ -90,7 +90,7 @@ function writeVendorEntry() {
     '| Name | Version | Licence | Source | Path | SHA-256 |\n' +
     '|---|---|---|---|---|---|\n'
 
-  let content = header
+  let rows = [row]
   if (fs.existsSync(vendorMdPath)) {
     const existing = fs.readFileSync(vendorMdPath, 'utf8')
     const lines = existing.split('\n')
@@ -98,10 +98,15 @@ function writeVendorEntry() {
       (l) => l.startsWith('|') && !l.startsWith('| Name') && !l.startsWith('|---'),
     )
     const otherRows = dataLines.filter((l) => !l.includes('editor-3.31.3.js'))
-    content = header + otherRows.map((l) => l + '\n').join('') + row
-  } else {
-    content = header + row
+    rows = [...otherRows, row]
   }
+  // Sorted by name (not appended at the end): another vendor script
+  // touching this same shared file, run in either order, must produce
+  // byte-identical output, or CI's "bundle is reproducible" check
+  // (which only re-runs *this* script and diffs) sees a false failure
+  // whenever the file was last written by a different script.
+  rows.sort()
+  const content = header + rows.join('\n') + '\n'
 
   fs.writeFileSync(vendorMdPath, content)
 }

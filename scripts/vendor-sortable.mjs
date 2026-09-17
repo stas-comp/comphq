@@ -31,7 +31,7 @@ function writeVendorEntry() {
   const vendorMdPath = path.join(root, 'web', 'static', 'vendor', 'VENDOR.md')
   const name = `Sortable-${version}.min.js`
 
-  const row = `| ${name} | SortableJS ${version} | MIT | npm: sortablejs | \`sortable/${name}\` | ${sha256} |\n`
+  const row = `| ${name} | SortableJS ${version} | MIT | npm: sortablejs | \`sortable/${name}\` | ${sha256} |`
 
   const header =
     '# Vendored third-party files\n\n' +
@@ -39,7 +39,7 @@ function writeVendorEntry() {
     '| Name | Version | Licence | Source | Path | SHA-256 |\n' +
     '|---|---|---|---|---|---|\n'
 
-  let content = header
+  let rows = [row]
   if (fs.existsSync(vendorMdPath)) {
     const existing = fs.readFileSync(vendorMdPath, 'utf8')
     const lines = existing.split('\n')
@@ -47,10 +47,14 @@ function writeVendorEntry() {
       (l) => l.startsWith('|') && !l.startsWith('| Name') && !l.startsWith('|---'),
     )
     const otherRows = dataLines.filter((l) => !l.includes(name))
-    content = header + otherRows.map((l) => l + '\n').join('') + row
-  } else {
-    content = header + row
+    rows = [...otherRows, row]
   }
+  // Sorted by name (not appended at the end): another vendor script
+  // touching this same shared file, run in either order, must produce
+  // byte-identical output, or a "bundle is reproducible" CI check that
+  // only re-runs one script and diffs the file sees a false failure.
+  rows.sort()
+  const content = header + rows.join('\n') + '\n'
 
   fs.writeFileSync(vendorMdPath, content)
 }
