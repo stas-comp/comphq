@@ -7,7 +7,7 @@ import path from 'node:path';
 
 export type Server = { baseURL: string; dataDir: string; stubImageHost: string };
 
-async function freePort(): Promise<number> {
+export async function freePort(): Promise<number> {
   return new Promise((resolve, reject) => {
     const srv = net.createServer();
     srv.listen(0, '127.0.0.1', () => {
@@ -23,7 +23,7 @@ async function freePort(): Promise<number> {
   });
 }
 
-async function waitForHealthy(baseURL: string, timeoutMs = 15_000): Promise<void> {
+export async function waitForHealthy(baseURL: string, timeoutMs = 15_000): Promise<void> {
   const deadline = Date.now() + timeoutMs;
   let lastError: unknown;
   while (Date.now() < deadline) {

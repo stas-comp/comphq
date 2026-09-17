@@ -23,4 +23,18 @@ export default async function globalSetup(): Promise<void> {
   });
 
   process.env.COMPHQ_TEST_BINARY = bin;
+
+  // The speed project's test-library seeder (PLAN.md P1-27): built once
+  // here like the app binary itself, rather than via `go run` per worker,
+  // so a slow `go build` never counts against a speed budget.
+  const seedBin = path.join(
+    root,
+    'bin',
+    process.platform === 'win32' ? 'comphq-seed-e2e.exe' : 'comphq-seed-e2e',
+  );
+  execFileSync('go', ['build', '-o', seedBin, './e2e/seed'], {
+    cwd: root,
+    stdio: 'inherit',
+  });
+  process.env.COMPHQ_SEED_BINARY = seedBin;
 }

@@ -35,6 +35,11 @@ export default defineConfig({
     {
       name: 'speed',
       testDir: 'e2e/speed',
+      // The test library is seeded once per worker (D-24); a single
+      // worker keeps that a true "once" instead of once per parallel
+      // shard, and keeps timing measurements free of CPU contention
+      // from other workers' tests running at the same time.
+      workers: 1,
       use: { ...devices['Desktop Chrome'] },
     },
     {
