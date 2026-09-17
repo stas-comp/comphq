@@ -31,14 +31,18 @@ var ErrUnreadable = errors.New("this file can't be read as a Word document")
 var ErrTooLarge = errors.New("this Word document is too large")
 
 // Result is what the KB editor needs to insert the converted document.
-// Notes lists one entry per thing left out of the conversion (SPEC B4:
-// comments, footnotes, endnotes, headers and footers today; P1-32 adds
-// unsupported items like charts and pictures in other formats) — the
-// editor turns len(Notes) and its entries into the 1.49 summary message.
+// Notes lists one entry per thing left out of the conversion (comments,
+// footnotes, endnotes, headers, footers, and unsupported items like
+// charts and pictures in other formats — SPEC B4) — the editor turns
+// len(Notes) and its entries into the 1.49 summary message. Images holds
+// one entry per picture actually extracted, keyed by the token that
+// appears literally in HTML as an <img src>, for the caller to replace
+// once each one is stored (SPEC B4).
 type Result struct {
-	Title string
-	HTML  string
-	Notes []string
+	Title  string
+	HTML   string
+	Notes  []string
+	Images []Image
 }
 
 // Convert reads a .docx from r (size bytes long) and returns its title and
@@ -102,7 +106,18 @@ func Convert(r io.ReaderAt, size int64, filename string) (Result, error) {
 		return Result{}, err
 	}
 
-	parsed, err := parseBlocks(docXML, sheet, hyperlinkRels)
+	mediaRels, err := pkg.mediaRelationships(mainPart)
+	if err != nil {
+		return Result{}, err
+	}
+	resolvedImages := make(map[string]resolvedImage, len(mediaRels))
+	for relID, rel := range mediaRels {
+		resolvedImages[relID] = pkg.resolveImage(rel)
+	}
+
+	ctx := &docCtx{styles: sheet, hyperlinkRels: hyperlinkRels, resolvedImages: resolvedImages}
+
+	parsed, err := parseBlocks(docXML, ctx)
 	if err != nil {
 		return Result{}, err
 	}
@@ -113,7 +128,9 @@ func Convert(r io.ReaderAt, size int64, filename string) (Result, error) {
 	}
 	notes := append(hfNotes, parsed.notes...)
 
-	return buildResult(parsed.blocks, notes, sheet, numSheet, filename), nil
+	result := buildResult(parsed.blocks, notes, sheet, numSheet, filename)
+	result.Images = ctx.images
+	return result, nil
 }
 
 // pkgReader reads parts of the zip package, enforcing the uncompressed-size
@@ -133,6 +150,20 @@ func (p *pkgReader) findFile(name string) *zip.File {
 }
 
 func (p *pkgReader) readPart(name string) ([]byte, error) {
+	return p.readPartWithLimit(name, MaxUncompressedSize-p.total)
+}
+
+// readImagePart is readPart with the smaller per-image cap (SPEC B4),
+// still inside whatever's left of the whole-document budget.
+func (p *pkgReader) readImagePart(name string) ([]byte, error) {
+	limit := int64(MaxImageSize)
+	if remaining := MaxUncompressedSize - p.total; remaining < limit {
+		limit = remaining
+	}
+	return p.readPartWithLimit(name, limit)
+}
+
+func (p *pkgReader) readPartWithLimit(name string, limit int64) ([]byte, error) {
 	f := p.findFile(name)
 	if f == nil {
 		return nil, ErrUnreadable
@@ -142,8 +173,7 @@ func (p *pkgReader) readPart(name string) ([]byte, error) {
 	// can lie about it, and Go's own zip reader already refuses a header
 	// that doesn't match the data); the limit is enforced on bytes
 	// actually decompressed.
-	remaining := MaxUncompressedSize - p.total
-	if remaining <= 0 {
+	if limit <= 0 {
 		return nil, ErrTooLarge
 	}
 
@@ -155,12 +185,12 @@ func (p *pkgReader) readPart(name string) ([]byte, error) {
 	if err != nil {
 		return nil, ErrUnreadable
 	}
-	n, copyErr := io.Copy(io.Discard, io.LimitReader(probe, remaining+1))
+	n, copyErr := io.Copy(io.Discard, io.LimitReader(probe, limit+1))
 	probe.Close()
 	if copyErr != nil {
 		return nil, ErrUnreadable
 	}
-	if n > remaining {
+	if n > limit {
 		return nil, ErrTooLarge
 	}
 

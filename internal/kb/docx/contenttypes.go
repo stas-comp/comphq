@@ -31,9 +31,10 @@ func parseContentTypes(data []byte) (contentTypes, error) {
 }
 
 type relationship struct {
-	ID     string `xml:"Id,attr"`
-	Type   string `xml:"Type,attr"`
-	Target string `xml:"Target,attr"`
+	ID         string `xml:"Id,attr"`
+	Type       string `xml:"Type,attr"`
+	Target     string `xml:"Target,attr"`
+	TargetMode string `xml:"TargetMode,attr"`
 }
 
 type relationships struct {

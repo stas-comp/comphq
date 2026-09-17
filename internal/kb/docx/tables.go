@@ -78,7 +78,7 @@ func wrapInnerXML(innerXML string) []byte {
 // already passed checkXMLDepth before any of this runs, and a subtree can
 // never be deeper than the whole it came from, so re-parsing captured
 // fragments needs no depth check of its own.
-func buildTableBlock(raw tblXML, styles styleSheet, hyperlinkRels map[string]string) (tableBlock, []string, error) {
+func buildTableBlock(raw tblXML, ctx *docCtx) (tableBlock, []string, error) {
 	var tbl tableBlock
 	var notes []string
 	for _, r := range raw.Rows {
@@ -96,7 +96,7 @@ func buildTableBlock(raw tblXML, styles styleSheet, hyperlinkRels map[string]str
 				}
 			}
 
-			cellDoc, err := parseBlocks(wrapInnerXML(c.InnerXML), styles, hyperlinkRels)
+			cellDoc, err := parseBlocks(wrapInnerXML(c.InnerXML), ctx)
 			if err != nil {
 				return tableBlock{}, nil, err
 			}

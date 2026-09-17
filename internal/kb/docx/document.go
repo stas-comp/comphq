@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/xml"
 	"io"
+	"strconv"
 	"strings"
 )
 
@@ -56,17 +57,24 @@ type segmentKind int
 const (
 	segText segmentKind = iota
 	segBreak
+	segMedia
 )
 
-// segment is one contiguous run of a paragraph's content: either text
-// with its resolved bold/italic and, if inside a link, its href, or a
-// line break (SPEC B4: "w:br -> br").
+// segment is one contiguous unit of a paragraph's content: text with its
+// resolved bold/italic and, if inside a link, its href; a line break
+// (SPEC B4: "w:br -> br"); or a piece of media — either a successfully
+// extracted image (imageToken/imageAlt set) or a placeholder for
+// something that couldn't come across (missingKind set, one of
+// "picture"/"chart"/"diagram"/"shape"/"equation"/"object" — SPEC B4).
 type segment struct {
-	kind   segmentKind
-	text   string
-	bold   bool
-	italic bool
-	href   string
+	kind        segmentKind
+	text        string
+	bold        bool
+	italic      bool
+	href        string
+	imageToken  string
+	imageAlt    string
+	missingKind string
 }
 
 // paragraph is one <w:p>. directNumID/directIlvl are nil when the
@@ -90,6 +98,23 @@ func (p paragraph) plainText() string {
 	return b.String()
 }
 
+// hasContent reports whether p has anything worth keeping: real text, or
+// a piece of media (an image or a data-missing-kind placeholder). Used
+// instead of plainText() alone to decide whether to drop an empty
+// paragraph (SPEC B4) — a paragraph holding only a picture has no text
+// at all, but is exactly the kind of paragraph that rule shouldn't drop.
+func (p paragraph) hasContent() bool {
+	if strings.TrimSpace(p.plainText()) != "" {
+		return true
+	}
+	for _, s := range p.segments {
+		if s.kind == segMedia {
+			return true
+		}
+	}
+	return false
+}
+
 type blockKind int
 
 const (
@@ -98,7 +123,7 @@ const (
 )
 
 // block is one body-level (or table-cell-level) item: a paragraph or a
-// table (SPEC B4). Images join this in P1-32.
+// table (SPEC B4).
 type block struct {
 	kind      blockKind
 	paragraph paragraph
@@ -106,12 +131,133 @@ type block struct {
 }
 
 // parsedDocument is parseBlocks's result: the blocks, plus one note per
-// comment, footnote or endnote reference found (SPEC B4: "left out, and
-// counted in notes" — headers and footers, being separate parts rather
-// than inline references, are added by the caller instead).
+// comment, footnote, endnote reference, or unsupported item found (SPEC
+// B4: "left out, and counted in notes" — headers and footers, being
+// separate parts rather than inline references, are added by the caller
+// instead).
 type parsedDocument struct {
 	blocks []block
 	notes  []string
+}
+
+// docCtx carries what a body-level parse needs but doesn't want to keep
+// re-deriving or re-threading as separate parameters: style/hyperlink
+// lookups, and the running image list and token counter a single
+// Convert() call accumulates across every recursive re-parse (a table
+// cell's content, a text box's). Passed by pointer so a table cell or
+// text box's own recursive parseBlocks call shares the same running
+// state as the top-level one, rather than starting fresh.
+type docCtx struct {
+	styles         styleSheet
+	hyperlinkRels  map[string]string
+	resolvedImages map[string]resolvedImage
+	images         []Image
+	imageCounter   int
+}
+
+// resolveDrawingSegment turns a decoded <w:drawing> into a segment: a
+// real image (SPEC B4: "w:drawing ... a:blip r:embed"), or a placeholder
+// for a chart, SmartArt diagram, or anything else this converter doesn't
+// specifically recognise (rendered as a generic "shape" placeholder,
+// covering real drawn shapes and any other DrawingML content).
+func (ctx *docCtx) resolveDrawingSegment(raw drawingXML) segment {
+	body := raw.Inline
+	if body == nil {
+		body = raw.Anchor
+	}
+	if body == nil {
+		return segment{kind: segMedia, missingKind: "object"}
+	}
+	alt := body.DocPr.Descr
+	if alt == "" {
+		alt = body.DocPr.Title
+	}
+	switch {
+	case hasSuffixFold(body.GraphicData.URI, "/picture"):
+		relID := ""
+		if body.GraphicData.Pic != nil {
+			relID = body.GraphicData.Pic.BlipFill.Blip.Embed
+		}
+		return ctx.resolvePictureSegment(relID, alt)
+	case hasSuffixFold(body.GraphicData.URI, "/chart"):
+		return segment{kind: segMedia, missingKind: "chart"}
+	case hasSuffixFold(body.GraphicData.URI, "/diagram"):
+		return segment{kind: segMedia, missingKind: "diagram"}
+	default:
+		return segment{kind: segMedia, missingKind: "shape"}
+	}
+}
+
+// resolvePictureSegment looks relID up in the images already resolved
+// (read and sniffed) by docx.go's Convert before parsing ever started.
+// Anything not found there — an unrecognised id, or one that resolved to
+// an unsupported format, an external target, or an oversize file — is a
+// "picture" placeholder, never included as image bytes (SPEC B4: "never
+// fetched").
+func (ctx *docCtx) resolvePictureSegment(relID, alt string) segment {
+	resolved, ok := ctx.resolvedImages[relID]
+	if !ok || !resolved.supported {
+		return segment{kind: segMedia, missingKind: "picture"}
+	}
+	ctx.imageCounter++
+	token := "cid:docximage" + strconv.Itoa(ctx.imageCounter)
+	ctx.images = append(ctx.images, Image{Token: token, Bytes: resolved.bytes, Alt: alt})
+	return segment{kind: segMedia, imageToken: token, imageAlt: alt}
+}
+
+func noteForMissingKind(kind string) string {
+	switch kind {
+	case "picture":
+		return "a picture"
+	case "chart":
+		return "a chart"
+	case "diagram":
+		return "a SmartArt diagram"
+	case "equation":
+		return "an equation"
+	case "object":
+		return "an embedded object"
+	default:
+		return "a shape"
+	}
+}
+
+// vmlContent is what scanVMLPict finds inside a <w:pict> (or <w:object>):
+// at most one of an image relationship id or a text box's own inner XML,
+// found anywhere in the subtree regardless of which VML shape element
+// wraps it (v:shape, v:rect, v:roundrect... all vary by drawing tool, so
+// this looks for the content that actually matters rather than modelling
+// every shape element).
+type vmlContent struct {
+	imageRelID string
+	txbxInner  string
+}
+
+func scanVMLPict(data []byte) vmlContent {
+	var out vmlContent
+	dec := xml.NewDecoder(bytes.NewReader(data))
+	for {
+		tok, err := dec.Token()
+		if err != nil {
+			break
+		}
+		se, ok := tok.(xml.StartElement)
+		if !ok {
+			continue
+		}
+		switch se.Name.Local {
+		case "imagedata":
+			out.imageRelID = attrVal(se, "id")
+		case "txbxContent":
+			var raw struct {
+				InnerXML string `xml:",innerxml"`
+			}
+			if err := dec.DecodeElement(&raw, &se); err == nil {
+				out.txbxInner = raw.InnerXML
+			}
+		}
+	}
+	return out
 }
 
 // parseBlocks walks a WordprocessingML body (document.xml, or a table
@@ -122,9 +268,7 @@ type parsedDocument struct {
 // care about ancestors this walker isn't matching on, so a <w:p> nested
 // inside any of them is still found by its own start/end tokens (SPEC B4:
 // "descend into w:sdt/w:sdtContent, w:smartTag, w:customXml and
-// w:fldSimple"). hyperlinkRels maps a relationship id to its target URL,
-// for w:hyperlink r:id lookups (SPEC B4: "w:hyperlink with an external
-// relationship").
+// w:fldSimple").
 //
 // A <w:tbl> is decoded whole, via encoding/xml's struct-based
 // DecodeElement rather than more token-matching, since a table's row/cell
@@ -138,8 +282,10 @@ type parsedDocument struct {
 // since a text box's own <w:p> would otherwise be encountered while the
 // anchor's <w:p> is still open — this walker has no nesting counter for
 // w:p, by design, so a genuinely nested one needs to be routed around it,
-// not through it.
-func parseBlocks(data []byte, styles styleSheet, hyperlinkRels map[string]string) (parsedDocument, error) {
+// not through it. <w:drawing>, <w:pict>, <w:object> and <m:oMath> are
+// decoded (or scanned) the same way, becoming either a real image or a
+// data-missing-kind placeholder segment.
+func parseBlocks(data []byte, ctx *docCtx) (parsedDocument, error) {
 	if err := checkXMLDepth(data); err != nil {
 		if err == errXMLTooDeep {
 			return parsedDocument{}, ErrTooLarge
@@ -191,7 +337,7 @@ func parseBlocks(data []byte, styles styleSheet, hyperlinkRels map[string]string
 
 	flushRun := func() {
 		if runText.Len() > 0 {
-			bold, italic := styles.resolveMarks(cur.styleID, runStyleID, runBold, runItalic)
+			bold, italic := ctx.styles.resolveMarks(cur.styleID, runStyleID, runBold, runItalic)
 			href := ""
 			if len(hrefStack) > 0 {
 				href = hrefStack[len(hrefStack)-1]
@@ -201,11 +347,20 @@ func parseBlocks(data []byte, styles styleSheet, hyperlinkRels map[string]string
 		}
 	}
 
+	appendMedia := func(seg segment) {
+		cur.segments = append(cur.segments, seg)
+		if seg.missingKind != "" {
+			out.notes = append(out.notes, noteForMissingKind(seg.missingKind))
+		}
+	}
+
 	// skipDepth counts nested elements whose text must never appear in the
 	// visible run text (SPEC B4: "skip w:del, w:delText and w:moveFrom";
-	// "skip field instruction text"). w:ins and w:moveTo need no
-	// equivalent entry — their text is included exactly like any other
-	// run's, simply by not being skipped.
+	// "skip field instruction text"), and, for mc:Choice, whose *content*
+	// (including any table/text box/picture inside it) must never be
+	// used at all. w:ins and w:moveTo need no equivalent entry — their
+	// text is included exactly like any other run's, simply by not being
+	// skipped.
 	skipDepth := 0
 
 	for {
@@ -245,7 +400,7 @@ func parseBlocks(data []byte, styles styleSheet, hyperlinkRels map[string]string
 			case "hyperlink":
 				href := ""
 				if relID := attrVal(t, "id"); relID != "" {
-					href = hyperlinkRels[relID]
+					href = ctx.hyperlinkRels[relID]
 				}
 				hrefStack = append(hrefStack, href)
 			case "fldSimple":
@@ -309,8 +464,8 @@ func parseBlocks(data []byte, styles styleSheet, hyperlinkRels map[string]string
 				// Choice is mc:Choice: SPEC B4 says AlternateContent must
 				// use exactly one branch, and this converter understands
 				// none of the extensions a Choice branch Requires, so it
-				// always prefers mc:Fallback — skipping Choice's text the
-				// same way deleted/field-instruction text is skipped
+				// always prefers mc:Fallback — skipping Choice's content
+				// the same way deleted/field-instruction text is skipped
 				// keeps that simple, without a second mechanism.
 				skipDepth++
 				if t.Name.Local == "instrText" {
@@ -328,7 +483,7 @@ func parseBlocks(data []byte, styles styleSheet, hyperlinkRels map[string]string
 					return parsedDocument{}, ErrUnreadable
 				}
 				if skipDepth == 0 {
-					tbl, tblNotes, err := buildTableBlock(raw, styles, hyperlinkRels)
+					tbl, tblNotes, err := buildTableBlock(raw, ctx)
 					if err != nil {
 						return parsedDocument{}, err
 					}
@@ -348,12 +503,68 @@ func parseBlocks(data []byte, styles styleSheet, hyperlinkRels map[string]string
 					return parsedDocument{}, ErrUnreadable
 				}
 				if skipDepth == 0 {
-					tbDoc, err := parseBlocks(wrapInnerXML(raw.InnerXML), styles, hyperlinkRels)
+					tbDoc, err := parseBlocks(wrapInnerXML(raw.InnerXML), ctx)
 					if err != nil {
 						return parsedDocument{}, err
 					}
 					pendingTextBoxParagraphs = append(pendingTextBoxParagraphs, flattenBlocksToParagraphs(tbDoc.blocks)...)
 					out.notes = append(out.notes, tbDoc.notes...)
+				}
+			case "drawing":
+				var raw drawingXML
+				if err := dec.DecodeElement(&raw, &t); err != nil {
+					return parsedDocument{}, ErrUnreadable
+				}
+				if skipDepth == 0 && inRun {
+					flushRun()
+					appendMedia(ctx.resolveDrawingSegment(raw))
+				}
+			case "pict":
+				var raw struct {
+					InnerXML string `xml:",innerxml"`
+				}
+				if err := dec.DecodeElement(&raw, &t); err != nil {
+					return parsedDocument{}, ErrUnreadable
+				}
+				if skipDepth == 0 && inRun {
+					vml := scanVMLPict(wrapInnerXML(raw.InnerXML))
+					switch {
+					case vml.txbxInner != "":
+						tbDoc, err := parseBlocks(wrapInnerXML(vml.txbxInner), ctx)
+						if err != nil {
+							return parsedDocument{}, err
+						}
+						pendingTextBoxParagraphs = append(pendingTextBoxParagraphs, flattenBlocksToParagraphs(tbDoc.blocks)...)
+						out.notes = append(out.notes, tbDoc.notes...)
+					case vml.imageRelID != "":
+						flushRun()
+						appendMedia(ctx.resolvePictureSegment(vml.imageRelID, ""))
+					default:
+						// A drawn shape with no text and no picture (SPEC
+						// B4: "drawn shapes with no text").
+						flushRun()
+						appendMedia(segment{kind: segMedia, missingKind: "shape"})
+					}
+				}
+			case "object":
+				// An OLE object (SPEC B4: "embedded objects with no
+				// usable image"): typically wraps a VML v:imagedata
+				// holding a cached preview, which is used as a real
+				// picture when present.
+				var raw struct {
+					InnerXML string `xml:",innerxml"`
+				}
+				if err := dec.DecodeElement(&raw, &t); err != nil {
+					return parsedDocument{}, ErrUnreadable
+				}
+				if skipDepth == 0 && inRun {
+					flushRun()
+					vml := scanVMLPict(wrapInnerXML(raw.InnerXML))
+					if vml.imageRelID != "" {
+						appendMedia(ctx.resolvePictureSegment(vml.imageRelID, ""))
+					} else {
+						appendMedia(segment{kind: segMedia, missingKind: "object"})
+					}
 				}
 			case "tab":
 				if inRun && skipDepth == 0 {
@@ -369,6 +580,20 @@ func parseBlocks(data []byte, styles styleSheet, hyperlinkRels map[string]string
 						flushRun()
 						cur.segments = append(cur.segments, segment{kind: segBreak})
 					}
+				}
+			case "oMath":
+				// An equation (SPEC B4). Consumed whole via DecodeElement
+				// (into a struct with nothing to capture) rather than
+				// left to the normal run walk: m:r/m:t share local names
+				// with w:r/w:t, so without this its numerator/denominator
+				// text would otherwise leak into the visible text.
+				var raw struct{}
+				if err := dec.DecodeElement(&raw, &t); err != nil {
+					return parsedDocument{}, ErrUnreadable
+				}
+				if skipDepth == 0 && inParagraph {
+					flushRun()
+					appendMedia(segment{kind: segMedia, missingKind: "equation"})
 				}
 			case "commentReference", "footnoteReference", "endnoteReference":
 				out.notes = append(out.notes, noteFor(t.Name.Local))

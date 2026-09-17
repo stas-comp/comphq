@@ -50,7 +50,7 @@ func renderParagraphSequence(paragraphs []paragraph, styles styleSheet, numberin
 	// interruption) doesn't split them into two separate lists.
 	nonEmpty := make([]paragraph, 0, len(paragraphs))
 	for _, p := range paragraphs {
-		if strings.TrimSpace(p.plainText()) != "" {
+		if p.hasContent() {
 			nonEmpty = append(nonEmpty, p)
 		}
 	}
@@ -317,6 +317,11 @@ func renderInlineSegments(segments []segment, suppressStrong bool) string {
 			i++
 			continue
 		}
+		if seg.kind == segMedia {
+			writeMediaSegment(&b, seg)
+			i++
+			continue
+		}
 		if seg.text == "" {
 			i++
 			continue
@@ -360,6 +365,25 @@ func writeMarkedSegments(b *strings.Builder, segs []segment, suppressStrong bool
 	}
 }
 
+// writeMediaSegment renders a real image or a data-missing-kind
+// placeholder (SPEC B4). A placeholder's own explanatory text comes from
+// the editor's CSS, keyed off data-missing-kind's value (P1-33), the
+// same way an existing missing-picture placeholder from the paste flow
+// already works.
+func writeMediaSegment(b *strings.Builder, seg segment) {
+	if seg.missingKind != "" {
+		b.WriteString(`<div data-missing-kind="`)
+		b.WriteString(html.EscapeString(seg.missingKind))
+		b.WriteString(`"></div>`)
+		return
+	}
+	b.WriteString(`<img src="`)
+	b.WriteString(html.EscapeString(seg.imageToken))
+	b.WriteString(`" alt="`)
+	b.WriteString(html.EscapeString(seg.imageAlt))
+	b.WriteString(`">`)
+}
+
 func writeMarkedText(b *strings.Builder, text string, bold, italic bool) {
 	open, close := "", ""
 	switch {
@@ -378,12 +402,12 @@ func writeMarkedText(b *strings.Builder, text string, bold, italic bool) {
 // trimSegments trims leading whitespace from the first text segment and
 // trailing whitespace from the last, without touching which formatting
 // applies to the visible characters in between, and stops at a line
-// break rather than reaching past it.
+// break or a piece of media rather than reaching past it.
 func trimSegments(segs []segment) []segment {
 	out := make([]segment, len(segs))
 	copy(out, segs)
 	for i := range out {
-		if out[i].kind == segBreak {
+		if out[i].kind != segText {
 			break
 		}
 		out[i].text = strings.TrimLeft(out[i].text, " \t")
@@ -392,7 +416,7 @@ func trimSegments(segs []segment) []segment {
 		}
 	}
 	for i := len(out) - 1; i >= 0; i-- {
-		if out[i].kind == segBreak {
+		if out[i].kind != segText {
 			break
 		}
 		out[i].text = strings.TrimRight(out[i].text, " \t")

@@ -3,6 +3,8 @@ package docx
 import (
 	"archive/zip"
 	"bytes"
+	"image"
+	"image/png"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -190,14 +192,14 @@ func TestTitleFromFilenameFallback(t *testing.T) {
 // when any external ones (hyperlinks) are needed, come from docRels.
 func buildDocx(t *testing.T, stylesXML, bodyXML string) []byte {
 	t.Helper()
-	return buildDocxFull(t, stylesXML, "", "", bodyXML)
+	return buildDocxFull(t, stylesXML, "", "", bodyXML, nil)
 }
 
 // buildDocxWithNumbering is buildDocx plus a numbering.xml part, for the
 // list-related tests.
 func buildDocxWithNumbering(t *testing.T, stylesXML, numberingXML, bodyXML string) []byte {
 	t.Helper()
-	return buildDocxFull(t, stylesXML, numberingXML, "", bodyXML)
+	return buildDocxFull(t, stylesXML, numberingXML, "", bodyXML, nil)
 }
 
 // buildDocxWithHyperlinkRels is buildDocx plus a word/_rels/document.xml.rels
@@ -212,10 +214,30 @@ func buildDocxWithHyperlinkRels(t *testing.T, bodyXML string, hyperlinks map[str
 		rels.WriteString(`<Relationship Id="` + id + `" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink" Target="` + target + `" TargetMode="External"/>` + "\n")
 	}
 	rels.WriteString(`</Relationships>`)
-	return buildDocxFull(t, "", "", rels.String(), bodyXML)
+	return buildDocxFull(t, "", "", rels.String(), bodyXML, nil)
 }
 
-func buildDocxFull(t *testing.T, stylesXML, numberingXML, docRelsXML, bodyXML string) []byte {
+// buildDocxWithImageRel is buildDocx plus one image-type relationship
+// (id "rIdImg") in word/_rels/document.xml.rels, and, unless external,
+// the referenced bytes written to word/media/image1.dat (an arbitrary
+// extension, since Convert sniffs content rather than trusting names).
+func buildDocxWithImageRel(t *testing.T, bodyXML string, imageBytes []byte, external bool) []byte {
+	t.Helper()
+	const target = "media/image1.dat"
+	rel := `<Relationship Id="rIdImg" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="`
+	media := map[string]string{}
+	if external {
+		rel += "https://example.test/pic.dat" + `" TargetMode="External"/>`
+	} else {
+		rel += target + `"/>`
+		media["word/"+target] = string(imageBytes)
+	}
+	docRels := `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>` +
+		`<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">` + rel + `</Relationships>`
+	return buildDocxFull(t, "", "", docRels, bodyXML, media)
+}
+
+func buildDocxFull(t *testing.T, stylesXML, numberingXML, docRelsXML, bodyXML string, mediaFiles map[string]string) []byte {
 	t.Helper()
 
 	overrides := ""
@@ -256,6 +278,9 @@ func buildDocxFull(t *testing.T, stylesXML, numberingXML, docRelsXML, bodyXML st
 	}
 	if docRelsXML != "" {
 		files = append(files, fileEntry{"word/_rels/document.xml.rels", docRelsXML})
+	}
+	for name, data := range mediaFiles {
+		files = append(files, fileEntry{name, data})
 	}
 
 	var buf bytes.Buffer
@@ -315,13 +340,20 @@ func TestConvertSampleDocxRunMarksAndTrackedChanges(t *testing.T) {
 }
 
 // TestConvertSampleDocxCountsNotes covers SPEC B4: "left out, and counted
-// in notes: comments, footnotes and endnotes, headers and footers."
+// in notes: comments, footnotes and endnotes, headers and footers" plus
+// P1-32's unsupported items (the fixture's EMF picture, chart, textless
+// shape and equation) — SmartArt is deliberately not among them, since
+// its mc:Choice branch is skipped in favour of mc:Fallback, which here
+// happens to be plain text rather than another unsupported construct.
 func TestConvertSampleDocxCountsNotes(t *testing.T) {
 	result, err := convertFixture(t, "sample.docx")
 	if err != nil {
 		t.Fatalf("Convert: %v", err)
 	}
-	want := []string{"the header", "the footer", "a comment", "a footnote"}
+	want := []string{
+		"the header", "the footer", "a comment", "a footnote",
+		"a picture", "a chart", "a shape", "an equation",
+	}
 	if len(result.Notes) != len(want) {
 		t.Fatalf("Notes = %v, want %v", result.Notes, want)
 	}
@@ -605,7 +637,7 @@ func TestConvertListDefinedViaParagraphStyle(t *testing.T) {
 </w:styles>`
 	body := `<w:p><w:pPr><w:pStyle w:val="ListStyle"/></w:pPr><w:r><w:t xml:space="preserve">Item one</w:t></w:r></w:p>` +
 		`<w:p><w:pPr><w:pStyle w:val="ListStyle"/></w:pPr><w:r><w:t xml:space="preserve">Item two</w:t></w:r></w:p>`
-	data := buildDocxFull(t, styles, bulletNumbering, "", body)
+	data := buildDocxFull(t, styles, bulletNumbering, "", body, nil)
 
 	result, err := Convert(bytes.NewReader(data), int64(len(data)), "test.docx")
 	if err != nil {
@@ -787,4 +819,257 @@ func TestConvertTextBoxInChoiceWithVMLFallbackAppearsOnce(t *testing.T) {
 	if result.HTML != want {
 		t.Errorf("HTML = %q, want %q", result.HTML, want)
 	}
+}
+
+func tinyPNGBytes(t *testing.T) []byte {
+	t.Helper()
+	img := image.NewRGBA(image.Rect(0, 0, 2, 2))
+	var buf bytes.Buffer
+	if err := png.Encode(&buf, img); err != nil {
+		t.Fatalf("encode png: %v", err)
+	}
+	return buf.Bytes()
+}
+
+// pictureDrawing returns a <w:drawing> referencing relID as a real
+// DrawingML picture (SPEC B4), with alt from wp:docPr descr, declaring
+// its own namespaces so it doesn't depend on what the surrounding
+// document element happens to declare.
+func pictureDrawing(relID, alt string) string {
+	descrAttr := ""
+	if alt != "" {
+		descrAttr = ` descr="` + alt + `"`
+	}
+	return `<w:drawing ` +
+		`xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" ` +
+		`xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" ` +
+		`xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture">` +
+		`<wp:inline><wp:docPr id="1" name="Pic"` + descrAttr + `/>` +
+		`<a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture">` +
+		`<pic:pic><pic:blipFill><a:blip r:embed="` + relID + `"/></pic:blipFill></pic:pic>` +
+		`</a:graphicData></a:graphic></wp:inline></w:drawing>`
+}
+
+// TestConvertDrawingPictureExtractsImageWithAlt covers SPEC B4: "w:drawing
+// ... a:blip r:embed", with alt "from wp:docPr descr".
+func TestConvertDrawingPictureExtractsImageWithAlt(t *testing.T) {
+	pngBytes := tinyPNGBytes(t)
+	body := `<w:p><w:r>` + pictureDrawing("rIdImg", "A test picture") + `</w:r></w:p>`
+	data := buildDocxWithImageRel(t, body, pngBytes, false)
+
+	result, err := Convert(bytes.NewReader(data), int64(len(data)), "test.docx")
+	if err != nil {
+		t.Fatalf("Convert: %v", err)
+	}
+	if len(result.Images) != 1 {
+		t.Fatalf("Images = %+v, want 1", result.Images)
+	}
+	img := result.Images[0]
+	if img.Alt != "A test picture" {
+		t.Errorf("Alt = %q, want %q", img.Alt, "A test picture")
+	}
+	if !bytes.Equal(img.Bytes, pngBytes) {
+		t.Error("image bytes don't match the source PNG")
+	}
+	want := `<p><img src="` + img.Token + `" alt="A test picture"></p>` + "\n"
+	if result.HTML != want {
+		t.Errorf("HTML = %q, want %q", result.HTML, want)
+	}
+}
+
+// TestConvertVMLPictureExtractsImage covers SPEC B4: "legacy VML
+// v:imagedata r:id -> img".
+func TestConvertVMLPictureExtractsImage(t *testing.T) {
+	pngBytes := tinyPNGBytes(t)
+	body := `<w:p><w:r><w:pict xmlns:v="urn:schemas-microsoft-com:vml">` +
+		`<v:shape><v:imagedata r:id="rIdImg"/></v:shape></w:pict></w:r></w:p>`
+	data := buildDocxWithImageRel(t, body, pngBytes, false)
+
+	result, err := Convert(bytes.NewReader(data), int64(len(data)), "test.docx")
+	if err != nil {
+		t.Fatalf("Convert: %v", err)
+	}
+	if len(result.Images) != 1 {
+		t.Fatalf("Images = %+v, want 1", result.Images)
+	}
+	want := `<p><img src="` + result.Images[0].Token + `" alt=""></p>` + "\n"
+	if result.HTML != want {
+		t.Errorf("HTML = %q, want %q", result.HTML, want)
+	}
+}
+
+// TestConvertExternalImageNeverFetchedBecomesPlaceholder covers SPEC B4:
+// "Images with TargetMode='External' are never fetched; they become
+// placeholders."
+func TestConvertExternalImageNeverFetchedBecomesPlaceholder(t *testing.T) {
+	body := `<w:p><w:r>` + pictureDrawing("rIdImg", "") + `</w:r></w:p>`
+	data := buildDocxWithImageRel(t, body, nil, true)
+
+	result, err := Convert(bytes.NewReader(data), int64(len(data)), "test.docx")
+	if err != nil {
+		t.Fatalf("Convert: %v", err)
+	}
+	if len(result.Images) != 0 {
+		t.Errorf("Images = %+v, want none (external targets are never fetched)", result.Images)
+	}
+	want := `<p><div data-missing-kind="picture"></div></p>` + "\n"
+	if result.HTML != want {
+		t.Errorf("HTML = %q, want %q", result.HTML, want)
+	}
+}
+
+// TestConvertUnsupportedImageFormatBecomesPlaceholder covers SPEC B4:
+// pictures in a format this converter doesn't recognise (standing in for
+// EMF/WMF/TIFF/BMP, which sample.docx already covers with a real EMF
+// signature) become a "picture" placeholder, not real image bytes.
+func TestConvertUnsupportedImageFormatBecomesPlaceholder(t *testing.T) {
+	body := `<w:p><w:r>` + pictureDrawing("rIdImg", "") + `</w:r></w:p>`
+	data := buildDocxWithImageRel(t, body, []byte("not a real image, just some bytes"), false)
+
+	result, err := Convert(bytes.NewReader(data), int64(len(data)), "test.docx")
+	if err != nil {
+		t.Fatalf("Convert: %v", err)
+	}
+	if len(result.Images) != 0 {
+		t.Errorf("Images = %+v, want none", result.Images)
+	}
+	want := `<p><div data-missing-kind="picture"></div></p>` + "\n"
+	if result.HTML != want {
+		t.Errorf("HTML = %q, want %q", result.HTML, want)
+	}
+}
+
+// TestConvertOversizeImageBecomesPlaceholder covers SPEC B4's 20 MB
+// per-image limit — real PNG bytes, so a placeholder here can only be
+// because of size, not because sniffing failed.
+func TestConvertOversizeImageBecomesPlaceholder(t *testing.T) {
+	oversized := append([]byte{0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a}, make([]byte, MaxImageSize)...)
+	body := `<w:p><w:r>` + pictureDrawing("rIdImg", "") + `</w:r></w:p>`
+	data := buildDocxWithImageRel(t, body, oversized, false)
+
+	result, err := Convert(bytes.NewReader(data), int64(len(data)), "test.docx")
+	if err != nil {
+		t.Fatalf("Convert: %v", err)
+	}
+	if len(result.Images) != 0 {
+		t.Errorf("Images = %+v, want none (over the 20 MB per-image cap)", result.Images)
+	}
+}
+
+// TestConvertRelationshipPathTraversalIgnored covers SPEC B4:
+// "Relationship targets resolve only inside the zip" — a target that
+// climbs above the relationship file's own directory must never resolve
+// to some unrelated entry the zip happens to contain, even a real image
+// deliberately placed where a naive resolution would find it.
+func TestConvertRelationshipPathTraversalIgnored(t *testing.T) {
+	pngBytes := tinyPNGBytes(t)
+	body := `<w:p><w:r>` + pictureDrawing("rIdImg", "") + `</w:r></w:p>`
+	docRels := `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>` +
+		`<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">` +
+		`<Relationship Id="rIdImg" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="../../x"/>` +
+		`</Relationships>`
+	data := buildDocxFull(t, "", "", docRels, body, map[string]string{"x": string(pngBytes)})
+
+	result, err := Convert(bytes.NewReader(data), int64(len(data)), "test.docx")
+	if err != nil {
+		t.Fatalf("Convert: %v", err)
+	}
+	if len(result.Images) != 0 {
+		t.Errorf("Images = %+v, want none (path traversal target must be ignored)", result.Images)
+	}
+	want := `<p><div data-missing-kind="picture"></div></p>` + "\n"
+	if result.HTML != want {
+		t.Errorf("HTML = %q, want %q", result.HTML, want)
+	}
+}
+
+// TestConvertDiagramGraphicDataBecomesPlaceholder covers SPEC B4's
+// SmartArt (dgm:) placeholder, via a bare w:drawing (not wrapped in
+// mc:AlternateContent, unlike sample.docx's own SmartArt, which this
+// converter never even inspects since it always prefers mc:Fallback).
+func TestConvertDiagramGraphicDataBecomesPlaceholder(t *testing.T) {
+	body := `<w:p><w:r><w:drawing xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" ` +
+		`xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"><wp:inline>` +
+		`<wp:docPr id="1" name="Diagram"/>` +
+		`<a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/diagram"/></a:graphic>` +
+		`</wp:inline></w:drawing></w:r></w:p>`
+	data := buildDocx(t, "", body)
+
+	result, err := Convert(bytes.NewReader(data), int64(len(data)), "test.docx")
+	if err != nil {
+		t.Fatalf("Convert: %v", err)
+	}
+	want := `<p><div data-missing-kind="diagram"></div></p>` + "\n"
+	if result.HTML != want {
+		t.Errorf("HTML = %q, want %q", result.HTML, want)
+	}
+}
+
+// TestConvertObjectWithCachedImageUsedAsPicture covers SPEC B4: an
+// embedded object's own VML cached preview is used as a real picture
+// when present.
+func TestConvertObjectWithCachedImageUsedAsPicture(t *testing.T) {
+	pngBytes := tinyPNGBytes(t)
+	body := `<w:p><w:r><w:object><v:shape xmlns:v="urn:schemas-microsoft-com:vml">` +
+		`<v:imagedata r:id="rIdImg"/></v:shape></w:object></w:r></w:p>`
+	data := buildDocxWithImageRel(t, body, pngBytes, false)
+
+	result, err := Convert(bytes.NewReader(data), int64(len(data)), "test.docx")
+	if err != nil {
+		t.Fatalf("Convert: %v", err)
+	}
+	if len(result.Images) != 1 {
+		t.Fatalf("Images = %+v, want 1 (the object's own cached preview image)", result.Images)
+	}
+}
+
+// TestConvertObjectWithoutImageBecomesPlaceholder covers SPEC B4:
+// "embedded objects with no usable image" become an "object" placeholder.
+func TestConvertObjectWithoutImageBecomesPlaceholder(t *testing.T) {
+	body := `<w:p><w:r><w:object><v:shape xmlns:v="urn:schemas-microsoft-com:vml"><v:path/></v:shape></w:object></w:r></w:p>`
+	data := buildDocx(t, "", body)
+
+	result, err := Convert(bytes.NewReader(data), int64(len(data)), "test.docx")
+	if err != nil {
+		t.Fatalf("Convert: %v", err)
+	}
+	want := `<p><div data-missing-kind="object"></div></p>` + "\n"
+	if result.HTML != want {
+		t.Errorf("HTML = %q, want %q", result.HTML, want)
+	}
+}
+
+// FuzzConvert seeds from every committed fixture (real documents and the
+// bad/ ones alike) and asserts only that Convert never panics — it may
+// return any error, or a Result, but must always return cleanly. Run
+// locally with `go test -fuzz=FuzzConvert -fuzztime=30s` before adding
+// any new seed corpus entries by hand; this form (no -fuzz flag) just
+// replays the seed corpus as ordinary subtests, which is what CI does.
+func FuzzConvert(f *testing.F) {
+	_, thisFile, _, ok := runtime.Caller(0)
+	if !ok {
+		f.Fatal("could not determine test file path")
+	}
+	root := filepath.Join(filepath.Dir(thisFile), "..", "..", "..", "e2e", "fixtures", "docx")
+
+	for _, name := range []string{
+		"sample.docx", "googledocs.docx", "big-20pages.docx",
+		"bad/oldword.doc", "bad/protected.docx", "bad/file.pdf",
+		"bad/truncated.docx", "bad/zipbomb.docx", "bad/deep.docx",
+	} {
+		data, err := os.ReadFile(filepath.Join(root, name))
+		if err != nil {
+			f.Fatalf("read fixture %s: %v", name, err)
+		}
+		f.Add(data)
+	}
+
+	f.Fuzz(func(t *testing.T, data []byte) {
+		defer func() {
+			if r := recover(); r != nil {
+				t.Fatalf("Convert panicked: %v", r)
+			}
+		}()
+		_, _ = Convert(bytes.NewReader(data), int64(len(data)), "fuzz.docx")
+	})
 }
