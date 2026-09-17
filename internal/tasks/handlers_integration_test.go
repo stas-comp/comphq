@@ -4,6 +4,7 @@ package tasks
 
 import (
 	"database/sql"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/cookiejar"
@@ -184,6 +185,117 @@ func TestTasksRedirectsToBoard(t *testing.T) {
 	}
 	if loc := resp.Header.Get("Location"); loc != "/tasks/board" {
 		t.Errorf("Location = %q, want /tasks/board", loc)
+	}
+}
+
+func taskID(t *testing.T, sqlDB *sql.DB, title string) int64 {
+	t.Helper()
+	var id int64
+	if err := sqlDB.QueryRow(`SELECT id FROM tasks WHERE title = ?`, title).Scan(&id); err != nil {
+		t.Fatalf("find task %q: %v", title, err)
+	}
+	return id
+}
+
+// TestMoveTaskHTTPButtonReorders covers gate 2.04's button path over
+// HTTP: Move up/down send the neighbour id a real board render would
+// compute.
+func TestMoveTaskHTTPButtonReorders(t *testing.T) {
+	ts, sqlDB := newTestServer(t)
+	client := &http.Client{Jar: mustCookieJar(t)}
+	signIn(t, client, ts, "Sam")
+
+	for _, title := range []string{"A", "B", "C"} {
+		postForm(t, client, ts, "/tasks", url.Values{"title": {title}, "stage": {StageTodo}}).Body.Close()
+	}
+	b, c := taskID(t, sqlDB, "B"), taskID(t, sqlDB, "C")
+
+	// [A, B, C], move C up (before its current upstairs neighbour, B) -> [A, C, B]
+	resp := postForm(t, client, ts, fmt.Sprintf("/tasks/%d/move", c), url.Values{
+		"stage": {StageTodo}, "before_id": {itoa(b)},
+	})
+	resp.Body.Close()
+
+	var gotOrder []string
+	rows, err := sqlDB.Query(`SELECT title FROM tasks WHERE stage = ? ORDER BY position`, StageTodo)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var title string
+		if err := rows.Scan(&title); err != nil {
+			t.Fatal(err)
+		}
+		gotOrder = append(gotOrder, title)
+	}
+	want := []string{"A", "C", "B"}
+	if len(gotOrder) != len(want) {
+		t.Fatalf("order = %v, want %v", gotOrder, want)
+	}
+	for i := range want {
+		if gotOrder[i] != want[i] {
+			t.Fatalf("order = %v, want %v", gotOrder, want)
+		}
+	}
+}
+
+// TestMoveTaskHTTPToBottomOfDifferentStage covers gate 2.05: a card
+// moved into a different column by button (here, "Move to…") lands at
+// the bottom of that column.
+func TestMoveTaskHTTPToBottomOfDifferentStage(t *testing.T) {
+	ts, sqlDB := newTestServer(t)
+	client := &http.Client{Jar: mustCookieJar(t)}
+	signIn(t, client, ts, "Sam")
+
+	postForm(t, client, ts, "/tasks", url.Values{"title": {"Existing"}, "stage": {StageTodo}}).Body.Close()
+	postForm(t, client, ts, "/tasks", url.Values{"title": {"Moving"}, "stage": {StageIdea}}).Body.Close()
+	moving := taskID(t, sqlDB, "Moving")
+
+	resp := postForm(t, client, ts, fmt.Sprintf("/tasks/%d/move", moving), url.Values{
+		"stage": {StageTodo}, "to_bottom": {"1"},
+	})
+	body := readBody(t, resp)
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("status = %d, want 200", resp.StatusCode)
+	}
+
+	var stage string
+	var position int
+	if err := sqlDB.QueryRow(`SELECT stage, position FROM tasks WHERE id = ?`, moving).Scan(&stage, &position); err != nil {
+		t.Fatal(err)
+	}
+	if stage != StageTodo {
+		t.Errorf("stage = %q, want %q", stage, StageTodo)
+	}
+	if position != 2 {
+		t.Errorf("position = %d, want 2 (the bottom, after Existing)", position)
+	}
+	if !strings.Contains(body, "Moving") {
+		t.Errorf("board response missing the moved task; got:\n%s", body)
+	}
+}
+
+// TestMoveTaskHTTPMissingNeighborReRendersBoard covers the "board
+// changed under us" race path: rather than an error page, the current
+// board is shown.
+func TestMoveTaskHTTPMissingNeighborReRendersBoard(t *testing.T) {
+	ts, sqlDB := newTestServer(t)
+	client := &http.Client{Jar: mustCookieJar(t)}
+	signIn(t, client, ts, "Sam")
+
+	postForm(t, client, ts, "/tasks", url.Values{"title": {"Task"}, "stage": {StageTodo}}).Body.Close()
+	task := taskID(t, sqlDB, "Task")
+
+	resp := postForm(t, client, ts, fmt.Sprintf("/tasks/%d/move", task), url.Values{
+		"stage": {StageTodo}, "before_id": {"999999"},
+	})
+	body := readBody(t, resp)
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("status = %d, want 200 (re-rendered board, not an error page)", resp.StatusCode)
+	}
+	if !strings.Contains(body, "Task") {
+		t.Errorf("board response missing the existing task; got:\n%s", body)
 	}
 }
 

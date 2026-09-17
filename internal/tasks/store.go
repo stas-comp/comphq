@@ -5,6 +5,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"strings"
 	"time"
 )
@@ -188,6 +189,139 @@ func (s *Store) Get(ctx context.Context, id int64, today time.Time) (Task, error
 	}
 	t.Assignees = assignees[id]
 	return t, nil
+}
+
+// ErrTaskNotFound is returned by Move for a removed or non-existent id.
+var ErrTaskNotFound = errors.New("that task isn't there any more")
+
+// ErrInvalidMove is returned by Move when the caller didn't specify
+// exactly one of BeforeID, AfterID or ToBottom (SPEC B4).
+var ErrInvalidMove = errors.New("exactly one of before_id, after_id or to_bottom is required")
+
+// MoveInput is one move (SPEC B4, gate 2.04's button path): Stage is the
+// destination stage (the same as the task's current one, for a same-
+// stage reorder), and exactly one of BeforeID/AfterID/ToBottom places it
+// within that stage.
+type MoveInput struct {
+	Stage    string
+	BeforeID int64
+	AfterID  int64
+	ToBottom bool
+}
+
+// Move renumbers position for the affected stage(s) in one transaction
+// (SPEC B4), recording a "moved" activity only when the stage actually
+// changes (PLAN.md P2-02).
+func (s *Store) Move(ctx context.Context, taskID int64, input MoveInput, actorID int64, now time.Time) error {
+	if !validStage(input.Stage) {
+		return ErrInvalidStage
+	}
+	targets := 0
+	if input.BeforeID != 0 {
+		targets++
+	}
+	if input.AfterID != 0 {
+		targets++
+	}
+	if input.ToBottom {
+		targets++
+	}
+	if targets != 1 {
+		return ErrInvalidMove
+	}
+
+	tx, err := s.DB.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	var oldStage string
+	err = tx.QueryRowContext(ctx, `SELECT stage FROM tasks WHERE id = ? AND removed_at IS NULL`, taskID).Scan(&oldStage)
+	if err == sql.ErrNoRows {
+		return ErrTaskNotFound
+	}
+	if err != nil {
+		return err
+	}
+
+	targetOthers, err := stageOrder(ctx, tx, input.Stage, taskID)
+	if err != nil {
+		return err
+	}
+	newTargetOrder, err := insertTask(targetOthers, taskID, input.BeforeID, input.AfterID, input.ToBottom)
+	if err != nil {
+		return err
+	}
+	if err := renumber(ctx, tx, newTargetOrder); err != nil {
+		return err
+	}
+
+	nowStr := now.UTC().Format(time.RFC3339)
+	if _, err := tx.ExecContext(ctx,
+		`UPDATE tasks SET stage = ?, updated_by = ?, updated_at = ? WHERE id = ?`,
+		input.Stage, actorID, nowStr, taskID,
+	); err != nil {
+		return err
+	}
+
+	if oldStage != input.Stage {
+		oldOthers, err := stageOrder(ctx, tx, oldStage, taskID)
+		if err != nil {
+			return err
+		}
+		if err := renumber(ctx, tx, oldOthers); err != nil {
+			return err
+		}
+
+		detail := fmt.Sprintf(`{"from":%q,"to":%q}`, oldStage, input.Stage)
+		if _, err := tx.ExecContext(ctx,
+			`INSERT INTO task_activity (task_id, person_id, action, detail, at) VALUES (?, ?, 'moved', ?, ?)`,
+			taskID, actorID, detail, nowStr,
+		); err != nil {
+			return err
+		}
+	}
+
+	return tx.Commit()
+}
+
+// stageOrder returns a stage's current tasks, in position order,
+// excluding excludeID (the task being moved — irrelevant when it isn't
+// in this stage at all, but harmless either way).
+func stageOrder(ctx context.Context, tx *sql.Tx, stage string, excludeID int64) ([]int64, error) {
+	rows, err := tx.QueryContext(ctx,
+		`SELECT id FROM tasks WHERE stage = ? AND removed_at IS NULL AND id != ? ORDER BY position`,
+		stage, excludeID,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var ids []int64
+	for rows.Next() {
+		var id int64
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		ids = append(ids, id)
+	}
+	return ids, rows.Err()
+}
+
+// renumber writes 1..n positions for orderedIDs, in that order — the
+// "renumbers position for the affected stage in one transaction" SPEC B4
+// describes. Simple full-stage renumbering rather than shifting only the
+// tasks between old and new spots: boards are small enough that this
+// costs nothing, and it can never drift into a duplicate or a gap.
+func renumber(ctx context.Context, tx *sql.Tx, orderedIDs []int64) error {
+	for i, id := range orderedIDs {
+		if _, err := tx.ExecContext(ctx, `UPDATE tasks SET position = ? WHERE id = ?`, i+1, id); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // ListBoard returns every task that belongs on the Board (SPEC gate

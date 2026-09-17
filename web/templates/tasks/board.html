@@ -32,6 +32,26 @@
 </p>
 {{end}}
 {{if .DueDate}}<p class="task-card-due">{{.DueDate}}{{if .Overdue}} <span class="task-overdue-stamp">OVERDUE</span>{{end}}</p>{{end}}
+<div class="task-card-actions">
+<form method="post" action="/tasks/{{.ID}}/move" class="inline-form">
+<input type="hidden" name="stage" value="{{.Stage}}">
+<input type="hidden" name="before_id" value="{{.PrevID}}">
+<button type="submit" aria-label="Move {{.Title}} up"{{if not .PrevID}} disabled{{end}}>Move up</button>
+</form>
+<form method="post" action="/tasks/{{.ID}}/move" class="inline-form">
+<input type="hidden" name="stage" value="{{.Stage}}">
+<input type="hidden" name="after_id" value="{{.NextID}}">
+<button type="submit" aria-label="Move {{.Title}} down"{{if not .NextID}} disabled{{end}}>Move down</button>
+</form>
+<form method="post" action="/tasks/{{.ID}}/move" class="task-move-to-form">
+<label class="visually-hidden" for="move-to-{{.ID}}">Move {{.Title}} to</label>
+<select id="move-to-{{.ID}}" name="stage">
+{{range .OtherStages}}<option value="{{.Stage}}">{{.Label}}</option>{{end}}
+</select>
+<input type="hidden" name="to_bottom" value="1">
+<button type="submit">Move to…</button>
+</form>
+</div>
 </li>
 {{end}}
 </ul>

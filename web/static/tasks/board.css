@@ -112,6 +112,34 @@
   color: var(--color-text-muted);
 }
 
+.task-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  margin-top: var(--space-2);
+}
+
+.task-card-actions button {
+  font-size: var(--font-size-small);
+  padding: var(--space-1) var(--space-2);
+}
+
+.task-card-actions button[disabled] {
+  opacity: 0.5;
+}
+
+.task-move-to-form {
+  display: flex;
+  gap: var(--space-1);
+}
+
+.task-move-to-form select {
+  font-family: var(--font-body);
+  font-size: var(--font-size-small);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+
 .task-overdue-stamp {
   display: inline-block;
   font-weight: 700;

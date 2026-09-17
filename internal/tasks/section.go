@@ -26,6 +26,7 @@ func Section(srv *app.Server) app.Section {
 			mux.HandleFunc("GET /tasks", h.handleRedirectToBoard) // My jobs lands here from P2-10
 			mux.HandleFunc("GET /tasks/board", h.handleBoard)
 			mux.HandleFunc("POST /tasks", h.handleCreateTask)
+			mux.HandleFunc("POST /tasks/{id}/move", h.handleMoveTask)
 		},
 	}
 }
