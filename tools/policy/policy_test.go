@@ -315,9 +315,8 @@ func TestGoModAtMostFiveDirectRequirements(t *testing.T) {
 	}
 }
 
-// TestReadmeHasRequiredHeadings covers gate 1.44's Phase 1 (P1-16) subset;
-// P1-37 extends this same list with the backing-up/restoring/troubleshooting
-// headings once Part 2 is written.
+// TestReadmeHasRequiredHeadings covers gate 1.44 and B8 rule 7's full
+// Phase 1 list, completed in P1-37 (P1-16 established the first five).
 func TestReadmeHasRequiredHeadings(t *testing.T) {
 	data, err := os.ReadFile(filepath.Join(repoRoot(t), "README.md"))
 	if err != nil {
@@ -331,6 +330,12 @@ func TestReadmeHasRequiredHeadings(t *testing.T) {
 		"## Installing on TrueNAS",
 		"## Updating",
 		"## Undoing an update",
+		"## Backing up",
+		"## Restoring",
+		"## It won't open — what now?",
+		"## Moving your HelpScout articles",
+		"## Word samples",
+		"## Your hands-on moments",
 	} {
 		if !strings.Contains(content, heading) {
 			t.Errorf("README.md is missing the required heading %q", heading)
