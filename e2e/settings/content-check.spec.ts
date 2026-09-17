@@ -3,6 +3,7 @@ import { expect, test } from '../helpers/fixtures';
 import { pasteHTML } from '../helpers/paste';
 import { signInAsNewPerson } from '../helpers/people';
 import { ready } from '../helpers/ready';
+import { UNREACHABLE_IMAGE_URL } from '../helpers/stub-image-server';
 import { uniqueName } from '../helpers/unique-name';
 
 type Page = import('@playwright/test').Page;
@@ -65,7 +66,7 @@ test('a clean article is not listed in Content check', async ({ page, server }) 
 test('an article with a failed external image is listed in Content check', async ({ page, server }) => {
   const category = uniqueName('Content check image');
   const title = uniqueName('Unreachable image article');
-  const imageURL = `http://${server.stubImageHost}/gone.png`;
+  const imageURL = UNREACHABLE_IMAGE_URL;
 
   await signInAsNewPerson(page, server.baseURL, '/kb');
   await createCategory(page, server.baseURL, category);

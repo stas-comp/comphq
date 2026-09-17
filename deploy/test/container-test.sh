@@ -1,17 +1,22 @@
 #!/usr/bin/env bash
-# Layer 4 container tests (SPEC B7, PLAN.md P1-06). Linux + Docker only;
-# runs in CI, not on the Windows build machine.
+# Layer 4 container tests (SPEC B7, PLAN.md P1-06, extended at P1-38).
+# Linux + Docker only; runs in CI, not on the Windows build machine.
 #
 # Proves gates 1.38 (Compose file validates, healthy with only the
 # documented edits), 1.39 (restart and full down/up, healthy <= 60s, data
-# intact) and 1.40 (remove container and image, recreate with the same
-# folder, data intact).
+# intact), 1.40 (remove container and image, recreate with the same
+# folder, data intact), 1.41 (the full E2E suite passes on an
+# internal-only network) and 1.42 (upgrade/rollback, see
+# run_upgrade_rollback_test below).
 #
-# There's no HTTP endpoint that writes data yet (the People section lands
-# in P1-13), so "data intact" here means: a marker file written directly
-# into the bind-mounted /data folder, plus a whole-folder checksum, both
-# survive every restart/recreate. A later task can extend this script to
-# also create a person over HTTP once that's possible (docs/decisions.md).
+# "Data intact" after restart/down-up/recreate is proven two ways: a
+# whole-folder checksum (byte-for-byte, catches anything at all changing
+# on disk, including the database and image files) plus, since P1-38,
+# real HTTP/UI checks (e2e/smoke/basic.spec.ts's @seed/@verify pair and
+# e2e/smoke/names.spec.ts's @names-seed/@names-verify) that the article,
+# its image, its history and a person's name still open correctly — a
+# checksum alone wouldn't catch a regression that reads the same bytes
+# back wrong.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
@@ -185,6 +190,9 @@ log "2. up -d becomes healthy within 60s"
 docker compose -f "$COMPOSE_FILE" -p "$PROJECT" up -d
 wait_healthy
 
+log "2b. seeding real content (article, image, history, a name) to prove it survives what follows"
+BASE_URL="http://127.0.0.1:8080" npx playwright test --project=smoke --grep '@seed|@names-seed'
+
 log "3. restart: writing a marker and checksumming the data folder"
 # The directory is owned by uid 568 (so the container can write to it);
 # this shell runs as a different user, so writing into it needs sudo too.
@@ -217,18 +225,34 @@ if [ ! -f "$MARKER" ] || [ "$(checksum_data_dir)" != "$CHECKSUM_BEFORE" ]; then
   exit 1
 fi
 
+log "4b. verifying the article, its image, its history, and the name all still open correctly"
+BASE_URL="http://127.0.0.1:8080" npx playwright test --project=smoke --grep '@verify(?!-prev)|@names-verify'
+
 docker compose -f "$COMPOSE_FILE" -p "$PROJECT" down
 
-log "5. offline: the app can't reach the internet, and the smoke suite passes"
+log "5. offline: the app can't reach the internet, and the full E2E suite passes"
 OFFLINE_COMPOSE="$ROOT/deploy/test/offline.override.yaml"
 export REPO_ROOT="$ROOT"
 docker compose -f "$COMPOSE_FILE" -f "$OFFLINE_COMPOSE" -p "$PROJECT" up -d comphq
 wait_healthy
 # A published port isn't reachable from the host once the service's
-# network is internal: true, so the egress and healthz checks run from
-# the "runner" service instead — it shares that internal network with
-# comphq (see e2e/smoke/offline.spec.ts).
-docker compose -f "$COMPOSE_FILE" -f "$OFFLINE_COMPOSE" -p "$PROJECT" run --rm runner
+# network is internal: true, so both checks run from the "runner" service
+# instead — it shares that internal network with comphq. First, the
+# small dedicated proof that there's genuinely no route out (SPEC gate
+# 1.12, e2e/smoke/offline.spec.ts). Then the full E2E suite (PLAN.md
+# P1-38): every gate it covers must still pass with no internet access at
+# all, in particular gate 1.19's unreachable-external-image path, which
+# reports the exact same plain failure message here as it does with real
+# network access (e2e/kb/external-images.spec.ts's "unreachable" test
+# doesn't need a working network to prove that — every address is
+# equally unreachable either way). BASE_URL mode already excludes @fresh
+# tests (playwright.config.ts) — the ones that need a private, writable
+# database or a locally reachable stub image server neither of which a
+# shared, genuinely offline container can offer.
+docker compose -f "$COMPOSE_FILE" -f "$OFFLINE_COMPOSE" -p "$PROJECT" run --rm runner \
+  playwright test --project=smoke --grep 'cannot reach the internet' --output=/tmp/test-results-smoke
+docker compose -f "$COMPOSE_FILE" -f "$OFFLINE_COMPOSE" -p "$PROJECT" run --rm runner \
+  playwright test --project=e2e --output=/tmp/test-results-e2e
 docker compose -f "$COMPOSE_FILE" -f "$OFFLINE_COMPOSE" -p "$PROJECT" down
 
 log "6. upgrade/rollback"

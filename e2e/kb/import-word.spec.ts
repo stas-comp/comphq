@@ -81,7 +81,10 @@ async function expectSampleDocxImported(page: Page, server: { dataDir: string })
   await expect(editorEl.locator('table td[rowspan="2"]')).toHaveCount(1);
 
   // Two real pictures, served locally with alt text and a file on disk
-  // (SPEC gate 1.47).
+  // (SPEC gate 1.47). The on-disk check is skipped in BASE_URL mode
+  // (server.dataDir is empty there — PLAN.md P1-38 runs this file against
+  // a container whose filesystem the test process can't see); everything
+  // else about gate 1.47 still runs unconditionally.
   const imgs = editorEl.locator('img');
   await expect(imgs).toHaveCount(2);
   for (let i = 0; i < 2; i++) {
@@ -89,10 +92,12 @@ async function expectSampleDocxImported(page: Page, server: { dataDir: string })
     expect(src).toMatch(/^\/images\/[0-9a-f]+\.(png|jpg)$/);
     const alt = await imgs.nth(i).getAttribute('alt');
     expect(alt).toBeTruthy();
-    const filename = src!.replace('/images/', '');
-    const sha = filename.split('.')[0];
-    const onDisk = path.join(server.dataDir, 'images', sha.slice(0, 2), filename);
-    expect(fs.existsSync(onDisk)).toBe(true);
+    if (server.dataDir) {
+      const filename = src!.replace('/images/', '');
+      const sha = filename.split('.')[0];
+      const onDisk = path.join(server.dataDir, 'images', sha.slice(0, 2), filename);
+      expect(fs.existsSync(onDisk)).toBe(true);
+    }
   }
 
   // Unsupported items each become a placeholder (SPEC gate 1.49): the

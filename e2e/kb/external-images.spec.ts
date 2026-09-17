@@ -4,7 +4,7 @@ import { expect, test } from '../helpers/fixtures';
 import { pasteHTML } from '../helpers/paste';
 import { signInAsNewPerson } from '../helpers/people';
 import { ready } from '../helpers/ready';
-import { startStubImageServer } from '../helpers/stub-image-server';
+import { startStubImageServer, UNREACHABLE_IMAGE_URL } from '../helpers/stub-image-server';
 import { uniqueName } from '../helpers/unique-name';
 
 type Page = import('@playwright/test').Page;
@@ -28,8 +28,12 @@ async function startArticle(page: Page, baseURL: string, title: string) {
 }
 
 // SPEC gate 1.19: publishing copies a reachable external image onto the
-// NAS and the article ends up pointing at the local copy.
-test('an external image reachable at publish time is copied locally', async ({ page, server }) => {
+// NAS and the article ends up pointing at the local copy. @fresh: needs
+// its own worker-local stub server and a real fetch reaching it, neither
+// of which is available in BASE_URL mode (server.stubImageHost is empty
+// there) or meaningful against the genuinely offline container (PLAN.md
+// P1-38) — nothing reachable exists for this test to prove copies.
+test('@fresh an external image reachable at publish time is copied locally', async ({ page, server }) => {
   const stub = await startStubImageServer(server.stubImageHost, tinyPNG);
   try {
     await signInAsNewPerson(page, server.baseURL, '/kb');
@@ -54,10 +58,7 @@ test('an external image reachable at publish time is copied locally', async ({ p
 // still publishes, the failed image is named and marked in place, and the
 // rest of the text is saved.
 test('an unreachable external image is named, marked, and the rest of the text is saved', async ({ page, server }) => {
-  // Never started: server.stubImageHost is reachable in principle (it's
-  // the one address the SSRF guard allows in test mode) but nothing is
-  // listening there, so the fetch fails exactly like a dead link would.
-  const imageURL = `http://${server.stubImageHost}/gone.png`;
+  const imageURL = UNREACHABLE_IMAGE_URL;
 
   await signInAsNewPerson(page, server.baseURL, '/kb');
   await startArticle(page, server.baseURL, uniqueName('Unreachable image article'));
