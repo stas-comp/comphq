@@ -1,0 +1,18 @@
+{{define "kb-history.html"}}
+<p><a href="/kb/articles/{{.Article.ID}}">Back to {{.Article.Title}}</a></p>
+<h1>History: {{.Article.Title}}</h1>
+
+{{if .Versions}}
+<ul class="kb-history-list">
+{{range .Versions}}
+<li>
+<a href="/kb/articles/{{$.Article.ID}}/versions/{{.VersionNo}}">Version {{.VersionNo}}</a>
+— {{.Action}} by {{.EditedByName}}, {{.EditedAt}}
+{{if .RestoredFrom.Valid}} (restored from version {{.RestoredFrom.Int64}}){{end}}
+</li>
+{{end}}
+</ul>
+{{else}}
+<p>No history yet.</p>
+{{end}}
+{{end}}

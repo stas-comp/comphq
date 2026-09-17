@@ -1,0 +1,11 @@
+{{define "kb-version.html"}}
+<p><a href="/kb/articles/{{.Article.ID}}/history">Back to History</a></p>
+<p class="message" role="status">Viewing version {{.Version.VersionNo}}, {{.Version.Action}} by {{.Version.EditedByName}} on {{.Version.EditedAt}}. This isn't the current version.</p>
+<h1>{{.Version.Title}}</h1>
+
+<form method="post" action="/kb/articles/{{.Article.ID}}/versions/{{.Version.VersionNo}}/restore">
+<button type="submit">Restore this version</button>
+</form>
+
+<div class="kb-article-body">{{.BodyHTML}}</div>
+{{end}}

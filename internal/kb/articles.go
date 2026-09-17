@@ -108,22 +108,8 @@ func (s *ArticleStore) Publish(ctx context.Context, input ArticleInput, personID
 		return Article{}, err
 	}
 
-	if _, err := tx.ExecContext(ctx, `DELETE FROM kb_search WHERE article_id = ?`, article.ID); err != nil {
+	if err := rewriteSearchRowsFromBlocks(ctx, tx, article.ID, title, blockTexts); err != nil {
 		return Article{}, err
-	}
-	if _, err := tx.ExecContext(ctx,
-		`INSERT INTO kb_search (title, body, article_id, block_id) VALUES (?, '', ?, 0)`,
-		title, article.ID,
-	); err != nil {
-		return Article{}, err
-	}
-	for blockID, text := range blockTexts {
-		if _, err := tx.ExecContext(ctx,
-			`INSERT INTO kb_search (title, body, article_id, block_id) VALUES ('', ?, ?, ?)`,
-			text, article.ID, blockID,
-		); err != nil {
-			return Article{}, err
-		}
 	}
 
 	if err := tx.Commit(); err != nil {
@@ -131,6 +117,39 @@ func (s *ArticleStore) Publish(ctx context.Context, input ArticleInput, personID
 	}
 	article.ImageFailures = imageFailures
 	return article, nil
+}
+
+// rewriteSearchRows recomputes an article's kb_search rows from its
+// already-sanitised, already-block-id'd body (SPEC B4). Used by Restore
+// and Unarchive, which don't already have blockTexts computed the way
+// Publish does.
+func rewriteSearchRows(ctx context.Context, tx *sql.Tx, articleID int64, title, bodyHTML string) error {
+	return rewriteSearchRowsFromBlocks(ctx, tx, articleID, title, kbhtml.BlockTexts(bodyHTML))
+}
+
+// rewriteSearchRowsFromBlocks deletes and re-inserts an article's
+// kb_search rows in the same transaction as the change that caused them
+// to need updating (SPEC B4: "the same transaction as the article save").
+// Block 0 always holds the title; blocks 1..n hold each body block's text.
+func rewriteSearchRowsFromBlocks(ctx context.Context, tx *sql.Tx, articleID int64, title string, blockTexts map[int]string) error {
+	if _, err := tx.ExecContext(ctx, `DELETE FROM kb_search WHERE article_id = ?`, articleID); err != nil {
+		return err
+	}
+	if _, err := tx.ExecContext(ctx,
+		`INSERT INTO kb_search (title, body, article_id, block_id) VALUES (?, '', ?, 0)`,
+		title, articleID,
+	); err != nil {
+		return err
+	}
+	for blockID, text := range blockTexts {
+		if _, err := tx.ExecContext(ctx,
+			`INSERT INTO kb_search (title, body, article_id, block_id) VALUES ('', ?, ?, ?)`,
+			text, articleID, blockID,
+		); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // fetchImage returns a RewriteExternalImages callback that decodes a

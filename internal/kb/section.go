@@ -40,6 +40,12 @@ func Section(srv *app.Server) app.Section {
 			mux.HandleFunc("GET /kb/articles/{id}", h.handleViewArticle)
 			mux.HandleFunc("GET /kb/articles/{id}/edit", h.handleEditArticle)
 			mux.HandleFunc("POST /kb/articles", h.handleSaveArticle)
+			mux.HandleFunc("GET /kb/articles/{id}/history", h.handleArticleHistory)
+			mux.HandleFunc("GET /kb/articles/{id}/versions/{n}", h.handleViewVersion)
+			mux.HandleFunc("POST /kb/articles/{id}/versions/{n}/restore", h.handleRestoreVersion)
+			mux.HandleFunc("POST /kb/articles/{id}/archive", h.handleArchiveArticle)
+			mux.HandleFunc("POST /kb/articles/{id}/unarchive", h.handleUnarchiveArticle)
+			mux.HandleFunc("GET /kb/archived", h.handleArchivedList)
 			mux.HandleFunc("POST /kb/images", h.handleUploadImage)
 			mux.HandleFunc("GET /images/{filename}", h.handleServeImage)
 		},
