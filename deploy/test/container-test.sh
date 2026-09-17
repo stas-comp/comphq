@@ -80,9 +80,13 @@ wait_healthy() {
 checksum_data_dir() {
   # Exclude SQLite's WAL and shared-memory index files: they're working
   # files, not data, and their bytes aren't stable across a clean restart
-  # even when the actual rows are unchanged.
+  # even when the actual rows are unchanged. sudo on the sha256sum step
+  # itself (not just find): uploaded images are written uid 568 mode 0600
+  # (os.CreateTemp's default, fine for the container which reads its own
+  # files, but unreadable to this shell's own user once step 2b actually
+  # makes the app write one).
   find "$DATA_DIR" -type f ! -name '*-wal' ! -name '*-shm' -print0 |
-    sort -z | xargs -0 sha256sum | sha256sum | awk '{print $1}'
+    sort -z | sudo xargs -0 sha256sum | sha256sum | awk '{print $1}'
 }
 
 # run_upgrade_rollback_test proves gate 1.42: upgrade from the previous
