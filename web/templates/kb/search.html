@@ -1,0 +1,19 @@
+{{define "kb-search-results.html"}}
+<h1>Search results for <em>{{.Query}}</em></h1>
+
+{{if .Results}}
+<ul class="kb-search-results">
+{{range .Results}}
+<li class="search-result">
+<a href="{{.URL}}">
+<span class="search-result-title">{{.Title}}</span>
+<span class="search-result-category">{{.Category}}</span>
+<div class="search-snippet">{{.Snippet}}</div>
+</a>
+</li>
+{{end}}
+</ul>
+{{else}}
+<p>No articles match <em>{{.Query}}</em>.</p>
+{{end}}
+{{end}}

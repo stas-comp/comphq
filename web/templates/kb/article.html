@@ -1,6 +1,6 @@
 {{define "kb-article.html"}}
 <p><a href="/kb/categories/{{.Category.ID}}">{{.Category.Name}}</a></p>
-<h1>{{.Article.Title}}</h1>
+<h1 data-b="0"{{if .TitleHighlight}} data-hl="{{.TitleHighlight}}"{{end}}>{{.Article.Title}}</h1>
 {{if eq .Article.Status "archived"}}<p class="message" role="status">This article is archived.</p>{{end}}
 <p>
 <a href="/kb/articles/{{.Article.ID}}/edit">Edit</a>
@@ -20,4 +20,5 @@ Some pictures couldn't be copied, so they're marked in the article below. The re
 {{end}}
 
 <div class="kb-article-body">{{.BodyHTML}}</div>
+<script src="/static/kb/highlight.js"></script>
 {{end}}

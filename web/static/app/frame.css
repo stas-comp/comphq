@@ -82,6 +82,10 @@
   background: var(--color-white);
 }
 
+.topbar .search {
+  position: relative;
+}
+
 .topbar .search input {
   font-family: var(--font-body);
   font-size: var(--font-size-body);

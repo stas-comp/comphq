@@ -104,6 +104,57 @@ func HighlightBlock(db *sql.DB, articleID int64, blockID int, raw string) (strin
 	return markersToHTML(highlighted), nil
 }
 
+// HighlightMatches returns every block of one article that matches raw —
+// including block 0, the title, since a title match can rank as the best
+// block a search result links to — each with its matched words wrapped in
+// <mark> (SPEC B4: the article page marks every block a query hits, not
+// just the one a result link scrolls to; the client picks which one to
+// scroll to from the URL's own #b-N fragment, which never reaches the
+// server). Block 0 needs its own query: unlike snippet(), highlight() has
+// no auto-pick-the-column mode, and the title lives in a different column
+// than body blocks (SPEC B3).
+func HighlightMatches(db *sql.DB, articleID int64, raw string) (map[int]string, error) {
+	query, ok := BuildQuery(raw)
+	if !ok {
+		return nil, nil
+	}
+
+	out := make(map[int]string)
+
+	var titleHighlight sql.NullString
+	err := db.QueryRow(`
+		SELECT highlight(kb_search, 0, ?, ?)
+		FROM kb_search
+		WHERE kb_search MATCH ? AND article_id = ? AND block_id = 0
+	`, markStart, markEnd, query, articleID).Scan(&titleHighlight)
+	if err != nil && err != sql.ErrNoRows {
+		return nil, err
+	}
+	if titleHighlight.Valid {
+		out[0] = markersToHTML(titleHighlight.String)
+	}
+
+	rows, err := db.Query(`
+		SELECT block_id, highlight(kb_search, 1, ?, ?)
+		FROM kb_search
+		WHERE kb_search MATCH ? AND article_id = ? AND block_id != 0
+	`, markStart, markEnd, query, articleID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var blockID int
+		var highlighted string
+		if err := rows.Scan(&blockID, &highlighted); err != nil {
+			return nil, err
+		}
+		out[blockID] = markersToHTML(highlighted)
+	}
+	return out, rows.Err()
+}
+
 func markersToHTML(s string) string {
 	escaped := html.EscapeString(s)
 	escaped = strings.ReplaceAll(escaped, markStart, "<mark>")

@@ -76,6 +76,27 @@ func BlockTexts(withBlockIDs string) map[int]string {
 	return texts
 }
 
+// AddHighlightData sets a data-hl attribute on each block named in
+// highlights (keyed by data-b id) to its given HTML string, for
+// highlight.js to swap in client-side (SPEC B4: "matched words come from
+// the server via highlight() on that block, passed as a data attribute").
+// It's a display-only transform — the result is never what gets saved.
+func AddHighlightData(bodyHTML string, highlights map[int]string) string {
+	if len(highlights) == 0 {
+		return bodyHTML
+	}
+	nodes := walk(parseFragment(bodyHTML), func(n *html.Node) {
+		id, ok := blockID(n)
+		if !ok {
+			return
+		}
+		if hl, found := highlights[id]; found {
+			setAttr(n, "data-hl", hl)
+		}
+	})
+	return renderFragment(nodes)
+}
+
 func blockID(n *html.Node) (int, bool) {
 	for _, a := range n.Attr {
 		if a.Key == "data-b" {

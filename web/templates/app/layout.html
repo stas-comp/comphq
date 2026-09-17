@@ -28,7 +28,7 @@
 </aside>
 <div class="main-column">
 <header class="topbar">
-<form class="search" role="search" action="/kb/search" method="get">
+<form class="search" role="search" action="/kb/search" method="get" autocomplete="off">
 <label for="search-box" class="visually-hidden">Search</label>
 <input type="search" id="search-box" name="q" placeholder="Search">
 </form>
@@ -42,6 +42,8 @@
 </main>
 </div>
 </div>
+<script src="/static/kb/messages.js"></script>
+<script src="/static/kb/search.js"></script>
 </body>
 </html>
 {{end}}

@@ -163,3 +163,65 @@ func TestHighlightBlockWrapsMatches(t *testing.T) {
 		t.Errorf("HighlightBlock = %q, want it to contain <mark>toner</mark>", got)
 	}
 }
+
+func TestHighlightMatchesReturnsEveryMatchingBodyBlock(t *testing.T) {
+	sqlDB := openTestDB(t)
+	indexRow(t, sqlDB, 1, 0, "Printer supplies", "")
+	indexRow(t, sqlDB, 1, 1, "", "Ask Sam about the toner cartridges.")
+	indexRow(t, sqlDB, 1, 2, "", "The spare toner is in the cupboard.")
+	indexRow(t, sqlDB, 1, 3, "", "Wipe the scanner glass.")
+
+	got, err := HighlightMatches(sqlDB, 1, "toner")
+	if err != nil {
+		t.Fatalf("HighlightMatches: %v", err)
+	}
+	if len(got) != 2 {
+		t.Fatalf("HighlightMatches = %v, want 2 matching blocks", got)
+	}
+	if _, ok := got[0]; ok {
+		t.Error("HighlightMatches matched block 0 (the title), which doesn't contain the word")
+	}
+	if !strings.Contains(got[1], "<mark>toner</mark>") {
+		t.Errorf("block 1 = %q, want it to contain <mark>toner</mark>", got[1])
+	}
+	if !strings.Contains(got[2], "<mark>toner</mark>") {
+		t.Errorf("block 2 = %q, want it to contain <mark>toner</mark>", got[2])
+	}
+	if _, ok := got[3]; ok {
+		t.Error("HighlightMatches included block 3, which has no match")
+	}
+}
+
+// TestHighlightMatchesIncludesTheTitle covers the case a manual check
+// caught live: when an article's title itself contains the search word,
+// bm25's title weighting can make the title the single best-ranked block
+// for that article, so a search result can link to #b-0. If the title
+// weren't highlightable too, that link would scroll to nothing.
+func TestHighlightMatchesIncludesTheTitle(t *testing.T) {
+	sqlDB := openTestDB(t)
+	indexRow(t, sqlDB, 1, 0, "Changing the toner", "")
+	indexRow(t, sqlDB, 1, 1, "", "Open the front cover and pull the cartridge out.")
+
+	got, err := HighlightMatches(sqlDB, 1, "toner")
+	if err != nil {
+		t.Fatalf("HighlightMatches: %v", err)
+	}
+	if !strings.Contains(got[0], "<mark>toner</mark>") {
+		t.Errorf("title block = %q, want it to contain <mark>toner</mark>", got[0])
+	}
+	if _, ok := got[1]; ok {
+		t.Error("HighlightMatches matched block 1, which doesn't contain the word")
+	}
+}
+
+func TestHighlightMatchesSymbolFuzzingNeverErrors(t *testing.T) {
+	sqlDB := openTestDB(t)
+	indexRow(t, sqlDB, 1, 0, "Printer supplies", "")
+	indexRow(t, sqlDB, 1, 1, "", "toner cartridges")
+
+	for _, in := range []string{``, `a`, `"`, `*`, `(`, `-`, `:`, `NEAR`, `AND`, `OR`, `^`, `'`} {
+		if _, err := HighlightMatches(sqlDB, 1, in); err != nil {
+			t.Errorf("HighlightMatches(%q) returned an error: %v", in, err)
+		}
+	}
+}

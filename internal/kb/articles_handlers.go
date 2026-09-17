@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"strconv"
 
+	kbhtml "github.com/stas-comp/comphq/internal/kb/html"
+	"github.com/stas-comp/comphq/internal/kb/search"
 	"github.com/stas-comp/comphq/internal/people"
 )
 
@@ -63,12 +65,18 @@ func (h *Handlers) handleNewArticle(w http.ResponseWriter, r *http.Request) {
 // articlePageData renders one article. ImageFailures is set only right
 // after a publish that couldn't copy every external image (SPEC gate
 // 1.19: "the editor response lists the failures") — a plain view of an
-// already-published article never has any.
+// already-published article never has any. TitleHighlight is set only
+// when a search's best-ranked block for this article was the title
+// itself (bm25 weights title matches 10x) — a plain string, not
+// template.HTML, so it's auto-escaped like any other attribute value; the
+// literal <mark> markup only appears once the browser reads it back out
+// via getAttribute.
 type articlePageData struct {
-	Article       Article
-	BodyHTML      template.HTML
-	Category      Category
-	ImageFailures []string
+	Article        Article
+	BodyHTML       template.HTML
+	TitleHighlight string
+	Category       Category
+	ImageFailures  []string
 }
 
 func (h *Handlers) renderArticlePage(w http.ResponseWriter, r *http.Request, status int, article Article, imageFailures []string) {
@@ -77,13 +85,30 @@ func (h *Handlers) renderArticlePage(w http.ResponseWriter, r *http.Request, sta
 		http.Error(w, "internal error", http.StatusInternalServerError)
 		return
 	}
+
+	bodyHTML := article.BodyHTML
+	var titleHighlight string
+	// SPEC B4: a search result links here with ?q=<query>#b-<block>; the
+	// server can see the query (never the fragment) and marks every block
+	// it matches — including the title, block 0 — with a data-hl
+	// attribute for highlight.js to swap in. A failure here is never
+	// fatal to viewing the article — it just means no highlights this
+	// time — so it's swallowed rather than erroring the whole page.
+	if q := r.URL.Query().Get("q"); q != "" {
+		if highlights, err := search.HighlightMatches(h.srv.DB, article.ID, q); err == nil {
+			bodyHTML = kbhtml.AddHighlightData(bodyHTML, highlights)
+			titleHighlight = highlights[0]
+		}
+	}
+
 	// article.BodyHTML was sanitised on save (SPEC B4); it's the one place
 	// article content bypasses html/template's auto-escaping.
 	h.srv.RenderFrame(w, r, status, "kb-article.html", article.Title, articlePageData{
-		Article:       article,
-		BodyHTML:      template.HTML(article.BodyHTML),
-		Category:      category,
-		ImageFailures: imageFailures,
+		Article:        article,
+		BodyHTML:       template.HTML(bodyHTML),
+		TitleHighlight: titleHighlight,
+		Category:       category,
+		ImageFailures:  imageFailures,
 	})
 }
 
