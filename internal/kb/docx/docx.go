@@ -88,7 +88,21 @@ func Convert(r io.ReaderAt, size int64, filename string) (Result, error) {
 		return Result{}, err
 	}
 
-	parsed, err := parseDocument(docXML, sheet)
+	numberingXML, err := pkg.readPartIfExists(partRelativeTo(mainPart, "numbering.xml"))
+	if err != nil {
+		return Result{}, err
+	}
+	numSheet, err := parseNumbering(numberingXML)
+	if err != nil {
+		return Result{}, err
+	}
+
+	hyperlinkRels, err := pkg.hyperlinkRelationships(mainPart)
+	if err != nil {
+		return Result{}, err
+	}
+
+	parsed, err := parseDocument(docXML, sheet, hyperlinkRels)
 	if err != nil {
 		return Result{}, err
 	}
@@ -99,7 +113,7 @@ func Convert(r io.ReaderAt, size int64, filename string) (Result, error) {
 	}
 	notes := append(hfNotes, parsed.notes...)
 
-	return buildResult(parsed.paragraphs, notes, sheet, filename), nil
+	return buildResult(parsed.paragraphs, notes, sheet, numSheet, filename), nil
 }
 
 // pkgReader reads parts of the zip package, enforcing the uncompressed-size
@@ -226,6 +240,30 @@ func (p *pkgReader) headerFooterNotes(mainPart string) ([]string, error) {
 		}
 	}
 	return notes, nil
+}
+
+// hyperlinkRelationships returns mainPart's hyperlink relationships as a
+// map from relationship id to target URL, for w:hyperlink r:id lookups
+// (SPEC B4: "w:hyperlink with an external relationship").
+func (p *pkgReader) hyperlinkRelationships(mainPart string) (map[string]string, error) {
+	data, err := p.readPartIfExists(relsPathFor(mainPart))
+	if err != nil {
+		return nil, err
+	}
+	rels := map[string]string{}
+	if data == nil {
+		return rels, nil
+	}
+	parsed, err := parseRelationships(data)
+	if err != nil {
+		return nil, err
+	}
+	for _, r := range parsed {
+		if hasSuffixFold(r.Type, "/hyperlink") {
+			rels[r.ID] = r.Target
+		}
+	}
+	return rels, nil
 }
 
 // relsPathFor returns the relationships part for part, e.g.

@@ -7,12 +7,23 @@ import (
 	"strings"
 )
 
-// paragraphPropsXML is shared by a style definition's own pPr and (used
-// directly, below) a paragraph's direct pPr.
+// paragraphPropsXML is a style definition's own pPr (SPEC B4: a paragraph
+// style can set default numbering for every paragraph using it, "a list
+// defined via paragraph style").
 type paragraphPropsXML struct {
 	OutlineLvl *struct {
 		Val int `xml:"val,attr"`
 	} `xml:"outlineLvl"`
+	NumPr *numPrXML `xml:"numPr"`
+}
+
+type numPrXML struct {
+	Ilvl *struct {
+		Val int `xml:"val,attr"`
+	} `xml:"ilvl"`
+	NumID *struct {
+		Val int `xml:"val,attr"`
+	} `xml:"numId"`
 }
 
 // onOffXML models a WordprocessingML on/off toggle element (<w:b/>,
@@ -48,18 +59,24 @@ const (
 )
 
 // segment is one contiguous run of a paragraph's content: either text
-// with its resolved bold/italic, or a line break (SPEC B4: "w:br -> br").
+// with its resolved bold/italic and, if inside a link, its href, or a
+// line break (SPEC B4: "w:br -> br").
 type segment struct {
 	kind   segmentKind
 	text   string
 	bold   bool
 	italic bool
+	href   string
 }
 
-// paragraph is one <w:p>.
+// paragraph is one <w:p>. directNumID/directIlvl are nil when the
+// paragraph has no direct w:numPr — it may still be a list item through
+// its paragraph style (SPEC B4), resolved later against styleSheet.
 type paragraph struct {
 	styleID          string
 	directOutlineLvl *int
+	directNumID      *int
+	directIlvl       *int
 	segments         []segment
 }
 
@@ -84,13 +101,15 @@ type parsedDocument struct {
 
 // parseDocument walks document.xml as a token stream rather than
 // modelling every element type, so wrapper elements that need no special
-// handling (w:sdt/w:sdtContent, w:smartTag, w:customXml, w:fldSimple,
-// w:hyperlink, VML text boxes...) are simply passed through: the token
-// stream doesn't care about ancestors this walker isn't matching on, so
-// a <w:p> nested inside any of them is still found by its own start/end
-// tokens (SPEC B4: "descend into w:sdt/w:sdtContent, w:smartTag,
-// w:customXml and w:fldSimple").
-func parseDocument(data []byte, styles styleSheet) (parsedDocument, error) {
+// handling (w:sdt/w:sdtContent, w:smartTag, w:customXml, VML text
+// boxes...) are simply passed through: the token stream doesn't care
+// about ancestors this walker isn't matching on, so a <w:p> nested inside
+// any of them is still found by its own start/end tokens (SPEC B4:
+// "descend into w:sdt/w:sdtContent, w:smartTag, w:customXml and
+// w:fldSimple"). hyperlinkRels maps a relationship id to its target URL,
+// for w:hyperlink r:id lookups (SPEC B4: "w:hyperlink with an external
+// relationship").
+func parseDocument(data []byte, styles styleSheet, hyperlinkRels map[string]string) (parsedDocument, error) {
 	if err := checkXMLDepth(data); err != nil {
 		if err == errXMLTooDeep {
 			return parsedDocument{}, ErrTooLarge
@@ -110,18 +129,48 @@ func parseDocument(data []byte, styles styleSheet) (parsedDocument, error) {
 	var runBold, runItalic *bool
 	var runText bytes.Buffer
 
+	// hrefStack holds the currently-open link's href, from either a
+	// w:hyperlink with an external relationship or a HYPERLINK field's
+	// resolved URL (SPEC B4). An internal-anchor-only w:hyperlink, or a
+	// field that isn't a recognised external link, pushes "" — its
+	// content still flows through normally, just with no link (SPEC B4:
+	// "internal anchors keep their text and drop the link").
+	var hrefStack []string
+
+	// Complex-field state (w:fldChar begin/separate/end plus the
+	// w:instrText between begin and separate): fieldState tracks which
+	// phase, if any, is open; fieldInstrBuf accumulates the field's own
+	// instruction text (which may span more than one w:instrText/run) so
+	// it can be parsed once separate is reached, without ever letting it
+	// reach the visible run text.
+	const (
+		fieldIdle = iota
+		fieldCollectingInstr
+		fieldInResult
+	)
+	fieldState := fieldIdle
+	var fieldInstrBuf bytes.Buffer
+	fieldPushedHref := false
+	var inInstrText bool
+	fldSimplePushedHref := false
+
 	flushRun := func() {
 		if runText.Len() > 0 {
 			bold, italic := styles.resolveMarks(cur.styleID, runStyleID, runBold, runItalic)
-			cur.segments = append(cur.segments, segment{kind: segText, text: runText.String(), bold: bold, italic: italic})
+			href := ""
+			if len(hrefStack) > 0 {
+				href = hrefStack[len(hrefStack)-1]
+			}
+			cur.segments = append(cur.segments, segment{kind: segText, text: runText.String(), bold: bold, italic: italic, href: href})
 			runText.Reset()
 		}
 	}
 
-	// skipDepth counts nested elements whose text must never appear (SPEC
-	// B4: "skip w:del, w:delText and w:moveFrom"; "skip field instruction
-	// text"). w:ins and w:moveTo need no equivalent entry — their text is
-	// included exactly like any other run's, simply by not being skipped.
+	// skipDepth counts nested elements whose text must never appear in the
+	// visible run text (SPEC B4: "skip w:del, w:delText and w:moveFrom";
+	// "skip field instruction text"). w:ins and w:moveTo need no
+	// equivalent entry — their text is included exactly like any other
+	// run's, simply by not being skipped.
 	skipDepth := 0
 
 	for {
@@ -147,6 +196,50 @@ func parseDocument(data []byte, styles styleSheet) (parsedDocument, error) {
 				if inParagraph {
 					v := attrIntVal(t, "val")
 					cur.directOutlineLvl = &v
+				}
+			case "numId":
+				if inParagraph {
+					v := attrIntVal(t, "val")
+					cur.directNumID = &v
+				}
+			case "ilvl":
+				if inParagraph {
+					v := attrIntVal(t, "val")
+					cur.directIlvl = &v
+				}
+			case "hyperlink":
+				href := ""
+				if relID := attrVal(t, "id"); relID != "" {
+					href = hyperlinkRels[relID]
+				}
+				hrefStack = append(hrefStack, href)
+			case "fldSimple":
+				if url, ok := parseHyperlinkFieldInstr(attrVal(t, "instr")); ok {
+					hrefStack = append(hrefStack, url)
+					fldSimplePushedHref = true
+				} else {
+					fldSimplePushedHref = false
+				}
+			case "fldChar":
+				switch attrVal(t, "fldCharType") {
+				case "begin":
+					fieldState = fieldCollectingInstr
+					fieldInstrBuf.Reset()
+					fieldPushedHref = false
+				case "separate":
+					if fieldState == fieldCollectingInstr {
+						if url, ok := parseHyperlinkFieldInstr(fieldInstrBuf.String()); ok {
+							hrefStack = append(hrefStack, url)
+							fieldPushedHref = true
+						}
+					}
+					fieldState = fieldInResult
+				case "end":
+					if fieldState == fieldInResult && fieldPushedHref {
+						hrefStack = hrefStack[:len(hrefStack)-1]
+					}
+					fieldState = fieldIdle
+					fieldPushedHref = false
 				}
 			case "r":
 				// A run outside any paragraph isn't valid WordprocessingML
@@ -179,6 +272,9 @@ func parseDocument(data []byte, styles styleSheet) (parsedDocument, error) {
 				}
 			case "del", "delText", "moveFrom", "instrText":
 				skipDepth++
+				if t.Name.Local == "instrText" {
+					inInstrText = true
+				}
 			case "tab":
 				if inRun && skipDepth == 0 {
 					runText.WriteByte(' ')
@@ -215,16 +311,64 @@ func parseDocument(data []byte, styles styleSheet) (parsedDocument, error) {
 				if skipDepth > 0 {
 					skipDepth--
 				}
+				if t.Name.Local == "instrText" {
+					inInstrText = false
+				}
+			case "hyperlink":
+				if len(hrefStack) > 0 {
+					hrefStack = hrefStack[:len(hrefStack)-1]
+				}
+			case "fldSimple":
+				if fldSimplePushedHref {
+					hrefStack = hrefStack[:len(hrefStack)-1]
+					fldSimplePushedHref = false
+				}
 			}
 
 		case xml.CharData:
 			if inRun && skipDepth == 0 {
 				runText.Write(t)
 			}
+			if inInstrText && fieldState == fieldCollectingInstr {
+				fieldInstrBuf.Write(t)
+			}
 		}
 	}
 
 	return out, nil
+}
+
+// parseHyperlinkFieldInstr extracts a URL from a HYPERLINK field's
+// instruction text (SPEC B4: "HYPERLINK simple or complex fields"), e.g.
+// ` HYPERLINK "https://example.com" ` or ` HYPERLINK \l "Bookmark" `. It
+// returns ok=false for anything that isn't a recognised external link —
+// including an internal-only \l bookmark jump, which SPEC B4 says keeps
+// its text and drops the link — or a field that isn't HYPERLINK at all.
+func parseHyperlinkFieldInstr(instr string) (url string, ok bool) {
+	trimmed := strings.TrimSpace(instr)
+	if !strings.HasPrefix(strings.ToUpper(trimmed), "HYPERLINK") {
+		return "", false
+	}
+	rest := trimmed[len("HYPERLINK"):]
+	start := strings.IndexByte(rest, '"')
+	if start < 0 {
+		return "", false
+	}
+	rest = rest[start+1:]
+	end := strings.IndexByte(rest, '"')
+	if end < 0 {
+		return "", false
+	}
+	candidate := rest[:end]
+	if isExternalLinkScheme(candidate) {
+		return candidate, true
+	}
+	return "", false
+}
+
+func isExternalLinkScheme(url string) bool {
+	lower := strings.ToLower(url)
+	return strings.HasPrefix(lower, "http://") || strings.HasPrefix(lower, "https://") || strings.HasPrefix(lower, "mailto:")
 }
 
 func noteFor(elementName string) string {

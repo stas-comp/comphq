@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -181,23 +182,54 @@ func TestTitleFromFilenameFallback(t *testing.T) {
 
 // buildDocx assembles a minimal but valid .docx package for one narrowly
 // scoped unit test: document.xml (with the given body) and, if non-empty,
-// styles.xml — no header/footer/comments/numbering. Building it in Go
-// rather than committing a binary satisfies PLAN.md's "no hand-edited
-// binaries" for rules narrow enough not to need the shared, realistic
+// styles.xml — no header/footer/comments. Building it in Go rather than
+// committing a binary satisfies PLAN.md's "no hand-edited binaries" for
+// rules narrow enough not to need the shared, realistic
 // e2e/fixtures/docx/sample.docx (which Playwright also imports end to
-// end) or a second committed fixture file.
+// end) or a second committed fixture file. document.xml relationships,
+// when any external ones (hyperlinks) are needed, come from docRels.
 func buildDocx(t *testing.T, stylesXML, bodyXML string) []byte {
 	t.Helper()
+	return buildDocxFull(t, stylesXML, "", "", bodyXML)
+}
 
-	stylesOverride := ""
+// buildDocxWithNumbering is buildDocx plus a numbering.xml part, for the
+// list-related tests.
+func buildDocxWithNumbering(t *testing.T, stylesXML, numberingXML, bodyXML string) []byte {
+	t.Helper()
+	return buildDocxFull(t, stylesXML, numberingXML, "", bodyXML)
+}
+
+// buildDocxWithHyperlinkRels is buildDocx plus a word/_rels/document.xml.rels
+// part declaring external hyperlink relationships, for link tests that
+// need a real w:hyperlink r:id to resolve against.
+func buildDocxWithHyperlinkRels(t *testing.T, bodyXML string, hyperlinks map[string]string) []byte {
+	t.Helper()
+	var rels strings.Builder
+	rels.WriteString(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>` + "\n")
+	rels.WriteString(`<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">` + "\n")
+	for id, target := range hyperlinks {
+		rels.WriteString(`<Relationship Id="` + id + `" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink" Target="` + target + `" TargetMode="External"/>` + "\n")
+	}
+	rels.WriteString(`</Relationships>`)
+	return buildDocxFull(t, "", "", rels.String(), bodyXML)
+}
+
+func buildDocxFull(t *testing.T, stylesXML, numberingXML, docRelsXML, bodyXML string) []byte {
+	t.Helper()
+
+	overrides := ""
 	if stylesXML != "" {
-		stylesOverride = `<Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/>`
+		overrides += `<Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/>`
+	}
+	if numberingXML != "" {
+		overrides += `<Override PartName="/word/numbering.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.numbering+xml"/>`
 	}
 	contentTypes := `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
 <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
 <Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>
-` + stylesOverride + `
+` + overrides + `
 </Types>`
 
 	const rootRels = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
@@ -206,7 +238,7 @@ func buildDocx(t *testing.T, stylesXML, bodyXML string) []byte {
 </Relationships>`
 
 	document := `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
 <w:body>` + bodyXML + `</w:body>
 </w:document>`
 
@@ -218,6 +250,12 @@ func buildDocx(t *testing.T, stylesXML, bodyXML string) []byte {
 	}
 	if stylesXML != "" {
 		files = append(files, fileEntry{"word/styles.xml", stylesXML})
+	}
+	if numberingXML != "" {
+		files = append(files, fileEntry{"word/numbering.xml", numberingXML})
+	}
+	if docRelsXML != "" {
+		files = append(files, fileEntry{"word/_rels/document.xml.rels", docRelsXML})
 	}
 
 	var buf bytes.Buffer
@@ -471,6 +509,167 @@ func TestConvertTabToSpaceAndBreaksHandledPerType(t *testing.T) {
 		t.Fatalf("Convert: %v", err)
 	}
 	want := "<p>Before After<br>NewLineStillHere</p>\n"
+	if result.HTML != want {
+		t.Errorf("HTML = %q, want %q", result.HTML, want)
+	}
+}
+
+const bulletNumbering = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:numbering xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+<w:abstractNum w:abstractNumId="0">
+<w:lvl w:ilvl="0"><w:numFmt w:val="bullet"/></w:lvl>
+</w:abstractNum>
+<w:num w:numId="1"><w:abstractNumId w:val="0"/></w:num>
+</w:numbering>`
+
+const threeLevelNumbering = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:numbering xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+<w:abstractNum w:abstractNumId="0">
+<w:lvl w:ilvl="0"><w:numFmt w:val="bullet"/></w:lvl>
+<w:lvl w:ilvl="1"><w:numFmt w:val="decimal"/></w:lvl>
+<w:lvl w:ilvl="2"><w:numFmt w:val="bullet"/></w:lvl>
+</w:abstractNum>
+<w:num w:numId="1"><w:abstractNumId w:val="0"/></w:num>
+</w:numbering>`
+
+func listParagraph(numID, ilvl int, text string) string {
+	numPr := `<w:numPr><w:ilvl w:val="` + strconv.Itoa(ilvl) + `"/><w:numId w:val="` + strconv.Itoa(numID) + `"/></w:numPr>`
+	return `<w:p><w:pPr>` + numPr + `</w:pPr><w:r><w:t xml:space="preserve">` + text + `</w:t></w:r></w:p>`
+}
+
+// TestConvertNestedThreeLevelsMixedBulletsAndNumbers covers SPEC B4:
+// "ilvl -> nesting", with the format (and so the ul/ol tag) changing at
+// each level, matching sample.docx's numId 1 (bullet/decimal levels)
+// generalised to three levels deep.
+func TestConvertNestedThreeLevelsMixedBulletsAndNumbers(t *testing.T) {
+	body := listParagraph(1, 0, "Top A") +
+		listParagraph(1, 1, "Mid A1") +
+		listParagraph(1, 2, "Deep A1a") +
+		listParagraph(1, 1, "Mid A2") +
+		listParagraph(1, 0, "Top B")
+	data := buildDocxWithNumbering(t, "", threeLevelNumbering, body)
+
+	result, err := Convert(bytes.NewReader(data), int64(len(data)), "test.docx")
+	if err != nil {
+		t.Fatalf("Convert: %v", err)
+	}
+	want := "<ul>\n" +
+		"<li>Top A<ol>\n" +
+		"<li>Mid A1<ul>\n" +
+		"<li>Deep A1a</li></ul>\n" +
+		"</li>\n" +
+		"<li>Mid A2</li></ol>\n" +
+		"</li>\n" +
+		"<li>Top B</li></ul>\n"
+	if result.HTML != want {
+		t.Errorf("HTML = %q, want %q", result.HTML, want)
+	}
+}
+
+// TestConvertListInterruptedByAParagraphStartsANewList covers SPEC B4:
+// "consecutive paragraphs with the same numId form one list" — an
+// ordinary paragraph in between, even with no numbering of its own,
+// ends the first list rather than being swallowed into it.
+func TestConvertListInterruptedByAParagraphStartsANewList(t *testing.T) {
+	body := listParagraph(1, 0, "First") +
+		listParagraph(1, 0, "Second") +
+		`<w:p><w:r><w:t xml:space="preserve">Interrupting paragraph.</w:t></w:r></w:p>` +
+		listParagraph(1, 0, "Third") +
+		listParagraph(1, 0, "Fourth")
+	data := buildDocxWithNumbering(t, "", bulletNumbering, body)
+
+	result, err := Convert(bytes.NewReader(data), int64(len(data)), "test.docx")
+	if err != nil {
+		t.Fatalf("Convert: %v", err)
+	}
+	want := "<ul>\n<li>First</li>\n<li>Second</li></ul>\n" +
+		"<p>Interrupting paragraph.</p>\n" +
+		"<ul>\n<li>Third</li>\n<li>Fourth</li></ul>\n"
+	if result.HTML != want {
+		t.Errorf("HTML = %q, want %q", result.HTML, want)
+	}
+}
+
+// TestConvertListDefinedViaParagraphStyle covers SPEC B4: "w:numPr,
+// directly or through the paragraph style" — no paragraph here has its
+// own direct numPr; the list comes entirely from the style.
+func TestConvertListDefinedViaParagraphStyle(t *testing.T) {
+	const styles = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+<w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/></w:style>
+<w:style w:type="paragraph" w:styleId="ListStyle">
+<w:name w:val="My List"/>
+<w:basedOn w:val="Normal"/>
+<w:pPr><w:numPr><w:numId w:val="1"/></w:numPr></w:pPr>
+</w:style>
+</w:styles>`
+	body := `<w:p><w:pPr><w:pStyle w:val="ListStyle"/></w:pPr><w:r><w:t xml:space="preserve">Item one</w:t></w:r></w:p>` +
+		`<w:p><w:pPr><w:pStyle w:val="ListStyle"/></w:pPr><w:r><w:t xml:space="preserve">Item two</w:t></w:r></w:p>`
+	data := buildDocxFull(t, styles, bulletNumbering, "", body)
+
+	result, err := Convert(bytes.NewReader(data), int64(len(data)), "test.docx")
+	if err != nil {
+		t.Fatalf("Convert: %v", err)
+	}
+	want := "<ul>\n<li>Item one</li>\n<li>Item two</li></ul>\n"
+	if result.HTML != want {
+		t.Errorf("HTML = %q, want %q", result.HTML, want)
+	}
+}
+
+// TestConvertComplexFieldHyperlinkSpanningRuns covers SPEC B4: "HYPERLINK
+// simple or complex fields -> a href" — the field's display portion here
+// spans two runs with different formatting, which must still become one
+// anchor, not two adjacent ones.
+func TestConvertComplexFieldHyperlinkSpanningRuns(t *testing.T) {
+	body := `<w:p>` +
+		`<w:r><w:fldChar w:fldCharType="begin"/></w:r>` +
+		`<w:r><w:instrText xml:space="preserve"> HYPERLINK "https://example.test/page" </w:instrText></w:r>` +
+		`<w:r><w:fldChar w:fldCharType="separate"/></w:r>` +
+		`<w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">Bold part</w:t></w:r>` +
+		`<w:r><w:t xml:space="preserve">plain part</w:t></w:r>` +
+		`<w:r><w:fldChar w:fldCharType="end"/></w:r>` +
+		`</w:p>`
+	data := buildDocx(t, "", body)
+
+	result, err := Convert(bytes.NewReader(data), int64(len(data)), "test.docx")
+	if err != nil {
+		t.Fatalf("Convert: %v", err)
+	}
+	want := `<p><a href="https://example.test/page"><strong>Bold part</strong>plain part</a></p>` + "\n"
+	if result.HTML != want {
+		t.Errorf("HTML = %q, want %q", result.HTML, want)
+	}
+}
+
+// TestConvertMailtoLink covers SPEC B4's w:hyperlink external
+// relationship path with a mailto: target.
+func TestConvertMailtoLink(t *testing.T) {
+	body := `<w:p><w:hyperlink r:id="rIdMail"><w:r><w:t xml:space="preserve">Email Sam</w:t></w:r></w:hyperlink></w:p>`
+	data := buildDocxWithHyperlinkRels(t, body, map[string]string{"rIdMail": "mailto:sam@example.test"})
+
+	result, err := Convert(bytes.NewReader(data), int64(len(data)), "test.docx")
+	if err != nil {
+		t.Fatalf("Convert: %v", err)
+	}
+	want := `<p><a href="mailto:sam@example.test">Email Sam</a></p>` + "\n"
+	if result.HTML != want {
+		t.Errorf("HTML = %q, want %q", result.HTML, want)
+	}
+}
+
+// TestConvertInternalAnchorKeepsTextDropsLink covers SPEC B4: "Internal
+// anchors keep their text and drop the link" — a w:hyperlink with only a
+// w:anchor (no r:id) has nothing external to link to.
+func TestConvertInternalAnchorKeepsTextDropsLink(t *testing.T) {
+	body := `<w:p><w:hyperlink w:anchor="Section2"><w:r><w:t xml:space="preserve">Jump to Section 2</w:t></w:r></w:hyperlink></w:p>`
+	data := buildDocx(t, "", body)
+
+	result, err := Convert(bytes.NewReader(data), int64(len(data)), "test.docx")
+	if err != nil {
+		t.Fatalf("Convert: %v", err)
+	}
+	want := "<p>Jump to Section 2</p>\n"
 	if result.HTML != want {
 		t.Errorf("HTML = %q, want %q", result.HTML, want)
 	}

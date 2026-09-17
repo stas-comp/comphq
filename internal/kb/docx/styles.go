@@ -129,6 +129,31 @@ func (s styleSheet) runProps(styleID string) (bold, italic *bool) {
 	return bold, italic
 }
 
+// numbering walks styleID's basedOn chain for the nearest w:numPr in a
+// style's own pPr (SPEC B4: "a list defined via paragraph style"),
+// returning ok=false if nothing in the chain sets one.
+func (s styleSheet) numbering(styleID string) (numID, ilvl int, ok bool) {
+	seen := map[string]bool{}
+	for styleID != "" && !seen[styleID] {
+		seen[styleID] = true
+		def, has := s.byID[styleID]
+		if !has {
+			return 0, 0, false
+		}
+		if def.ParagraphProps.NumPr != nil {
+			if def.ParagraphProps.NumPr.NumID != nil {
+				numID = def.ParagraphProps.NumPr.NumID.Val
+			}
+			if def.ParagraphProps.NumPr.Ilvl != nil {
+				ilvl = def.ParagraphProps.NumPr.Ilvl.Val
+			}
+			return numID, ilvl, true
+		}
+		styleID = def.BasedOn.Val
+	}
+	return 0, 0, false
+}
+
 // resolveMarks combines a run's direct bold/italic (nil if the run's own
 // rPr doesn't mention it) with its paragraph style's and, if set, its own
 // character style's (SPEC B4: "bold/italic toggles ... honouring
