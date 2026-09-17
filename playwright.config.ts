@@ -50,6 +50,13 @@ export default defineConfig({
     {
       name: 'smoke',
       testDir: 'e2e/smoke',
+      // @seed, @verify and @verify-prev depend on running against the
+      // same server and data (in BASE_URL mode, container-test.sh's own
+      // sequencing already guarantees this; locally, without BASE_URL, a
+      // single worker keeps every test in this project on the one
+      // worker-spawned server instead of scattering them across several
+      // independent, empty ones).
+      workers: 1,
       use: { ...devices['Desktop Chrome'] },
     },
   ],
