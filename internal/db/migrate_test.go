@@ -110,6 +110,43 @@ func TestRunMigrationsRefusesOnFailedMigration(t *testing.T) {
 	}
 }
 
+func TestHasPendingMigrations(t *testing.T) {
+	sqlDB := openTestDB(t)
+	migrations := []Migration{
+		{Section: "test", Version: 1, Name: "create", SQL: `CREATE TABLE widgets (id INTEGER PRIMARY KEY)`},
+		{Section: "test", Version: 2, Name: "add_column", SQL: `ALTER TABLE widgets ADD COLUMN size TEXT`},
+	}
+
+	pending, err := HasPendingMigrations(sqlDB, migrations)
+	if err != nil {
+		t.Fatalf("HasPendingMigrations (before any run): %v", err)
+	}
+	if !pending {
+		t.Fatal("pending = false, want true before any migration has been applied")
+	}
+
+	if err := RunMigrations(sqlDB, "1.0.0", migrations); err != nil {
+		t.Fatalf("RunMigrations: %v", err)
+	}
+
+	pending, err = HasPendingMigrations(sqlDB, migrations)
+	if err != nil {
+		t.Fatalf("HasPendingMigrations (after run): %v", err)
+	}
+	if pending {
+		t.Fatal("pending = true, want false once every migration has been applied")
+	}
+
+	migrations = append(migrations, Migration{Section: "test", Version: 3, Name: "add_index", SQL: `CREATE INDEX idx_widgets_size ON widgets(size)`})
+	pending, err = HasPendingMigrations(sqlDB, migrations)
+	if err != nil {
+		t.Fatalf("HasPendingMigrations (with a new migration appended): %v", err)
+	}
+	if !pending {
+		t.Fatal("pending = false, want true once a new migration file is added")
+	}
+}
+
 func TestLoadMigrationsSortsByVersion(t *testing.T) {
 	fsys := fstest.MapFS{
 		"migrations/test/0002_second.sql": {Data: []byte("-- second\n")},

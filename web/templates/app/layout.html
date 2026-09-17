@@ -27,6 +27,9 @@
 </nav>
 </aside>
 <div class="main-column">
+{{if .ShowBackupBanner}}
+<div class="backup-banner" role="alert">The last backup is more than 2 days old. Check <a href="/settings/backups">Settings → Backups</a>.</div>
+{{end}}
 <header class="topbar">
 <form class="search" role="search" action="/kb/search" method="get" autocomplete="off">
 <label for="search-box" class="visually-hidden">Search</label>

@@ -86,6 +86,25 @@ func RunMigrations(sqlDB *sql.DB, appVersion string, migrations []Migration) err
 	return nil
 }
 
+// HasPendingMigrations reports whether any migration in the list has not
+// yet been recorded in schema_migrations (SPEC B6: the pre-update backup
+// runs "only when migrations are pending").
+func HasPendingMigrations(sqlDB *sql.DB, migrations []Migration) (bool, error) {
+	if err := ensureMigrationsTable(sqlDB); err != nil {
+		return false, fmt.Errorf("prepare schema_migrations: %w", err)
+	}
+	for _, m := range migrations {
+		applied, err := isApplied(sqlDB, m.Section, m.Version)
+		if err != nil {
+			return false, fmt.Errorf("check %s/%04d_%s: %w", m.Section, m.Version, m.Name, err)
+		}
+		if !applied {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
 func ensureMigrationsTable(sqlDB *sql.DB) error {
 	_, err := sqlDB.Exec(`
 		CREATE TABLE IF NOT EXISTS schema_migrations (

@@ -61,16 +61,58 @@ func run() error {
 	srv.Registry().Add(calendar.Section(srv))
 	srv.Registry().Add(settings.Section(srv))
 
+	sectionMigrations := make(map[string][]db.Migration)
+	pending := false
 	for _, section := range srv.Registry().MigrationNames() {
 		migrations, err := db.LoadMigrations(comphq.Migrations, section)
 		if err != nil {
 			return fmt.Errorf("load %s migrations: %w", section, err)
 		}
-		if err := db.RunMigrations(sqlDB, version, migrations); err != nil {
+		sectionMigrations[section] = migrations
+		sectionPending, err := db.HasPendingMigrations(sqlDB, migrations)
+		if err != nil {
+			return fmt.Errorf("check %s migrations: %w", section, err)
+		}
+		if sectionPending {
+			pending = true
+		}
+	}
+
+	existingData, err := db.HasExistingData(sqlDB)
+	if err != nil {
+		return fmt.Errorf("check for existing data: %w", err)
+	}
+	if pending && existingData {
+		// SPEC B6: migrations run "after a VACUUM INTO pre-update backup
+		// (only when migrations are pending)" — one backup covering every
+		// section, not one per section. A fresh install has nothing yet
+		// worth protecting, so it skips straight to the first migration
+		// run, which is what creates app_meta in the first place.
+		if err := db.PreUpdateBackup(sqlDB, cfg.DataDir, version, time.Now()); err != nil {
+			log.Fatalf("refusing to start: pre-update backup failed: %v", err)
+		}
+	}
+
+	for _, section := range srv.Registry().MigrationNames() {
+		if err := db.RunMigrations(sqlDB, version, sectionMigrations[section]); err != nil {
 			// Refuse to start on a failed migration (SPEC §2.5), with a
 			// clear log line explaining why.
 			log.Fatalf("refusing to start: migration failed: %v", err)
 		}
+	}
+
+	if cfg.TestMode {
+		// Hundreds of existing tests render pages without caring about
+		// backups; a fresh test server's app_meta has no last_backup_at
+		// row, which would make every one of them see the stale banner.
+		// Seed a fresh timestamp instead of running the real scheduler, so
+		// only tests that explicitly set an old timestamp see it (SPEC
+		// gate 1.35's own test plan: "test-mode helper").
+		if err := db.SetLastBackupAtForTest(sqlDB, time.Now()); err != nil {
+			return fmt.Errorf("seed backup status for test mode: %w", err)
+		}
+	} else {
+		go db.RunBackupScheduler(sqlDB, cfg.DataDir, db.RealClock{})
 	}
 
 	httpServer := &http.Server{

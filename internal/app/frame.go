@@ -3,21 +3,25 @@ package app
 import (
 	"bytes"
 	"html/template"
+	"log"
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 
+	"github.com/stas-comp/comphq/internal/db"
 	"github.com/stas-comp/comphq/internal/people"
 )
 
 // frameData is what layout.html needs to render the sidebar, top bar, and
 // the current page's own content (SPEC A4, gate 1.07).
 type frameData struct {
-	Title       string
-	PersonName  string
-	ChangeHref  string
-	Nav         []navItemData
-	BodyContent template.HTML
+	Title            string
+	PersonName       string
+	ChangeHref       string
+	Nav              []navItemData
+	BodyContent      template.HTML
+	ShowBackupBanner bool
 }
 
 type navItemData struct {
@@ -56,12 +60,20 @@ func (s *Server) RenderFrame(w http.ResponseWriter, r *http.Request, status int,
 		})
 	}
 
+	showBackupBanner := false
+	if status, err := db.GetBackupStatus(s.DB); err != nil {
+		log.Printf("frame: reading backup status: %v", err)
+	} else {
+		showBackupBanner = status.Stale(time.Now())
+	}
+
 	data := frameData{
-		Title:       title,
-		PersonName:  personName,
-		ChangeHref:  "/who?next=" + url.QueryEscape(r.URL.RequestURI()),
-		Nav:         navItems,
-		BodyContent: template.HTML(body.String()), //nolint:gosec // body comes from our own sanitised/static templates, not user input
+		Title:            title,
+		PersonName:       personName,
+		ChangeHref:       "/who?next=" + url.QueryEscape(r.URL.RequestURI()),
+		Nav:              navItems,
+		BodyContent:      template.HTML(body.String()), //nolint:gosec // body comes from our own sanitised/static templates, not user input
+		ShowBackupBanner: showBackupBanner,
 	}
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")

@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/stas-comp/comphq"
+	"github.com/stas-comp/comphq/internal/db"
 	"github.com/stas-comp/comphq/internal/people"
 )
 
@@ -92,6 +93,7 @@ func (s *Server) Routes() http.Handler {
 		mux.HandleFunc("GET /__test/routes", s.handleTestRoutes)
 		mux.HandleFunc("POST /__test/people/deactivate", s.handleTestDeactivatePerson)
 		mux.HandleFunc("POST /__test/kb/seed-article", s.handleTestSeedKBArticle)
+		mux.HandleFunc("POST /__test/backups/set-last-backup-at", s.handleTestSetLastBackupAt)
 	}
 
 	for _, section := range s.registry.Sections() {
@@ -202,6 +204,26 @@ func (s *Server) handleTestSeedKBArticle(w http.ResponseWriter, r *http.Request)
 		`INSERT INTO kb_articles (category_id, title, status, created_at, updated_at) VALUES (?, ?, 'published', ?, ?)`,
 		categoryID, "Test article", now, now,
 	); err != nil {
+		http.Error(w, "internal error", http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+}
+
+// handleTestSetLastBackupAt lets an E2E test move the recorded backup
+// time without waiting on the real scheduler (SPEC gate 1.35's own test
+// plan: "set last_backup_at to 3 days ago (test-mode helper)"). days_ago
+// may be fractional (e.g. "2.1") and negative values are rejected only
+// implicitly by AddDate's normal arithmetic — a caller wanting "fresh"
+// passes "0".
+func (s *Server) handleTestSetLastBackupAt(w http.ResponseWriter, r *http.Request) {
+	daysAgo, err := strconv.ParseFloat(r.FormValue("days_ago"), 64)
+	if err != nil {
+		http.Error(w, "invalid days_ago", http.StatusBadRequest)
+		return
+	}
+	at := time.Now().Add(-time.Duration(daysAgo * float64(24*time.Hour)))
+	if err := db.SetLastBackupAtForTest(s.DB, at); err != nil {
 		http.Error(w, "internal error", http.StatusInternalServerError)
 		return
 	}

@@ -1,0 +1,13 @@
+{{define "settings-backups.html"}}
+{{template "settings-subnav" .}}
+<h1>Backups</h1>
+{{if .HasRun}}
+<p>Last backup: <span id="last-backup-at">{{.LastBackupAt}}</span></p>
+{{else}}
+<p id="last-backup-at">No backup has been made yet.</p>
+{{end}}
+{{if not .LastBackupOK}}
+<p class="message" role="alert">The most recent backup attempt failed: {{.LastBackupError}}</p>
+{{end}}
+<p>Comp HQ backs up automatically every night and keeps the last {{.DailyKeep}} copies.</p>
+{{end}}
