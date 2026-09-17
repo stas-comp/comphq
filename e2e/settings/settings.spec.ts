@@ -52,7 +52,12 @@ test('removing a person leaves the picker', async ({ page, server, browser }) =>
 test('About shows the version', async ({ page, server }) => {
   await signInAsNewPerson(page, server.baseURL, '/settings/about');
   await ready(page);
-  await expect(page.locator('#app-version')).toHaveText('0.0.0-test');
+  // Not a literal string: the per-worker local binary is always built
+  // "0.0.0-test" (e2e/helpers/global-setup.ts), but PLAN.md P1-38's
+  // offline-container run points this same test at a real container
+  // image carrying its own version (e.g. "0.0.2-container-test"). Gate
+  // 1.37 only needs a real version number to be shown.
+  await expect(page.locator('#app-version')).toHaveText(/^\d+\.\d+\.\d+/);
 });
 
 test('Copy puts the exact command text on the clipboard', async ({ page, server, context }) => {
@@ -63,8 +68,25 @@ test('Copy puts the exact command text on the clipboard', async ({ page, server,
   const expected = await page.locator('#chrome-command').textContent();
   await page.click('.copy-button[data-target="chrome-command"]');
 
-  await expect(page.locator('#copy-status')).toHaveText('Copied.');
-  const clipboardText = await page.evaluate(() => navigator.clipboard.readText());
-  expect(clipboardText).toBe(expected);
-  expect(clipboardText).toContain('chrome.exe');
+  // copy.js (SPEC B6) tries the Clipboard API first, falling back to
+  // selecting the text when it's unavailable — which is what a real
+  // owner actually sees, since Comp HQ is reached over plain HTTP at a
+  // NAS IP address, not a secure context. Chromium always treats a
+  // loopback address as secure regardless of scheme, which is why every
+  // worker-spawned local server takes the "Copied." path; only PLAN.md
+  // P1-38's offline-container run (reached via a Compose service
+  // hostname, not an IP) exercises the fallback for real. Both paths
+  // must land on the exact same text.
+  const statusLocator = page.locator('#copy-status');
+  await expect(statusLocator).toHaveText(/^(Copied\.|Selected — press Ctrl\+C to copy\.)$/);
+  const status = await statusLocator.textContent();
+
+  if (status === 'Copied.') {
+    const clipboardText = await page.evaluate(() => navigator.clipboard.readText());
+    expect(clipboardText).toBe(expected);
+  } else {
+    const selectedText = await page.evaluate(() => window.getSelection()?.toString());
+    expect(selectedText).toBe(expected);
+  }
+  expect(expected).toContain('chrome.exe');
 });

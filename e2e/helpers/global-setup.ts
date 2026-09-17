@@ -1,14 +1,41 @@
 import { execFileSync } from 'node:child_process';
+import fs from 'node:fs';
 import path from 'node:path';
 
 // Builds the real binary once before the run, so every worker can spawn its
 // own server against a temp data dir (SPEC §2.6: "global setup builds the
 // binary"). In BASE_URL mode we're pointed at an already-running server
-// instead, so there's nothing to build.
+// instead, so there's nothing to build there — except the unzip helper
+// below, which e2e/settings/export.spec.ts needs regardless of mode.
 export default async function globalSetup(): Promise<void> {
+  const root = path.join(__dirname, '..', '..');
+
+  // e2e/settings/export.spec.ts (SPEC gate 1.34) needs to inspect the
+  // downloaded export as real files under a file:// URL, so it extracts
+  // the zip with this small Go helper rather than an npm dependency.
+  // Needed in BASE_URL mode too (PLAN.md P1-38's offline-container run,
+  // which skips every other build below) — but skipped there if the
+  // binary already exists, rather than run unconditionally: the
+  // container-test.sh sub-steps that run this file over BASE_URL from
+  // inside the "runner" Playwright container (mcr.microsoft.com/playwright)
+  // have no Go toolchain at all, unlike the earlier host-side sub-steps
+  // (e.g. seeding, right after the container comes up) that share the
+  // same bind-mounted repo and build it there first.
+  const unzipBin = path.join(
+    root,
+    'bin',
+    process.platform === 'win32' ? 'comphq-unzip-e2e.exe' : 'comphq-unzip-e2e',
+  );
+  if (!fs.existsSync(unzipBin)) {
+    execFileSync('go', ['build', '-o', unzipBin, './e2e/unzip'], {
+      cwd: root,
+      stdio: 'inherit',
+    });
+  }
+  process.env.COMPHQ_UNZIP_BINARY = unzipBin;
+
   if (process.env.BASE_URL) return;
 
-  const root = path.join(__dirname, '..', '..');
   const bin = path.join(
     root,
     'bin',
@@ -37,18 +64,4 @@ export default async function globalSetup(): Promise<void> {
     stdio: 'inherit',
   });
   process.env.COMPHQ_SEED_BINARY = seedBin;
-
-  // e2e/settings/export.spec.ts (SPEC gate 1.34) needs to inspect the
-  // downloaded export as real files under a file:// URL, so it extracts
-  // the zip with this small Go helper rather than an npm dependency.
-  const unzipBin = path.join(
-    root,
-    'bin',
-    process.platform === 'win32' ? 'comphq-unzip-e2e.exe' : 'comphq-unzip-e2e',
-  );
-  execFileSync('go', ['build', '-o', unzipBin, './e2e/unzip'], {
-    cwd: root,
-    stdio: 'inherit',
-  });
-  process.env.COMPHQ_UNZIP_BINARY = unzipBin;
 }
