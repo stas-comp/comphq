@@ -118,10 +118,20 @@ run_upgrade_rollback_test() {
     "$ROOT/deploy/truenas.yaml" >"$up_compose_current"
 
   # PREV's own smoke tests: an older tag may not have any yet (true for
-  # v0.0.1, which predates this harness) — that's expected, not a failure.
+  # v0.0.1, which predates this harness, and again for v0.0.2 until some
+  # later tag becomes PREV in its place) — that's expected, not a failure.
+  # @verify-prev's whole premise is that phase 1 actually seeded something
+  # with PREV's own @seed; when PREV has no smoke tests at all, phase 1
+  # never seeded anything, so phase 2 skips @verify-prev too rather than
+  # failing it against data that was never there to begin with.
+  local prev_has_smoke_tests=1
+  if ! compgen -G "$prev_worktree/e2e/smoke/*.spec.ts" >/dev/null; then
+    prev_has_smoke_tests=0
+  fi
+
   run_prev_smoke() {
     local grep_pattern="$1"
-    if ! compgen -G "$prev_worktree/e2e/smoke/*.spec.ts" >/dev/null; then
+    if [ "$prev_has_smoke_tests" = 0 ]; then
       log "  $prev_tag has no smoke tests yet; skipping smoke assertions for this phase"
       return 0
     fi
@@ -147,7 +157,11 @@ run_upgrade_rollback_test() {
   log "  phase 2: current build, verify-prev then seed and verify"
   docker compose -f "$up_compose_current" -p "$up_project" up -d
   wait_healthy "${up_project}-comphq-1"
-  BASE_URL="http://127.0.0.1:8080" npx playwright test --project=smoke --grep "@verify-prev"
+  if [ "$prev_has_smoke_tests" = 1 ]; then
+    BASE_URL="http://127.0.0.1:8080" npx playwright test --project=smoke --grep "@verify-prev"
+  else
+    log "  $prev_tag never seeded anything; skipping @verify-prev"
+  fi
   BASE_URL="http://127.0.0.1:8080" npx playwright test --project=smoke --grep "$seed_and_verify"
   docker compose -f "$up_compose_current" -p "$up_project" down
 
