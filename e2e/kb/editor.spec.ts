@@ -47,9 +47,13 @@ test.describe('editor toolbar (SPEC gate 1.15)', () => {
     await page.click('#btn-h2');
     // toggleHeading swaps the paragraph node for a heading node; typing
     // immediately can race ProseMirror's DOM update on CI's Linux/headless
-    // Chromium and lose the first few keystrokes, so wait for the new node
-    // to exist first.
-    await page.locator('#article-editor h2').waitFor();
+    // Chromium and lose the first keystroke(s). Waiting for the new node
+    // to exist isn't quite enough on its own — the browser's selection
+    // can still lag behind — so click it directly too, which synchronously
+    // places the cursor there.
+    const h2 = page.locator('#article-editor h2');
+    await h2.waitFor();
+    await h2.click();
     await page.keyboard.type('A large heading');
     await publish(page);
     await expect(page.locator('.kb-article-body h2')).toHaveText('A large heading');
@@ -60,7 +64,9 @@ test.describe('editor toolbar (SPEC gate 1.15)', () => {
     const title = uniqueName('Small heading article');
     await startArticle(page, server.baseURL, title);
     await page.click('#btn-h3');
-    await page.locator('#article-editor h3').waitFor();
+    const h3 = page.locator('#article-editor h3');
+    await h3.waitFor();
+    await h3.click();
     await page.keyboard.type('A small heading');
     await publish(page);
     await expect(page.locator('.kb-article-body h3')).toHaveText('A small heading');
@@ -83,7 +89,9 @@ test.describe('editor toolbar (SPEC gate 1.15)', () => {
     const title = uniqueName('Bullet list article');
     await startArticle(page, server.baseURL, title);
     await page.click('#btn-bullet');
-    await page.locator('#article-editor ul').waitFor();
+    const firstItem = page.locator('#article-editor ul li');
+    await firstItem.waitFor();
+    await firstItem.click();
     await page.keyboard.type('one');
     await page.keyboard.press('Enter');
     await page.keyboard.type('two');
@@ -96,7 +104,9 @@ test.describe('editor toolbar (SPEC gate 1.15)', () => {
     const title = uniqueName('Numbered list article');
     await startArticle(page, server.baseURL, title);
     await page.click('#btn-ordered');
-    await page.locator('#article-editor ol').waitFor();
+    const firstOrderedItem = page.locator('#article-editor ol li');
+    await firstOrderedItem.waitFor();
+    await firstOrderedItem.click();
     await page.keyboard.type('one');
     await page.keyboard.press('Enter');
     await page.keyboard.type('two');
