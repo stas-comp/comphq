@@ -35,9 +35,29 @@ function relativeOrder(all: string[], wanted: string[]): string[] {
 // whether that fetch (which is what actually persists the move
 // server-side) has completed yet, so asserting on the DOM right after
 // mouse.up alone can pass on a move that never really landed.
+// Polls (rather than sleeping a guessed duration) for SortableJS's own
+// "drag has started" signal — the `sortable-chosen` class it applies to
+// the dragged element — so this works regardless of how fast the
+// machine is: a fixed sleep tuned against a fast dev machine turned out
+// to still be too short on CI's much slower 2-vCPU runner, where the
+// drag was never recognised as started at all (zero move requests).
+async function waitForDragStart(page: Page, taskId: string, timeout: number): Promise<boolean> {
+  try {
+    await page.waitForFunction(
+      (id) => document.querySelector(`[data-task-id="${id}"]`)?.classList.contains('sortable-chosen'),
+      taskId,
+      { timeout },
+    );
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 async function dragOnce(page: Page, sourceTitle: string, targetTitle: string, dropBelow: boolean): Promise<number> {
   const source = page.locator('.task-card', { hasText: sourceTitle });
   const target = page.locator('.task-card', { hasText: targetTitle });
+  const sourceId = await source.getAttribute('data-task-id');
   // The source point is the title line specifically, not the card's
   // overall bounding-box centre: a card's actions row (move up/down,
   // the "Move to…" select) is filtered from starting a drag (board.js's
@@ -46,7 +66,7 @@ async function dragOnce(page: Page, sourceTitle: string, targetTitle: string, dr
   // silently refusing to start a drag at all.
   const sourceTitleBox = await source.locator('.task-card-title').boundingBox();
   const targetBox = await target.boundingBox();
-  if (!sourceTitleBox || !targetBox) throw new Error('dragCardOnto: card not found');
+  if (!sourceId || !sourceTitleBox || !targetBox) throw new Error('dragCardOnto: card not found');
 
   // A margin well inside the target (not right at its edge): a drop
   // right at a card's boundary is more sensitive to exactly where
@@ -57,42 +77,38 @@ async function dragOnce(page: Page, sourceTitle: string, targetTitle: string, dr
   const targetX = targetBox.x + targetBox.width / 2;
   await page.mouse.move(sourceX, sourceY);
   await page.mouse.down();
-  // Small pauses at each phase, not just intermediate positions: a
-  // pointer-based drag library like SortableJS processes drag-start and
-  // drop-target detection on its own timers/rAF callbacks, which can
-  // lose a rapid burst of synthetic events with no real time between
-  // them (observed directly: ~20% of drops silently did nothing without
-  // these waits, despite the same coordinates).
   await page.mouse.move(sourceX, sourceY + 10, { steps: 5 });
-  await page.waitForTimeout(100);
+
+  if (!(await waitForDragStart(page, sourceId, 3000))) {
+    // SortableJS never recognised this as a drag at all (no move
+    // request will ever fire) — release the button so the page isn't
+    // left mid-drag, and signal the caller to retry the whole gesture.
+    await page.mouse.up();
+    return 0;
+  }
+
   await page.mouse.move(sourceX + (targetX - sourceX) / 2, sourceY + (targetY - sourceY) / 2, { steps: 10 });
-  await page.waitForTimeout(100);
   await page.mouse.move(targetX, targetY, { steps: 10 });
-  await page.waitForTimeout(150);
 
   let response;
   try {
-    const moved = page.waitForResponse((res) => /\/tasks\/\d+\/move$/.test(new URL(res.url()).pathname) && res.request().method() === 'POST', { timeout: 3000 });
+    const moved = page.waitForResponse((res) => /\/tasks\/\d+\/move$/.test(new URL(res.url()).pathname) && res.request().method() === 'POST', { timeout: 5000 });
     await page.mouse.up();
     response = await moved;
-  } catch (err) {
-    // SortableJS occasionally never registers the drag as started at
-    // all (no move request fires) despite identical synthetic input —
-    // release the button so the page isn't left mid-drag and signal
-    // the caller to retry the whole gesture from scratch.
+  } catch {
     await page.mouse.up();
     return 0;
   }
   return response.status();
 }
 
-// SortableJS drives its own pointer tracking off timers/rAF rather than
-// the native HTML5 Drag and Drop API, and occasionally misses a
-// synthetic drag entirely (no move request ever fires) regardless of
-// coordinates or pacing — a known, hard-to-eliminate flake class for
-// automating pointer-based drag libraries. Retrying the whole gesture,
-// rather than loosening the assertion, keeps the test proving a real
-// drag actually persists server-side every time it reports success.
+// A bounded retry around the whole gesture, on top of polling for
+// SortableJS's own drag-start signal inside dragOnce: even confirming
+// the drag started, a single synthetic run can still occasionally miss
+// the drop (e.g. a move event landing between two rAF callbacks). Each
+// attempt still requires a genuine 302 from the move endpoint, so this
+// compensates for automation timing noise without weakening what a
+// passing attempt actually proves.
 async function dragCardOnto(page: Page, sourceTitle: string, targetTitle: string, dropBelow: boolean): Promise<void> {
   const attempts = 4;
   for (let attempt = 1; attempt <= attempts; attempt++) {
@@ -282,7 +298,12 @@ test('gate 2.04: a task can be moved with keyboard only', async ({ page, server 
 
 // SPEC gate 2.04 (drag part), 2.05 (dragged card lands where dropped):
 // dragging within a column reorders it, consistent after a reload.
-test('dragging within a column reorders it, and the order survives a reload', async ({ page, server }) => {
+// @fresh: this board's own worker-scoped server is shared and long-lived
+// (reused across every other board test, with no way yet to delete a
+// task — that arrives with P2-06), so a column could otherwise already
+// hold enough cards from earlier tests to push a drag target below the
+// fold, off the viewport a synthetic mouse drag can actually reach.
+testToday('@fresh dragging within a column reorders it, and the order survives a reload', async ({ page, server }) => {
   await signInAsNewPerson(page, server.baseURL, '/tasks/board');
   await ready(page);
 
@@ -305,7 +326,8 @@ test('dragging within a column reorders it, and the order survives a reload', as
 });
 
 // SPEC gate 2.04 (drag part): dragging a card to another column moves it.
-test('dragging a card to another column moves it there', async ({ page, server }) => {
+// @fresh: see the previous test for why this needs its own empty board.
+testToday('@fresh dragging a card to another column moves it there', async ({ page, server }) => {
   await signInAsNewPerson(page, server.baseURL, '/tasks/board');
   await ready(page);
 
