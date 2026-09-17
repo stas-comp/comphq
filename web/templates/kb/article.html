@@ -3,5 +3,12 @@
 <h1>{{.Article.Title}}</h1>
 <p><a href="/kb/articles/{{.Article.ID}}/edit">Edit</a></p>
 
+{{if .ImageFailures}}
+<p class="message" role="alert">
+Some pictures couldn't be copied, so they're marked in the article below. The rest of the text was saved.
+{{range .ImageFailures}}<br>{{.}}{{end}}
+</p>
+{{end}}
+
 <div class="kb-article-body">{{.BodyHTML}}</div>
 {{end}}

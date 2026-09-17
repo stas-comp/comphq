@@ -8,16 +8,20 @@ import (
 	"time"
 
 	kbhtml "github.com/stas-comp/comphq/internal/kb/html"
+	"github.com/stas-comp/comphq/internal/kb/images"
 )
 
-// Article is one row of kb_articles.
+// Article is one row of kb_articles. ImageFailures is set only on the
+// Article Publish just returned (SPEC gate 1.19: "the editor response
+// lists the failures") — it's never stored.
 type Article struct {
-	ID         int64
-	CategoryID int64
-	Title      string
-	BodyHTML   string
-	Status     string
-	VersionNo  int
+	ID            int64
+	CategoryID    int64
+	Title         string
+	BodyHTML      string
+	Status        string
+	VersionNo     int
+	ImageFailures []string
 }
 
 // ArticleInput is what a publish form submits. ID is 0 for a new article.
@@ -32,21 +36,26 @@ type ArticleInput struct {
 var ErrArticleEmptyTitle = errors.New("title can't be empty")
 
 type ArticleStore struct {
-	DB *sql.DB
+	DB     *sql.DB
+	Images *images.Store
 }
 
-// Publish sanitises the body, assigns block ids, saves the article (a new
-// row for a new article, or an incremented version for an existing one),
-// records a version, and rewrites its search rows — all in one transaction
-// (SPEC B3/B4: "Rows are rewritten in the same transaction as the article
-// save").
+// Publish copies external images onto the NAS, sanitises the body, assigns
+// block ids, saves the article (a new row for a new article, or an
+// incremented version for an existing one), records a version, and
+// rewrites its search rows — all in one transaction (SPEC B3/B4: "Rows are
+// rewritten in the same transaction as the article save").
 func (s *ArticleStore) Publish(ctx context.Context, input ArticleInput, personID int64) (Article, error) {
 	title := strings.TrimSpace(input.Title)
 	if title == "" {
 		return Article{}, ErrArticleEmptyTitle
 	}
 
-	withBlocks := kbhtml.AssignBlocks(kbhtml.Sanitize(input.BodyHTML))
+	// SPEC B4: "for every img whose src isn't /images/...", fetch or
+	// decode it before Sanitize, which unconditionally drops anything
+	// still pointing elsewhere afterward.
+	withLocalImages, imageFailures := kbhtml.RewriteExternalImages(input.BodyHTML, s.fetchImage(ctx, personID))
+	withBlocks := kbhtml.AssignBlocks(kbhtml.Sanitize(withLocalImages))
 	blockTexts := kbhtml.BlockTexts(withBlocks)
 
 	tx, err := s.DB.BeginTx(ctx, nil)
@@ -120,7 +129,30 @@ func (s *ArticleStore) Publish(ctx context.Context, input ArticleInput, personID
 	if err := tx.Commit(); err != nil {
 		return Article{}, err
 	}
+	article.ImageFailures = imageFailures
 	return article, nil
+}
+
+// fetchImage returns a RewriteExternalImages callback that decodes a
+// data: URL or fetches an http(s) one through s.Images, whichever the src
+// is; anything else (an unrecognised scheme) is treated as a failure.
+func (s *ArticleStore) fetchImage(ctx context.Context, personID int64) func(src string) (string, bool) {
+	return func(src string) (string, bool) {
+		var img images.Image
+		var err error
+		switch {
+		case strings.HasPrefix(src, "data:"):
+			img, err = s.Images.StoreDataURL(ctx, src, personID)
+		case strings.HasPrefix(src, "http://"), strings.HasPrefix(src, "https://"):
+			img, err = s.Images.FetchAndStore(ctx, src, personID)
+		default:
+			return "", false
+		}
+		if err != nil {
+			return "", false
+		}
+		return "/images/" + img.SHA256 + "." + img.Ext, true
+	}
 }
 
 // Get returns one article by id, regardless of status.

@@ -55,10 +55,31 @@ func (h *Handlers) handleNewArticle(w http.ResponseWriter, r *http.Request) {
 	h.srv.RenderFrame(w, r, http.StatusOK, "kb-editor.html", "New article", data)
 }
 
+// articlePageData renders one article. ImageFailures is set only right
+// after a publish that couldn't copy every external image (SPEC gate
+// 1.19: "the editor response lists the failures") — a plain view of an
+// already-published article never has any.
 type articlePageData struct {
-	Article  Article
-	BodyHTML template.HTML
-	Category Category
+	Article       Article
+	BodyHTML      template.HTML
+	Category      Category
+	ImageFailures []string
+}
+
+func (h *Handlers) renderArticlePage(w http.ResponseWriter, r *http.Request, status int, article Article, imageFailures []string) {
+	category, err := h.categories.Get(article.CategoryID)
+	if err != nil {
+		http.Error(w, "internal error", http.StatusInternalServerError)
+		return
+	}
+	// article.BodyHTML was sanitised on save (SPEC B4); it's the one place
+	// article content bypasses html/template's auto-escaping.
+	h.srv.RenderFrame(w, r, status, "kb-article.html", article.Title, articlePageData{
+		Article:       article,
+		BodyHTML:      template.HTML(article.BodyHTML),
+		Category:      category,
+		ImageFailures: imageFailures,
+	})
 }
 
 func (h *Handlers) handleViewArticle(w http.ResponseWriter, r *http.Request) {
@@ -76,18 +97,7 @@ func (h *Handlers) handleViewArticle(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "internal error", http.StatusInternalServerError)
 		return
 	}
-	category, err := h.categories.Get(article.CategoryID)
-	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
-		return
-	}
-	// article.BodyHTML was sanitised on save (SPEC B4); it's the one place
-	// article content bypasses html/template's auto-escaping.
-	h.srv.RenderFrame(w, r, http.StatusOK, "kb-article.html", article.Title, articlePageData{
-		Article:  article,
-		BodyHTML: template.HTML(article.BodyHTML),
-		Category: category,
-	})
+	h.renderArticlePage(w, r, http.StatusOK, article, nil)
 }
 
 func (h *Handlers) handleEditArticle(w http.ResponseWriter, r *http.Request) {
@@ -165,6 +175,13 @@ func (h *Handlers) handleSaveArticle(w http.ResponseWriter, r *http.Request) {
 	}
 	if err != nil {
 		http.Error(w, "internal error", http.StatusInternalServerError)
+		return
+	}
+	// The text is still saved even when a picture couldn't be copied
+	// (SPEC gate 1.19), so this renders the article directly (status 200)
+	// with the failures listed, rather than a clean redirect to its URL.
+	if len(article.ImageFailures) > 0 {
+		h.renderArticlePage(w, r, http.StatusOK, article, article.ImageFailures)
 		return
 	}
 	http.Redirect(w, r, "/kb/articles/"+strconv.FormatInt(article.ID, 10), http.StatusFound)

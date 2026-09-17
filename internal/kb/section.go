@@ -17,11 +17,12 @@ type Handlers struct {
 }
 
 func Section(srv *app.Server) app.Section {
+	imagesStore := &images.Store{DB: srv.DB, DataDir: srv.DataDir}
 	h := &Handlers{
 		srv:        srv,
 		categories: &CategoryStore{DB: srv.DB},
-		articles:   &ArticleStore{DB: srv.DB},
-		images:     &images.Store{DB: srv.DB, DataDir: srv.DataDir},
+		articles:   &ArticleStore{DB: srv.DB, Images: imagesStore},
+		images:     imagesStore,
 	}
 	return app.Section{
 		MigrationName: "kb", // migrations/kb/0001_search.sql (P1-08), 0002_categories.sql (P1-17), 0003_article_versions.sql (P1-19), 0004_images.sql (P1-21)

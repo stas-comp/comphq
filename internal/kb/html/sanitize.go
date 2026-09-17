@@ -127,10 +127,6 @@ func pruneInvalidImageChildren(n *html.Node) {
 }
 
 func hasValidImageSrc(n *html.Node) bool {
-	for _, a := range n.Attr {
-		if a.Key == "src" {
-			return imgSrcPolicy.MatchString(a.Val)
-		}
-	}
-	return false
+	src, ok := attrValue(n, "src")
+	return ok && imgSrcPolicy.MatchString(src)
 }

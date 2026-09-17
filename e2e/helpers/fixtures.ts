@@ -5,7 +5,7 @@ import net from 'node:net';
 import os from 'node:os';
 import path from 'node:path';
 
-export type Server = { baseURL: string; dataDir: string };
+export type Server = { baseURL: string; dataDir: string; stubImageHost: string };
 
 async function freePort(): Promise<number> {
   return new Promise((resolve, reject) => {
@@ -45,11 +45,13 @@ export const test = base.extend<{}, { server: Server }>({
   server: [async ({}, use, workerInfo) => {
     const baseURLFromEnv = process.env.BASE_URL;
     if (baseURLFromEnv) {
-      // dataDir is empty here: BASE_URL points at an already-running,
-      // separately-hosted server (e.g. a container), so this process
-      // can't see its filesystem. Tests that check a file landed on disk
-      // are tagged @fresh and excluded from this mode (see below).
-      await use({ baseURL: baseURLFromEnv, dataDir: '' });
+      // dataDir and stubImageHost are empty here: BASE_URL points at an
+      // already-running, separately-hosted server (e.g. a container), so
+      // this process can't see its filesystem, and the fixed
+      // COMPHQ_TEST_ALLOW_FETCH_HOST allowlist below wasn't set up for
+      // it. Tests needing either are tagged @fresh and excluded from this
+      // mode (see below).
+      await use({ baseURL: baseURLFromEnv, dataDir: '', stubImageHost: '' });
       return;
     }
 
@@ -62,15 +64,31 @@ export const test = base.extend<{}, { server: Server }>({
     const port = await freePort();
     const addr = `127.0.0.1:${port}`;
 
+    // A single fixed loopback address, reserved per worker, that
+    // internal/kb/images.FetchAndStore is allowed to reach in test mode
+    // (SPEC P1-23's SSRF guard blocks every other loopback/private
+    // address even under COMPHQ_TEST_MODE=1). Tests bind their own stub
+    // image server to exactly this host:port when they need one; since a
+    // worker runs its tests one at a time, only one test ever holds it at
+    // once.
+    const stubPort = await freePort();
+    const stubImageHost = `127.0.0.1:${stubPort}`;
+
     const child: ChildProcess = execFile(bin, [], {
-      env: { ...process.env, COMPHQ_DATA_DIR: dataDir, COMPHQ_ADDR: addr, COMPHQ_TEST_MODE: '1' },
+      env: {
+        ...process.env,
+        COMPHQ_DATA_DIR: dataDir,
+        COMPHQ_ADDR: addr,
+        COMPHQ_TEST_MODE: '1',
+        COMPHQ_TEST_ALLOW_FETCH_HOST: stubImageHost,
+      },
     });
     child.stderr?.on('data', (chunk) => process.stderr.write(`[comphq worker ${workerInfo.workerIndex}] ${chunk}`));
 
     const baseURL = `http://${addr}`;
     await waitForHealthy(baseURL);
 
-    await use({ baseURL, dataDir });
+    await use({ baseURL, dataDir, stubImageHost });
 
     child.kill();
   }, { scope: 'worker' }],
