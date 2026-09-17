@@ -111,6 +111,9 @@ func TestDeployYAMLRules(t *testing.T) {
 	if strings.Contains(content, "COMPHQ_TEST_MODE") {
 		t.Error("deploy/truenas.yaml must never set COMPHQ_TEST_MODE")
 	}
+	if strings.Contains(content, "COMPHQ_TEST_TODAY") {
+		t.Error("deploy/truenas.yaml must never set COMPHQ_TEST_TODAY (SPEC B4: test-mode-only date override)")
+	}
 
 	m := imageTagRe.FindStringSubmatch(content)
 	if m == nil {

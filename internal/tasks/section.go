@@ -1,18 +1,31 @@
-// Package tasks will hold the Board, Team view and My jobs (P2-01–P2-12).
-// For now it registers only the "Coming soon" placeholder (SPEC gate 1.08).
 package tasks
 
 import (
 	"net/http"
 
 	"github.com/stas-comp/comphq/internal/app"
+	"github.com/stas-comp/comphq/internal/people"
 )
 
+type Handlers struct {
+	srv    *app.Server
+	tasks  *Store
+	people *people.Store
+}
+
 func Section(srv *app.Server) app.Section {
+	h := &Handlers{
+		srv:    srv,
+		tasks:  &Store{DB: srv.DB},
+		people: srv.PeopleStore(),
+	}
 	return app.Section{
-		Nav: &app.NavItem{Label: "Tasks", Path: "/tasks", Icon: "/static/theme/icons/tasks.svg"},
+		MigrationName: "tasks",
+		Nav:           &app.NavItem{Label: "Tasks", Path: "/tasks", Icon: "/static/theme/icons/tasks.svg"},
 		RegisterRoutes: func(mux *http.ServeMux) {
-			mux.HandleFunc("GET /tasks", srv.ComingSoon("Tasks"))
+			mux.HandleFunc("GET /tasks", h.handleRedirectToBoard) // My jobs lands here from P2-10
+			mux.HandleFunc("GET /tasks/board", h.handleBoard)
+			mux.HandleFunc("POST /tasks", h.handleCreateTask)
 		},
 	}
 }

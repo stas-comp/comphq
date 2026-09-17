@@ -1,0 +1,41 @@
+{{define "tasks-board.html"}}
+<h1>Tasks</h1>
+{{if .Message}}<p class="message" role="alert">{{.Message}}</p>{{end}}
+
+<form method="post" action="/tasks" class="add-task-form">
+<label class="visually-hidden" for="new-task-title">New task title</label>
+<input type="text" id="new-task-title" name="title" placeholder="New task" required>
+<label class="visually-hidden" for="new-task-stage">Starting column</label>
+<select id="new-task-stage" name="stage">
+{{range .Columns}}<option value="{{.Stage}}">{{.Label}}</option>{{end}}
+</select>
+<label class="visually-hidden" for="new-task-due-date">Due date</label>
+<input type="date" id="new-task-due-date" name="due_date">
+<label class="visually-hidden" for="new-task-people">People</label>
+<select id="new-task-people" name="person_id" multiple size="1">
+{{range .People}}<option value="{{.ID}}">{{.Name}}</option>{{end}}
+</select>
+<button type="submit">Add task</button>
+</form>
+
+<div class="task-board">
+{{range .Columns}}
+<div class="task-column" data-stage="{{.Stage}}">
+<h2>{{.Label}}{{if eq .Stage "todo"}}<span class="task-column-hint">Top = most important</span>{{end}}</h2>
+<ul class="task-card-list">
+{{range .Tasks}}
+<li class="task-card" data-task-id="{{.ID}}">
+<p class="task-card-title">{{.Title}}</p>
+{{if .Assignees}}
+<p class="task-card-assignees">
+{{range .Assignees}}<span class="task-avatar {{.ColorClass}}"{{if .Removed}} title="{{.Name}} (removed)"{{else}} title="{{.Name}}"{{end}}>{{.Initials}}</span>{{end}}
+</p>
+{{end}}
+{{if .DueDate}}<p class="task-card-due">{{.DueDate}}{{if .Overdue}} <span class="task-overdue-stamp">OVERDUE</span>{{end}}</p>{{end}}
+</li>
+{{end}}
+</ul>
+</div>
+{{end}}
+</div>
+{{end}}
