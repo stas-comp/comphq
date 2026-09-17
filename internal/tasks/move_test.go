@@ -101,6 +101,43 @@ func TestMoveAcrossStagesRecordsMovedActivity(t *testing.T) {
 	}
 }
 
+// A task moved into Done needs done_at set the same as one created
+// straight into Done (store_test.go's TestCreateWithAssigneesAndDueDate
+// sibling case) — otherwise ListBoard's 14-day retention query (gate
+// 2.08) never has a timestamp to compare against and the card would
+// never leave the board. Moving back out again should clear it.
+func TestMoveIntoAndOutOfDoneSetsAndClearsDoneAt(t *testing.T) {
+	sqlDB := openTestDB(t)
+	store := &Store{DB: sqlDB}
+	creator := testPerson(t, sqlDB, "Sam")
+	ctx := context.Background()
+
+	task := createNamed(t, store, ctx, creator, "Task", StageDoing)
+
+	doneAt := func() sql.NullString {
+		t.Helper()
+		var s sql.NullString
+		if err := sqlDB.QueryRow(`SELECT done_at FROM tasks WHERE id = ?`, task.ID).Scan(&s); err != nil {
+			t.Fatal(err)
+		}
+		return s
+	}
+
+	if err := store.Move(ctx, task.ID, MoveInput{Stage: StageDone, ToBottom: true}, creator, fixedNow); err != nil {
+		t.Fatalf("Move to done: %v", err)
+	}
+	if got := doneAt(); !got.Valid || got.String == "" {
+		t.Errorf("done_at after moving into Done = %+v, want a timestamp", got)
+	}
+
+	if err := store.Move(ctx, task.ID, MoveInput{Stage: StageDoing, ToBottom: true}, creator, fixedNow); err != nil {
+		t.Fatalf("Move out of done: %v", err)
+	}
+	if got := doneAt(); got.Valid {
+		t.Errorf("done_at after moving out of Done = %+v, want NULL", got)
+	}
+}
+
 func TestMoveWithinSameStageRecordsNoMovedActivity(t *testing.T) {
 	sqlDB := openTestDB(t)
 	store := &Store{DB: sqlDB}

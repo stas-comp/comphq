@@ -59,6 +59,7 @@ type cardView struct {
 	ID          int64
 	Title       string
 	Size        string
+	SizeLabel   string
 	Stage       string
 	DueDate     string
 	Overdue     bool
@@ -86,7 +87,7 @@ func newCardView(t Task) cardView {
 		otherStages = append(otherStages, stageOption{Stage: stage, Label: stageLabels[stage]})
 	}
 	return cardView{
-		ID: t.ID, Title: t.Title, Size: t.Size, Stage: t.Stage,
+		ID: t.ID, Title: t.Title, Size: t.Size, SizeLabel: sizeLabels[t.Size], Stage: t.Stage,
 		DueDate: t.DueDate, Overdue: t.Overdue, Assignees: views,
 		OtherStages: otherStages,
 	}
@@ -140,6 +141,20 @@ func (h *Handlers) renderBoard(w http.ResponseWriter, r *http.Request, status in
 	})
 }
 
+// parsePersonIDs reads a form's repeated person_id values (a multi-select
+// of assignees), shared by the add-task and details forms.
+func parsePersonIDs(r *http.Request) ([]int64, error) {
+	var personIDs []int64
+	for _, raw := range r.Form["person_id"] {
+		id, err := strconv.ParseInt(raw, 10, 64)
+		if err != nil {
+			return nil, err
+		}
+		personIDs = append(personIDs, id)
+	}
+	return personIDs, nil
+}
+
 func (h *Handlers) handleCreateTask(w http.ResponseWriter, r *http.Request) {
 	person, ok := people.FromContext(r.Context())
 	if !ok {
@@ -152,14 +167,10 @@ func (h *Handlers) handleCreateTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var personIDs []int64
-	for _, raw := range r.Form["person_id"] {
-		id, err := strconv.ParseInt(raw, 10, 64)
-		if err != nil {
-			http.Error(w, "invalid person_id", http.StatusBadRequest)
-			return
-		}
-		personIDs = append(personIDs, id)
+	personIDs, err := parsePersonIDs(r)
+	if err != nil {
+		http.Error(w, "invalid person_id", http.StatusBadRequest)
+		return
 	}
 
 	input := CreateInput{
@@ -172,7 +183,7 @@ func (h *Handlers) handleCreateTask(w http.ResponseWriter, r *http.Request) {
 	}
 
 	today := app.Today(h.srv.TestMode)
-	_, err := h.tasks.Create(r.Context(), input, person.ID, today)
+	_, err = h.tasks.Create(r.Context(), input, person.ID, today)
 	switch err {
 	case nil:
 		http.Redirect(w, r, "/tasks/board", http.StatusFound)

@@ -1,0 +1,46 @@
+{{define "tasks-details.html"}}
+<p><a href="/tasks/board">Back to Board</a></p>
+<h1>{{.Title}}</h1>
+{{if .Message}}<p class="message" role="alert">{{.Message}}</p>{{end}}
+
+<form method="post" action="/tasks/{{.ID}}" class="task-details-form">
+<label for="details-title">Title</label>
+<input type="text" id="details-title" name="title" value="{{.Title}}" required>
+
+<label for="details-notes">Notes</label>
+<textarea id="details-notes" name="notes">{{.Notes}}</textarea>
+
+<label for="details-size">Size</label>
+{{$size := .Size}}
+<select id="details-size" name="size">
+<option value="S"{{if eq $size "S"}} selected{{end}}>Small</option>
+<option value="M"{{if eq $size "M"}} selected{{end}}>Medium</option>
+<option value="L"{{if eq $size "L"}} selected{{end}}>Large</option>
+</select>
+
+<label for="details-stage">Column</label>
+{{$stage := .Stage}}
+<select id="details-stage" name="stage">
+{{range .Stages}}<option value="{{.Stage}}"{{if eq .Stage $stage}} selected{{end}}>{{.Label}}</option>{{end}}
+</select>
+
+<label for="details-due-date">Due date</label>
+<input type="date" id="details-due-date" name="due_date" value="{{.DueDate}}">
+
+<label for="details-people">People</label>
+<select id="details-people" name="person_id" multiple size="1">
+{{range .People}}<option value="{{.ID}}"{{if .Selected}} selected{{end}}>{{.Name}}</option>{{end}}
+</select>
+
+<button type="submit">Save</button>
+</form>
+
+<h2>Activity</h2>
+{{if .Activity}}
+<ul class="task-activity-list">
+{{range .Activity}}<li>{{.Text}} · {{.At}}</li>{{end}}
+</ul>
+{{else}}
+<p>No activity yet.</p>
+{{end}}
+{{end}}

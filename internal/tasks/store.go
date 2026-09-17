@@ -264,6 +264,9 @@ func (s *Store) Move(ctx context.Context, taskID int64, input MoveInput, actorID
 	); err != nil {
 		return err
 	}
+	if err := updateDoneAtForStageChange(ctx, tx, taskID, oldStage, input.Stage, nowStr); err != nil {
+		return err
+	}
 
 	if oldStage != input.Stage {
 		oldOthers, err := stageOrder(ctx, tx, oldStage, taskID)
@@ -284,6 +287,27 @@ func (s *Store) Move(ctx context.Context, taskID int64, input MoveInput, actorID
 	}
 
 	return tx.Commit()
+}
+
+// updateDoneAtForStageChange keeps done_at in sync with a stage change
+// that entered or left Done. ListBoard's 14-day retention (gate 2.08)
+// needs a real timestamp the moment a task lands in Done, not just from
+// Create (which already sets it for a task created straight into Done)
+// — a card dragged or moved into Done later needs the same treatment,
+// and one moved back out again should stop being tracked as finished.
+func updateDoneAtForStageChange(ctx context.Context, tx *sql.Tx, taskID int64, oldStage, newStage, nowStr string) error {
+	switch {
+	case oldStage == newStage:
+		return nil
+	case newStage == StageDone:
+		_, err := tx.ExecContext(ctx, `UPDATE tasks SET done_at = ? WHERE id = ?`, nowStr, taskID)
+		return err
+	case oldStage == StageDone:
+		_, err := tx.ExecContext(ctx, `UPDATE tasks SET done_at = NULL WHERE id = ?`, taskID)
+		return err
+	default:
+		return nil
+	}
 }
 
 // stageOrder returns a stage's current tasks, in position order,
