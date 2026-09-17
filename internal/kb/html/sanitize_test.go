@@ -1,6 +1,10 @@
 package html
 
-import "testing"
+import (
+	"os"
+	"strings"
+	"testing"
+)
 
 func TestSanitize(t *testing.T) {
 	tests := []struct {
@@ -87,6 +91,36 @@ func TestSanitizeIsIdempotent(t *testing.T) {
 		twice := Sanitize(once)
 		if once != twice {
 			t.Errorf("Sanitize not idempotent for %q:\n first: %q\nsecond: %q", in, once, twice)
+		}
+	}
+}
+
+// TestSanitizeStripsWebPageFixtureStyles covers P1-22's Go-side half of
+// SPEC gate 1.18: the same web page fixture the E2E paste tests use, run
+// straight through Sanitize, must come out with no style, class or font
+// left anywhere (the E2E test proves the same thing after a real paste and
+// publish; this proves the sanitiser itself does its part on the exact
+// fixture bytes).
+func TestSanitizeStripsWebPageFixtureStyles(t *testing.T) {
+	raw, err := os.ReadFile("../../../e2e/fixtures/paste/web-page.html")
+	if err != nil {
+		t.Fatalf("read fixture: %v", err)
+	}
+
+	got := Sanitize(string(raw))
+	for _, banned := range []string{"style=", "class=", "<font", "<script"} {
+		if strings.Contains(got, banned) {
+			t.Errorf("Sanitize(web-page.html fixture) still contains %q:\n%s", banned, got)
+		}
+	}
+	// Structural tags the fixture uses that are already on the allowlist
+	// survive even without going through the editor first (<b> and <span>
+	// aren't allowed tags, so those get unwrapped here rather than
+	// normalised to <strong> — that normalisation is the editor's job,
+	// proven by the E2E paste test against the real pipeline).
+	for _, want := range []string{"<h2>", "<li>", "<a href=", "<table>", "<td>"} {
+		if !strings.Contains(got, want) {
+			t.Errorf("Sanitize(web-page.html fixture) missing %q:\n%s", want, got)
 		}
 	}
 }

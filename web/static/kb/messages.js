@@ -9,6 +9,7 @@
 window.ComphqMessages = {
   LEAVE_WITHOUT_SAVING: 'Leave without saving?',
   WORD_IMPORT_COMING_SOON: "Import from Word is coming soon. Word documents can't be added yet.",
+  WORD_PICTURES_MISSING: "Some pictures from Word couldn't be pasted. Use Import from Word to bring them in.",
 }
 
 // A single visible message area for client-only feedback (SPEC gate 1.17:

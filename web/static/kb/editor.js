@@ -59,6 +59,28 @@ document.addEventListener('DOMContentLoaded', () => {
     onDrop: (_editor, files, pos) => {
       for (const file of files) uploadAndInsert(file, pos)
     },
+    // Word's clipboard HTML references pictures the browser can never load
+    // (Word doesn't hand over the actual bytes), so any img[src^="file:"]
+    // becomes a marked placeholder instead (SPEC gate 1.18, B4). data: and
+    // http(s) images are left untouched here — publishing copies those onto
+    // the NAS (P1-23), so this step only needs to catch the one kind that
+    // publish-time fetching can never rescue.
+    transformPastedHTML(html) {
+      if (!/<img[^>]+src=["']file:/i.test(html)) return html
+      const doc = new DOMParser().parseFromString(html, 'text/html')
+      let found = false
+      doc.querySelectorAll('img[src^="file:"]').forEach((img) => {
+        found = true
+        const placeholder = doc.createElement('div')
+        placeholder.setAttribute('data-missing-kind', 'picture')
+        placeholder.setAttribute('data-missing-src', img.getAttribute('src') || '')
+        img.replaceWith(placeholder)
+      })
+      if (found) {
+        window.ComphqUI.showMessage(window.ComphqMessages.WORD_PICTURES_MISSING)
+      }
+      return doc.body.innerHTML
+    },
   })
   editor.on('update', markDirty)
   titleInput.addEventListener('input', markDirty)

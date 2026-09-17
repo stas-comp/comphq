@@ -32,6 +32,28 @@
   height: auto;
 }
 
+/* SPEC gate 1.18: a picture pasted from Word that couldn't come across is
+   marked in place, both in the editor and in the published article. */
+.ProseMirror div[data-missing-kind],
+.kb-article-body div[data-missing-kind] {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 3em;
+  margin: 0 0 0.75em;
+  border: 2px dashed var(--color-danger, #a4222c);
+  border-radius: var(--radius-sm, 4px);
+  padding: var(--space-3, 0.75rem);
+  color: var(--color-danger, #a4222c);
+  font-size: var(--font-size-small, 0.875rem);
+  text-align: center;
+}
+
+.ProseMirror div[data-missing-kind]::after,
+.kb-article-body div[data-missing-kind]::after {
+  content: "Picture not shown — use Import from Word to bring it in.";
+}
+
 .ProseMirror table {
   border-collapse: collapse;
   table-layout: fixed;
