@@ -49,6 +49,7 @@ func Section(srv *app.Server) app.Section {
 			mux.HandleFunc("GET /kb/search", h.handleSearchResultsPage)
 			mux.HandleFunc("GET /kb/search.json", h.handleSearchJSON)
 			mux.HandleFunc("POST /kb/images", h.handleUploadImage)
+			mux.HandleFunc("POST /kb/import/docx", h.handleImportDocx)
 			mux.HandleFunc("GET /images/{filename}", h.handleServeImage)
 		},
 	}

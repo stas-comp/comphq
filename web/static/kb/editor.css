@@ -32,8 +32,15 @@
   height: auto;
 }
 
-/* SPEC gate 1.18: a picture pasted from Word that couldn't come across is
-   marked in place, both in the editor and in the published article. */
+/* Anything that couldn't come across — a picture pasted from Word (gate
+   1.18), one from a publish-time fetch failure, or, from Import from
+   Word, a picture in an unsupported format, a chart, a SmartArt diagram,
+   a textless shape, an equation or an embedded object (gate 1.49) — is
+   marked in place the same way, both in the editor and in the published
+   article. Each data-missing-kind value gets its own label text below;
+   what to actually do about it (open the file in Word, try the import
+   again) belongs in the one-off status message shown alongside it
+   (ComphqMessages), not in this permanent in-place label. */
 .ProseMirror div[data-missing-kind],
 .kb-article-body div[data-missing-kind] {
   display: flex;
@@ -49,9 +56,36 @@
   text-align: center;
 }
 
-.ProseMirror div[data-missing-kind]::after,
-.kb-article-body div[data-missing-kind]::after {
-  content: "Picture not shown — use Import from Word to bring it in.";
+.ProseMirror div[data-missing-kind="picture"]::after,
+.kb-article-body div[data-missing-kind="picture"]::after,
+.ProseMirror div[data-missing-kind="external"]::after,
+.kb-article-body div[data-missing-kind="external"]::after {
+  content: "Picture not shown.";
+}
+
+.ProseMirror div[data-missing-kind="chart"]::after,
+.kb-article-body div[data-missing-kind="chart"]::after {
+  content: "Chart not shown.";
+}
+
+.ProseMirror div[data-missing-kind="diagram"]::after,
+.kb-article-body div[data-missing-kind="diagram"]::after {
+  content: "Diagram not shown.";
+}
+
+.ProseMirror div[data-missing-kind="shape"]::after,
+.kb-article-body div[data-missing-kind="shape"]::after {
+  content: "Shape not shown.";
+}
+
+.ProseMirror div[data-missing-kind="equation"]::after,
+.kb-article-body div[data-missing-kind="equation"]::after {
+  content: "Equation not shown.";
+}
+
+.ProseMirror div[data-missing-kind="object"]::after,
+.kb-article-body div[data-missing-kind="object"]::after {
+  content: "Object not shown.";
 }
 
 .ProseMirror table {

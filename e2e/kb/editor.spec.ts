@@ -164,13 +164,6 @@ test.describe('editor toolbar (SPEC gate 1.15)', () => {
     }
   });
 
-  test('Import from Word is disabled with a tooltip', async ({ page, server }) => {
-    await signInAsNewPerson(page, server.baseURL, '/kb');
-    await goToNewArticle(page, server.baseURL);
-    const button = page.locator('#btn-import-word');
-    await expect(button).toBeDisabled();
-    await expect(button).toHaveAttribute('title', /.+/);
-  });
 });
 
 // SPEC gate 1.20: a beforeunload prompt when dirty, and Cancel on a dirty

@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const titleInput = document.getElementById('article-title')
   const categorySelect = document.getElementById('article-category')
   const imageFileInput = document.getElementById('image-file-input')
+  const docxFileInput = document.getElementById('docx-file-input')
 
   let dirty = false
   const markDirty = () => { dirty = true }
@@ -20,13 +21,8 @@ document.addEventListener('DOMContentLoaded', () => {
   // Uploads one file and inserts it as an image (SPEC gates 1.16, 1.17).
   // pos is given for a drop (insert exactly where it landed) and omitted
   // for a paste or the toolbar's file chooser (insert at the cursor). A
-  // .docx is routed to Import from Word, not upload — that command isn't
-  // built until P1-33, so it shows a "coming soon" message for now.
+  // .docx is routed to Import from Word instead — see importDocxFile.
   async function uploadAndInsert(file, pos) {
-    if (isWordFile(file)) {
-      window.ComphqUI.showMessage(window.ComphqMessages.WORD_IMPORT_COMING_SOON)
-      return
-    }
     try {
       const res = await fetch('/kb/images', {
         method: 'POST',
@@ -51,13 +47,55 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  // Imports a .docx into the editor (SPEC gates 1.45–1.52): never
+  // publishes anything itself — Publish, afterwards, follows the normal
+  // path. Replacing non-empty content asks first (gate 1.50); Cancel on
+  // that confirm leaves the editor exactly as it was.
+  async function importDocxFile(file) {
+    if (!editor.isEmpty && !window.confirm(window.ComphqMessages.REPLACE_EDITOR_CONTENT)) {
+      return
+    }
+    const formData = new FormData()
+    formData.append('file', file)
+    try {
+      const res = await fetch('/kb/import/docx', { method: 'POST', body: formData })
+      if (!res.ok) {
+        window.ComphqUI.showMessage(await res.text())
+        return
+      }
+      const data = await res.json()
+      editor.commands.setContent(data.html)
+      titleInput.value = data.title
+      markDirty()
+      if (data.notes && data.notes.length > 0) {
+        window.ComphqUI.showMessage(window.ComphqMessages.docxImportSummary(data.notes))
+      } else {
+        window.ComphqUI.clearMessage()
+      }
+    } catch (err) {
+      window.ComphqUI.showMessage('That file could not be imported.')
+    }
+  }
+
   const editor = window.ComphqEditor.create(container, {
     content: initialContent,
     onPaste: (_editor, files) => {
-      for (const file of files) uploadAndInsert(file)
+      for (const file of files) {
+        if (isWordFile(file)) {
+          importDocxFile(file)
+        } else {
+          uploadAndInsert(file)
+        }
+      }
     },
     onDrop: (_editor, files, pos) => {
-      for (const file of files) uploadAndInsert(file, pos)
+      for (const file of files) {
+        if (isWordFile(file)) {
+          importDocxFile(file)
+        } else {
+          uploadAndInsert(file, pos)
+        }
+      }
     },
     // Word's clipboard HTML references pictures the browser can never load
     // (Word doesn't hand over the actual bytes), so any img[src^="file:"]
@@ -111,6 +149,14 @@ document.addEventListener('DOMContentLoaded', () => {
     imageFileInput.value = ''
     if (!file) return
     uploadAndInsert(file)
+  })
+
+  bind('btn-import-word', () => docxFileInput.click())
+  docxFileInput.addEventListener('change', () => {
+    const file = docxFileInput.files && docxFileInput.files[0]
+    docxFileInput.value = ''
+    if (!file) return
+    importDocxFile(file)
   })
 
   // The four table-editing buttons only make sense with the cursor inside

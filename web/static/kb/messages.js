@@ -8,8 +8,15 @@
 // live in internal/kb/images — one source of truth, not duplicated here.
 window.ComphqMessages = {
   LEAVE_WITHOUT_SAVING: 'Leave without saving?',
-  WORD_IMPORT_COMING_SOON: "Import from Word is coming soon. Word documents can't be added yet.",
+  REPLACE_EDITOR_CONTENT: "Replace what's in the editor with this document?",
   WORD_PICTURES_MISSING: "Some pictures from Word couldn't be pasted. Use Import from Word to bring them in.",
+  // SPEC gate 1.49: "A message lists what came across and what didn't,
+  // for example '1 thing couldn't be brought in: a chart.'" notes is the
+  // server's own list of human-readable phrases (docx.Result.Notes).
+  docxImportSummary(notes) {
+    const noun = notes.length === 1 ? 'thing' : 'things'
+    return notes.length + ' ' + noun + " couldn't be brought in: " + notes.join(', ') + '.'
+  },
   // SPEC gate 1.32 (the asterisks around "words" in the SPEC text are its
   // own markdown emphasis, not literal characters to render).
   noArticlesMatch(query) {

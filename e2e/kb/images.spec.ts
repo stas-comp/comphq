@@ -105,10 +105,15 @@ test('a file that is neither an image nor a Word document shows a plain message 
   await expect(page.locator('#article-editor img')).toHaveCount(0);
 });
 
-test('dropping a .docx shows a coming-soon message instead of uploading it', async ({ page, server }) => {
+test('dropping a .docx imports it instead of uploading it as an image', async ({ page, server }) => {
   await signInAsNewPerson(page, server.baseURL, '/kb');
   await startArticle(page, server.baseURL, uniqueName('Docx drop article'));
 
+  // Not a real .docx — proves the drop is routed to Import from Word
+  // (SPEC gate 1.45: "dragging a .docx file onto the editor does the
+  // same" as the button) rather than the image-upload path, via the
+  // exact SPEC gate 1.51 message a genuinely unreadable file gets.
+  // e2e/kb/import-word.spec.ts covers the real end-to-end import.
   const docx = fixtureFromBytes(
     'sample.docx',
     'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
@@ -116,6 +121,6 @@ test('dropping a .docx shows a coming-soon message instead of uploading it', asy
   );
   await dropFile(page, '#article-editor .ProseMirror', docx);
 
-  await expect(page.locator('#editor-message')).toContainText('coming soon', { timeout: 5000 });
+  await expect(page.locator('#editor-message')).toContainText("Comp HQ can't open this file", { timeout: 5000 });
   await expect(page.locator('#article-editor img')).toHaveCount(0);
 });
