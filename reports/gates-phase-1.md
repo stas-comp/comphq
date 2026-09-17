@@ -34,4 +34,4 @@ Generated for PLAN.md P1-38 ("prove every Phase 1 gate in every environment SPEC
 
 **Not yet applicable in Phase 1:** 2.xx and 3.xx gates (Phase 2/3 features), and 2.22's CSV part of the export (P2-18).
 
-**CI run:** see PROGRESS.md's P1-38 row for the `gh workflow run ci.yml -f full=true` URL this checklist's results came from (all five jobs — go, browser, container, speed, screens — green in that one run).
+**CI run:** https://github.com/stas-comp/comphq/actions/runs/35250669689 (`gh workflow run ci.yml -f full=true`, all five jobs — go, browser, container, speed, screens — green). Two earlier dispatches of this same run (35247465972, 35248677291) failed and are not the run this checklist's results describe: they caught real, now-fixed issues (a checksum step unreadable-by-a-different-user permission bug, and three E2E tests that only worked against a per-worker local server) — see docs/decisions.md D-37 and the P1-38 commit history.
