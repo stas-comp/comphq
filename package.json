@@ -16,6 +16,7 @@
     "test:policy": "go test ./tools/policy/...",
     "check": "npm run build && npm run test:unit && npm run test:integration && npm run test:policy && npm run test:e2e && npm run test:a11y",
     "vendor:editor": "node scripts/vendor-editor/build.mjs",
+    "vendor:sortable": "node scripts/vendor-sortable.mjs",
     "fixtures:docx": "go run ./e2e/fixtures/docx/gen"
   },
   "devDependencies": {
@@ -27,6 +28,7 @@
     "@tiptap/extension-table": "3.31.3",
     "@tiptap/pm": "3.31.3",
     "@tiptap/starter-kit": "3.31.3",
-    "esbuild": "0.28.2"
+    "esbuild": "0.28.2",
+    "sortablejs": "1.15.7"
   }
 }
