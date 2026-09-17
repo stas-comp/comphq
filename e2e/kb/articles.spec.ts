@@ -27,7 +27,13 @@ async function publishArticle(
   await goToNewArticle(page, baseURL);
   await page.selectOption('#article-category', { label: category });
   await page.fill('#article-title', title);
-  await page.click('#article-editor');
+  // Click the ProseMirror node directly (not the #article-editor wrapper
+  // it mounts into) and wait for focus to land — a race seen only on CI's
+  // Linux/headless Chromium, where the first keystrokes after the click
+  // could be lost before focus had actually settled.
+  const editor = page.locator('#article-editor .ProseMirror');
+  await editor.click();
+  await expect(editor).toBeFocused();
   await page.keyboard.type(bodyText);
   await page.click('#btn-publish');
   await ready(page);
@@ -85,7 +91,9 @@ test('editing a published article records a new version and shows the new text',
 
   await page.locator('a', { hasText: 'Edit' }).click();
   await page.waitForSelector('body[data-editor-ready]');
-  await page.click('#article-editor');
+  const editor = page.locator('#article-editor .ProseMirror');
+  await editor.click();
+  await expect(editor).toBeFocused();
   await page.keyboard.press('Control+a');
   await page.keyboard.type('Edited text.');
   await page.click('#btn-publish');

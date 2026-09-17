@@ -18,14 +18,20 @@ async function goToNewArticle(page: Page, baseURL: string) {
 }
 
 // Creates a category, opens a new article against it with the given title,
-// and returns once the editor is ready to type into.
+// and returns once the editor is focused and ready to type into. Clicking
+// the ProseMirror node directly (not the #article-editor wrapper it mounts
+// into) and waiting for focus to land avoids a race seen only on CI's
+// Linux/headless Chromium, where the very first keystrokes after the click
+// could be lost before focus had actually settled.
 async function startArticle(page: Page, baseURL: string, title: string) {
   const category = uniqueName('Printers');
   await createCategory(page, baseURL, category);
   await goToNewArticle(page, baseURL);
   await page.selectOption('#article-category', { label: category });
   await page.fill('#article-title', title);
-  await page.click('#article-editor');
+  const editor = page.locator('#article-editor .ProseMirror');
+  await editor.click();
+  await expect(editor).toBeFocused();
 }
 
 async function publish(page: Page) {
@@ -223,7 +229,9 @@ test('publishing an article works with keyboard only', async ({ page, server }) 
   await page.locator('#article-category').selectOption({ label: category });
   await page.locator('#article-title').focus();
   await page.keyboard.type(title);
-  await page.locator('#article-editor .ProseMirror').focus();
+  const editor = page.locator('#article-editor .ProseMirror');
+  await editor.focus();
+  await expect(editor).toBeFocused();
   await page.keyboard.type('Typed entirely from the keyboard.');
   await page.locator('#btn-publish').focus();
   await page.keyboard.press('Enter');
