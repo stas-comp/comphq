@@ -161,6 +161,9 @@ func (s *Store) Create(ctx context.Context, input CreateInput, creatorID int64, 
 	); err != nil {
 		return Task{}, err
 	}
+	if err := bumpTasksVersion(ctx, tx); err != nil {
+		return Task{}, err
+	}
 
 	if err := tx.Commit(); err != nil {
 		return Task{}, err
@@ -286,6 +289,9 @@ func (s *Store) Move(ctx context.Context, taskID int64, input MoveInput, actorID
 		}
 	}
 
+	if err := bumpTasksVersion(ctx, tx); err != nil {
+		return err
+	}
 	return tx.Commit()
 }
 

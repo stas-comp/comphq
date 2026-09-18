@@ -4,6 +4,7 @@ package tasks
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -428,6 +429,37 @@ func TestNoDeleteRouteForTasks(t *testing.T) {
 	}
 	if stillExists != 1 {
 		t.Error("task no longer exists after DELETE attempts")
+	}
+}
+
+// TestVersionEndpointReturnsIncreasingCounter covers the refresh
+// mechanism's polling endpoint (SPEC B4/D-15) end to end over HTTP.
+func TestVersionEndpointReturnsIncreasingCounter(t *testing.T) {
+	ts, _ := newTestServer(t)
+	client := &http.Client{Jar: mustCookieJar(t)}
+	signIn(t, client, ts, "Sam")
+
+	getVersion := func() int64 {
+		t.Helper()
+		resp, err := client.Get(ts.URL + "/tasks/version")
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer resp.Body.Close()
+		var body struct {
+			Version int64 `json:"version"`
+		}
+		if err := json.NewDecoder(resp.Body).Decode(&body); err != nil {
+			t.Fatal(err)
+		}
+		return body.Version
+	}
+
+	before := getVersion()
+	postForm(t, client, ts, "/tasks", url.Values{"title": {"Task"}}).Body.Close()
+	after := getVersion()
+	if after <= before {
+		t.Errorf("version after creating a task = %d, want > %d", after, before)
 	}
 }
 

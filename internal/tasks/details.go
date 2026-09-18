@@ -144,6 +144,9 @@ func (s *Store) Update(ctx context.Context, taskID int64, input UpdateInput, act
 		return err
 	}
 
+	if err := bumpTasksVersion(ctx, tx); err != nil {
+		return err
+	}
 	return tx.Commit()
 }
 

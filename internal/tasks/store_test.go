@@ -19,7 +19,7 @@ func openTestDB(t *testing.T) *sql.DB {
 	}
 	t.Cleanup(func() { sqlDB.Close() })
 
-	for _, section := range []string{"people", "tasks"} {
+	for _, section := range []string{"app", "people", "tasks"} {
 		migrations, err := db.LoadMigrations(comphq.Migrations, section)
 		if err != nil {
 			t.Fatalf("LoadMigrations(%s): %v", section, err)

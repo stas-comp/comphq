@@ -36,7 +36,7 @@ My tasks
 {{if .FilterActive}}<a href="/tasks/board">Clear filter</a>{{end}}
 </form>
 
-<div class="task-board">
+<div class="task-board" data-refresh-version-url="/tasks/version" data-refresh-fragment-selector=".task-board">
 {{range .Columns}}
 <div class="task-column" data-stage="{{.Stage}}">
 <h2>{{.Label}}{{if eq .Stage "todo"}}<span class="task-column-hint">Top = most important</span>{{end}}</h2>

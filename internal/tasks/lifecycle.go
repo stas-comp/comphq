@@ -122,6 +122,9 @@ func (s *Store) Reopen(ctx context.Context, taskID int64, actorID int64, now tim
 		return err
 	}
 
+	if err := bumpTasksVersion(ctx, tx); err != nil {
+		return err
+	}
 	return tx.Commit()
 }
 
@@ -165,6 +168,9 @@ func (s *Store) Remove(ctx context.Context, taskID int64, actorID int64, now tim
 		return err
 	}
 
+	if err := bumpTasksVersion(ctx, tx); err != nil {
+		return err
+	}
 	return tx.Commit()
 }
 
@@ -209,5 +215,8 @@ func (s *Store) Restore(ctx context.Context, taskID int64, actorID int64, now ti
 		return err
 	}
 
+	if err := bumpTasksVersion(ctx, tx); err != nil {
+		return err
+	}
 	return tx.Commit()
 }

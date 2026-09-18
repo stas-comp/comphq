@@ -85,6 +85,22 @@
   text-decoration: underline;
 }
 
+#refresh-notice {
+  display: block;
+  margin: 0 0 var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-signal-orange);
+  color: var(--color-white);
+  border: none;
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+#refresh-notice[hidden] {
+  display: none;
+}
+
 .topbar {
   display: flex;
   align-items: center;

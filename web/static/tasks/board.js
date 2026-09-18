@@ -3,6 +3,12 @@
 // way to do the same thing, not a replacement, so this never needs to
 // be keyboard-accessible on its own (the buttons already are).
 document.addEventListener('DOMContentLoaded', initSortable)
+// The board's own fragment can be replaced from underneath it by the
+// shared refresh mechanism (SPEC gate 2.10) when another computer's
+// change arrives — SortableJS's bindings don't survive that, so it
+// needs re-creating on the fresh DOM nodes exactly like it does after a
+// drag's own drop re-render.
+document.addEventListener('refresh:applied', initSortable)
 
 function initSortable() {
   document.querySelectorAll('.task-card-list').forEach((list) => {
@@ -13,7 +19,15 @@ function initSortable() {
       // must never be mistaken for the start of a drag.
       filter: 'button, select',
       preventOnFilter: false,
-      onEnd: (evt) => handleDrop(evt.item),
+      // Marks a drag in progress via the same body attribute
+      // refresh.js checks before ever swapping the board's DOM out
+      // from under an active gesture (SPEC gate 2.10's "never wiped
+      // out").
+      onStart: () => { document.body.dataset.refreshBusy = '1' },
+      onEnd: (evt) => {
+        delete document.body.dataset.refreshBusy
+        handleDrop(evt.item)
+      },
     })
   })
 }

@@ -1,6 +1,7 @@
 package tasks
 
 import (
+	"encoding/json"
 	"net/http"
 	"strconv"
 	"strings"
@@ -103,6 +104,19 @@ func (h *Handlers) handleRedirectToBoard(w http.ResponseWriter, r *http.Request)
 
 func (h *Handlers) handleBoard(w http.ResponseWriter, r *http.Request) {
 	h.renderBoard(w, r, http.StatusOK, "")
+}
+
+// handleVersion answers with the tasks_version counter (SPEC B4/D-15):
+// refresh.js polls this, not the whole board, to notice a change
+// happened elsewhere as cheaply as possible.
+func (h *Handlers) handleVersion(w http.ResponseWriter, r *http.Request) {
+	version, err := h.tasks.Version(r.Context())
+	if err != nil {
+		http.Error(w, "internal error", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]any{"version": version})
 }
 
 // boardFilterFromRequest reads ?mine=1, ?person= and ?q= (SPEC gate
