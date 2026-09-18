@@ -131,7 +131,12 @@ test('gate 1.29: stemming and prefix matching find related words', async ({ page
   const category = uniqueName('Printers');
   await createCategory(page, server.baseURL, category);
 
-  const stem = uniqueWord('grinder');
+  // The random part of uniqueWord can end in "s" (or "u", "y", ...), and
+  // the Porter stemmer treats "…ss" and "…ies" differently from a plain
+  // "…s": then "<word>s" no longer stems to the same root as "<word>",
+  // and this test failed by chance about one run in thirty. A fixed
+  // ordinary ending keeps the plural rule the one under test (D-58).
+  const stem = uniqueWord('grinder') + 'ter';
   const stemTitle = uniqueName('Stemming article');
   await publishArticle(page, server.baseURL, category, stemTitle, `The ${stem} needs oiling.`);
 
@@ -225,6 +230,11 @@ test('gate 1.32: no-match message and symbol fuzzing cause no errors', async ({ 
   page.on('pageerror', (err) => pageErrors.push(String(err)));
 
   await signInAsNewPerson(page, server.baseURL, '/kb');
+  // signInAsNewPerson doesn't wait for its own redirect, and the picker
+  // page is already "ready", so type only once /kb has really loaded
+  // (as the other search tests do); otherwise the text can be typed into
+  // the page that is about to be replaced (D-58).
+  await page.goto(server.baseURL + '/kb');
   await ready(page);
 
   const nonsense = uniqueWord('nomatch');
