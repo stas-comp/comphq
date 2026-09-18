@@ -24,7 +24,11 @@ export const test = base.extend<{}, { server: SeededServer }>({
 
     const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'comphq-speed-'));
 
-    execFileSync(seedBin, ['-data', dataDir, '-articles', '500', '-words', '800', '-categories', '15', '-images=true'], {
+    execFileSync(seedBin, [
+      '-data', dataDir,
+      '-articles', '500', '-words', '800', '-categories', '15', '-images=true',
+      '-tasks', '2000', '-people', '10',
+    ], {
       stdio: 'inherit',
     });
 
