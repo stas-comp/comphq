@@ -23,7 +23,7 @@ func Section(srv *app.Server) app.Section {
 		MigrationName: "tasks",
 		Nav:           &app.NavItem{Label: "Tasks", Path: "/tasks", Icon: "/static/theme/icons/tasks.svg"},
 		RegisterRoutes: func(mux *http.ServeMux) {
-			mux.HandleFunc("GET /tasks", h.handleRedirectToBoard) // My jobs lands here from P2-10
+			mux.HandleFunc("GET /tasks", h.handleMyJobs)
 			mux.HandleFunc("GET /tasks/board", h.handleBoard)
 			mux.HandleFunc("POST /tasks", h.handleCreateTask)
 			mux.HandleFunc("GET /tasks/version", h.handleVersion)
@@ -34,6 +34,7 @@ func Section(srv *app.Server) app.Section {
 			mux.HandleFunc("POST /tasks/{id}", h.handleUpdateTask)
 			mux.HandleFunc("POST /tasks/{id}/move", h.handleMoveTask)
 			mux.HandleFunc("POST /tasks/{id}/assign", h.handleAssignTask)
+			mux.HandleFunc("POST /tasks/{id}/take", h.handleTakeTask)
 			mux.HandleFunc("POST /tasks/{id}/reopen", h.handleReopenTask)
 			mux.HandleFunc("POST /tasks/{id}/remove", h.handleRemoveTask)
 			mux.HandleFunc("POST /tasks/{id}/restore", h.handleRestoreTask)

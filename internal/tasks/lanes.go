@@ -22,6 +22,31 @@ func (s *Store) ListForTeamView(ctx context.Context) ([]Task, error) {
 	`)
 }
 
+// ListUpForGrabs returns every unremoved, unassigned task nobody is on
+// (SPEC B4's My jobs "Up for grabs"): In progress and To do first, in
+// priority order, then Ideas — the only place Ideas appear outside the
+// Board, since the Team view excludes them. Done tasks never appear
+// here (SPEC gate 2.33: "finished jobs don't appear").
+func (s *Store) ListUpForGrabs(ctx context.Context) ([]Task, error) {
+	return s.listTasks(ctx, `
+		SELECT id, title, notes, size, stage, position, due_date, done_at
+		FROM tasks
+		WHERE removed_at IS NULL
+		  AND stage IN ('doing', 'todo', 'idea')
+		  AND id NOT IN (SELECT DISTINCT task_id FROM task_assignees)
+		ORDER BY
+			CASE stage WHEN 'doing' THEN 0 WHEN 'todo' THEN 1 WHEN 'idea' THEN 2 END,
+			position
+	`)
+}
+
+// LaneForPerson builds one person's own lane exactly the way BuildLanes
+// does (SPEC B4: My jobs' left side is "the current person's lane,
+// built by the same code as their Team lane").
+func LaneForPerson(tasksList []Task, person people.Person) Lane {
+	return BuildLanes(tasksList, []people.Person{person})[1] // [0] is always Unassigned
+}
+
 // sizeWeight is each size's contribution to workload (SPEC B4: "load is
 // the sum of weights S=1, M=2, L=4").
 var sizeWeight = map[string]int{"S": 1, "M": 2, "L": 4}

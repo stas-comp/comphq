@@ -1,0 +1,51 @@
+{{define "tasks-myjobs.html"}}
+<h1>Tasks</h1>
+{{template "tasks-view-switch" .}}
+<p class="task-board-links"><a href="/tasks/finished">Finished tasks</a> · <a href="/tasks/removed">Removed tasks</a></p>
+
+<div class="myjobs-columns">
+<div class="myjobs-mine">
+<h2>My jobs</h2>
+{{if .Lane.WorkloadLine}}
+<div class="workload" aria-hidden="true">
+{{range .Lane.Workload}}<span class="workload-group">{{range .Blocks}}<span class="workload-block"></span>{{end}}</span>{{end}}
+</div>
+<p class="workload-line">{{.Lane.WorkloadLine}}</p>
+{{end}}
+
+<h3>Working on now</h3>
+<ul class="team-task-list myjobs-working-list">
+{{range .Lane.WorkingOnNow}}
+<li class="team-task" data-task-id="{{.ID}}">
+<a href="/tasks/{{.ID}}">{{.Title}}</a> <span class="team-task-size">{{.SizeLabel}}</span>
+</li>
+{{end}}
+</ul>
+
+<h3>Up next</h3>
+<ul class="team-task-list myjobs-upnext-list">
+{{range .Lane.UpNext}}
+<li class="team-task" data-task-id="{{.ID}}">
+{{.Number}}. <a href="/tasks/{{.ID}}">{{.Title}}</a> <span class="team-task-size">{{.SizeLabel}}</span>
+</li>
+{{end}}
+</ul>
+</div>
+
+<div class="myjobs-grabs">
+<h2>Up for grabs</h2>
+<ul class="team-task-list myjobs-grabs-list">
+{{range .UpForGrabs}}
+<li class="team-task" data-task-id="{{.ID}}">
+<a href="/tasks/{{.ID}}">{{.Title}}</a> <span class="team-task-size">{{.SizeLabel}}</span>
+<form method="post" action="/tasks/{{.ID}}/take" class="inline-form">
+<button type="submit">Take it</button>
+</form>
+</li>
+{{end}}
+</ul>
+</div>
+</div>
+<script src="/static/vendor/sortable/Sortable-1.15.7.min.js"></script>
+<script src="/static/tasks/myjobs.js"></script>
+{{end}}

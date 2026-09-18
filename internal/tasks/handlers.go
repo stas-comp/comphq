@@ -99,10 +99,6 @@ func newCardView(t Task) cardView {
 	}
 }
 
-func (h *Handlers) handleRedirectToBoard(w http.ResponseWriter, r *http.Request) {
-	http.Redirect(w, r, "/tasks/board", http.StatusFound)
-}
-
 func (h *Handlers) handleBoard(w http.ResponseWriter, r *http.Request) {
 	h.renderBoard(w, r, http.StatusOK, "")
 }

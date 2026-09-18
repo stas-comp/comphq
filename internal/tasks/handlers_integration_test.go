@@ -166,26 +166,97 @@ func TestCreateTaskHTTPWithStageDueDateAndPeople(t *testing.T) {
 	}
 }
 
-// TestTasksRedirectsToBoard covers PLAN.md P2-01's note that GET /tasks
-// temporarily redirects to the board until My jobs exists (P2-10).
-func TestTasksRedirectsToBoard(t *testing.T) {
-	ts, _ := newTestServer(t)
+// TestMyJobsHTTPShowsOwnLaneAndUpForGrabs covers gate 2.32/2.33's My
+// jobs home screen end to end over HTTP: it renders directly (no
+// redirect), showing the signed-in person's own lane next to jobs and
+// ideas nobody is on, but not another person's job or a finished one.
+func TestMyJobsHTTPShowsOwnLaneAndUpForGrabs(t *testing.T) {
+	ts, sqlDB := newTestServer(t)
 	client := &http.Client{
 		Jar:           mustCookieJar(t),
 		CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse },
 	}
 	signIn(t, client, ts, "Sam")
+	signIn(t, client, ts, "Alex")
+	sam := personID(t, sqlDB, "Sam")
+
+	postForm(t, client, ts, "/tasks", url.Values{"title": {"Mine"}, "stage": {StageTodo}, "person_id": {itoa(sam)}}).Body.Close()
+	postForm(t, client, ts, "/tasks", url.Values{"title": {"Alex's"}, "stage": {StageTodo}, "person_id": {itoa(personID(t, sqlDB, "Alex"))}}).Body.Close()
+	postForm(t, client, ts, "/tasks", url.Values{"title": {"Grabbable"}, "stage": {StageTodo}}).Body.Close()
+	postForm(t, client, ts, "/tasks", url.Values{"title": {"Someday"}, "stage": {StageIdea}}).Body.Close()
+	postForm(t, client, ts, "/tasks", url.Values{"title": {"Finished already"}, "stage": {StageDone}}).Body.Close()
+
+	// Re-select Sam: signing in Alex above replaced the session cookie.
+	postForm(t, client, ts, "/who/select", url.Values{"person_id": {itoa(sam)}, "next": {"/"}}).Body.Close()
 
 	resp, err := client.Get(ts.URL + "/tasks")
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusFound {
-		t.Fatalf("status = %d, want %d", resp.StatusCode, http.StatusFound)
+	body := readBody(t, resp)
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("status = %d, want 200 (My jobs renders directly, no redirect)", resp.StatusCode)
 	}
-	if loc := resp.Header.Get("Location"); loc != "/tasks/board" {
-		t.Errorf("Location = %q, want /tasks/board", loc)
+	if !strings.Contains(body, "Mine") {
+		t.Errorf("My jobs missing the signed-in person's own task; got:\n%s", body)
+	}
+	if !strings.Contains(body, "Grabbable") || !strings.Contains(body, "Someday") {
+		t.Errorf("Up for grabs missing the unassigned task or idea; got:\n%s", body)
+	}
+	if strings.Contains(body, "Alex's") {
+		t.Errorf("My jobs shows a job belonging only to another person; got:\n%s", body)
+	}
+	if strings.Contains(body, "Finished already") {
+		t.Errorf("My jobs shows a finished task; got:\n%s", body)
+	}
+}
+
+// TestTakeTaskHTTPUnassignedTodoKeepsPosition covers gate 2.34's Take
+// it button path (no drop position) end to end over HTTP.
+func TestTakeTaskHTTPUnassignedTodoKeepsPosition(t *testing.T) {
+	ts, sqlDB := newTestServer(t)
+	client := &http.Client{Jar: mustCookieJar(t)}
+	signIn(t, client, ts, "Sam")
+
+	postForm(t, client, ts, "/tasks", url.Values{"title": {"Grabbable"}, "stage": {StageTodo}}).Body.Close()
+	task := taskID(t, sqlDB, "Grabbable")
+
+	resp := postForm(t, client, ts, fmt.Sprintf("/tasks/%d/take", task), nil)
+	body := readBody(t, resp)
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("status = %d, want 200 (following the redirect to My jobs)", resp.StatusCode)
+	}
+	if !strings.Contains(body, "Grabbable") {
+		t.Errorf("My jobs missing the taken task; got:\n%s", body)
+	}
+
+	var assigneeCount int
+	if err := sqlDB.QueryRow(`SELECT COUNT(*) FROM task_assignees WHERE task_id = ?`, task).Scan(&assigneeCount); err != nil {
+		t.Fatal(err)
+	}
+	if assigneeCount != 1 {
+		t.Errorf("task_assignees rows = %d, want 1", assigneeCount)
+	}
+}
+
+// TestTakeTaskHTTPIdeaMovesToTodo covers gate 2.35's idea-to-todo Take
+// path end to end over HTTP.
+func TestTakeTaskHTTPIdeaMovesToTodo(t *testing.T) {
+	ts, sqlDB := newTestServer(t)
+	client := &http.Client{Jar: mustCookieJar(t)}
+	signIn(t, client, ts, "Sam")
+
+	postForm(t, client, ts, "/tasks", url.Values{"title": {"Someday"}, "stage": {StageIdea}}).Body.Close()
+	idea := taskID(t, sqlDB, "Someday")
+
+	postForm(t, client, ts, fmt.Sprintf("/tasks/%d/take", idea), nil).Body.Close()
+
+	var stage string
+	if err := sqlDB.QueryRow(`SELECT stage FROM tasks WHERE id = ?`, idea).Scan(&stage); err != nil {
+		t.Fatal(err)
+	}
+	if stage != StageTodo {
+		t.Errorf("stage after Take = %q, want %q", stage, StageTodo)
 	}
 }
 
@@ -403,6 +474,7 @@ func TestNoDeleteRouteForTasks(t *testing.T) {
 		"/tasks/removed",
 		"/tasks/" + idStr,
 		"/tasks/" + idStr + "/move",
+		"/tasks/" + idStr + "/take",
 		"/tasks/" + idStr + "/reopen",
 		"/tasks/" + idStr + "/remove",
 		"/tasks/" + idStr + "/restore",
