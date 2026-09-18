@@ -299,6 +299,138 @@ func TestMoveTaskHTTPMissingNeighborReRendersBoard(t *testing.T) {
 	}
 }
 
+// TestReopenTaskHTTPReturnsToBottomOfTodo covers gate 2.08's Reopen
+// action end to end over HTTP.
+func TestReopenTaskHTTPReturnsToBottomOfTodo(t *testing.T) {
+	ts, sqlDB := newTestServer(t)
+	client := &http.Client{Jar: mustCookieJar(t)}
+	signIn(t, client, ts, "Sam")
+
+	postForm(t, client, ts, "/tasks", url.Values{"title": {"Existing"}, "stage": {StageTodo}}).Body.Close()
+	postForm(t, client, ts, "/tasks", url.Values{"title": {"Finished"}, "stage": {StageDone}}).Body.Close()
+	finished := taskID(t, sqlDB, "Finished")
+
+	// Reopen doesn't require the task to have actually aged off the
+	// board first (Store.Reopen has no such gate — only ListFinished's
+	// own query does), so this checks the wiring, not the 14-day rule
+	// itself (already covered at the store level).
+	resp := postForm(t, client, ts, fmt.Sprintf("/tasks/%d/reopen", finished), nil)
+	resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("status = %d, want 200 (following the redirect to Finished tasks)", resp.StatusCode)
+	}
+
+	var stage string
+	var doneAt sql.NullString
+	if err := sqlDB.QueryRow(`SELECT stage, done_at FROM tasks WHERE id = ?`, finished).Scan(&stage, &doneAt); err != nil {
+		t.Fatal(err)
+	}
+	if stage != StageTodo {
+		t.Errorf("stage after Reopen = %q, want %q", stage, StageTodo)
+	}
+	if doneAt.Valid {
+		t.Errorf("done_at after Reopen = %+v, want NULL", doneAt)
+	}
+}
+
+// TestRemoveAndRestoreTaskHTTP covers gate 2.09 end to end over HTTP:
+// Remove hides a task from the board and lists it in Removed tasks;
+// Restore brings it back.
+func TestRemoveAndRestoreTaskHTTP(t *testing.T) {
+	ts, sqlDB := newTestServer(t)
+	client := &http.Client{Jar: mustCookieJar(t)}
+	signIn(t, client, ts, "Sam")
+
+	postForm(t, client, ts, "/tasks", url.Values{"title": {"Removable"}, "stage": {StageTodo}}).Body.Close()
+	task := taskID(t, sqlDB, "Removable")
+
+	resp := postForm(t, client, ts, fmt.Sprintf("/tasks/%d/remove", task), nil)
+	boardBody := readBody(t, resp)
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("remove status = %d, want 200 (following the redirect to the board)", resp.StatusCode)
+	}
+	if strings.Contains(boardBody, "Removable") {
+		t.Errorf("board still shows a removed task; got:\n%s", boardBody)
+	}
+
+	removedResp, err := client.Get(ts.URL + "/tasks/removed")
+	if err != nil {
+		t.Fatal(err)
+	}
+	removedBody := readBody(t, removedResp)
+	if !strings.Contains(removedBody, "Removable") {
+		t.Errorf("Removed tasks page missing the removed task; got:\n%s", removedBody)
+	}
+
+	resp = postForm(t, client, ts, fmt.Sprintf("/tasks/%d/restore", task), nil)
+	restoredListBody := readBody(t, resp)
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("restore status = %d, want 200 (following the redirect to Removed tasks)", resp.StatusCode)
+	}
+	if strings.Contains(restoredListBody, "Removable") {
+		t.Errorf("Removed tasks page still lists the restored task; got:\n%s", restoredListBody)
+	}
+
+	boardResp, err := client.Get(ts.URL + "/tasks/board")
+	if err != nil {
+		t.Fatal(err)
+	}
+	boardBody = readBody(t, boardResp)
+	if !strings.Contains(boardBody, "Removable") {
+		t.Errorf("board missing the restored task; got:\n%s", boardBody)
+	}
+}
+
+// TestNoDeleteRouteForTasks covers SPEC gate 2.09's "nothing can be
+// permanently deleted": every task-related path registers only the
+// methods this section actually needs (SPEC B4's enhanced ServeMux
+// automatically answers 405 for a registered path given an
+// unregistered method), so a DELETE to any of them must never succeed.
+func TestNoDeleteRouteForTasks(t *testing.T) {
+	ts, sqlDB := newTestServer(t)
+	client := &http.Client{Jar: mustCookieJar(t)}
+	signIn(t, client, ts, "Sam")
+
+	postForm(t, client, ts, "/tasks", url.Values{"title": {"Task"}, "stage": {StageTodo}}).Body.Close()
+	id := taskID(t, sqlDB, "Task")
+	idStr := itoa(id)
+
+	paths := []string{
+		"/tasks",
+		"/tasks/board",
+		"/tasks/finished",
+		"/tasks/removed",
+		"/tasks/" + idStr,
+		"/tasks/" + idStr + "/move",
+		"/tasks/" + idStr + "/reopen",
+		"/tasks/" + idStr + "/remove",
+		"/tasks/" + idStr + "/restore",
+	}
+	for _, path := range paths {
+		req, err := http.NewRequest(http.MethodDelete, ts.URL+path, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		req.Header.Set("Origin", ts.URL)
+		resp, err := client.Do(req)
+		if err != nil {
+			t.Fatalf("DELETE %s: %v", path, err)
+		}
+		resp.Body.Close()
+		if resp.StatusCode == http.StatusOK || resp.StatusCode == http.StatusNoContent {
+			t.Errorf("DELETE %s = %d, want a non-success status (no delete route exists)", path, resp.StatusCode)
+		}
+	}
+
+	var stillExists int
+	if err := sqlDB.QueryRow(`SELECT COUNT(*) FROM tasks WHERE id = ?`, id).Scan(&stillExists); err != nil {
+		t.Fatal(err)
+	}
+	if stillExists != 1 {
+		t.Error("task no longer exists after DELETE attempts")
+	}
+}
+
 func itoa(id int64) string {
 	return strconv.FormatInt(id, 10)
 }

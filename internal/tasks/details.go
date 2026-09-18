@@ -291,6 +291,12 @@ func (s *Store) activityText(ctx context.Context, action, detail, actorName stri
 		return actorName + " created this", nil
 	case "edited":
 		return actorName + " edited this", nil
+	case "reopened":
+		return actorName + " reopened this", nil
+	case "removed":
+		return actorName + " removed this", nil
+	case "restored":
+		return actorName + " restored this", nil
 	case "moved":
 		var d movedDetail
 		if err := json.Unmarshal([]byte(detail), &d); err != nil {

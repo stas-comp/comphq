@@ -225,3 +225,23 @@
   flex-direction: column;
   gap: var(--space-1);
 }
+
+.task-remove-form {
+  max-width: 40rem;
+  margin: 0 0 var(--space-4);
+}
+
+.task-simple-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  max-width: 30rem;
+}
+
+.task-simple-list .task-card-actions,
+.task-simple-list .inline-form {
+  margin-top: var(--space-2);
+}

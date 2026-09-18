@@ -35,6 +35,10 @@
 <button type="submit">Save</button>
 </form>
 
+<form method="post" action="/tasks/{{.ID}}/remove" class="task-remove-form">
+<button type="submit">Remove task</button>
+</form>
+
 <h2>Activity</h2>
 {{if .Activity}}
 <ul class="task-activity-list">

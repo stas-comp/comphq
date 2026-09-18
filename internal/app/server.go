@@ -95,6 +95,7 @@ func (s *Server) Routes() http.Handler {
 		mux.HandleFunc("POST /__test/people/deactivate", s.handleTestDeactivatePerson)
 		mux.HandleFunc("POST /__test/kb/seed-article", s.handleTestSeedKBArticle)
 		mux.HandleFunc("POST /__test/backups/set-last-backup-at", s.handleTestSetLastBackupAt)
+		mux.HandleFunc("POST /__test/tasks/set-done-at", s.handleTestSetTaskDoneAt)
 	}
 
 	for _, section := range s.registry.Sections() {
@@ -225,6 +226,32 @@ func (s *Server) handleTestSetLastBackupAt(w http.ResponseWriter, r *http.Reques
 	}
 	at := time.Now().Add(-time.Duration(daysAgo * float64(24*time.Hour)))
 	if err := db.SetLastBackupAtForTest(s.DB, at); err != nil {
+		http.Error(w, "internal error", http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+}
+
+// handleTestSetTaskDoneAt lets an E2E test move a Done task's done_at
+// into the past without waiting on the real 14-day retention window
+// (SPEC gate 2.08), the same days_ago convention as
+// handleTestSetLastBackupAt. Raw SQL against the shared *sql.DB, not
+// the tasks package's own Store, since internal/app can't import a
+// section — a section imports internal/app itself (D-14) — the same
+// reason handleTestSeedKBArticle above talks to kb_articles directly.
+func (s *Server) handleTestSetTaskDoneAt(w http.ResponseWriter, r *http.Request) {
+	taskID, err := strconv.ParseInt(r.FormValue("task_id"), 10, 64)
+	if err != nil {
+		http.Error(w, "invalid task_id", http.StatusBadRequest)
+		return
+	}
+	daysAgo, err := strconv.ParseFloat(r.FormValue("days_ago"), 64)
+	if err != nil {
+		http.Error(w, "invalid days_ago", http.StatusBadRequest)
+		return
+	}
+	at := time.Now().Add(-time.Duration(daysAgo * float64(24*time.Hour)))
+	if _, err := s.DB.Exec(`UPDATE tasks SET done_at = ? WHERE id = ?`, at.UTC().Format(time.RFC3339), taskID); err != nil {
 		http.Error(w, "internal error", http.StatusInternalServerError)
 		return
 	}
