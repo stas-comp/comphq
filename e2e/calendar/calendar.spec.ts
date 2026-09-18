@@ -320,3 +320,46 @@ test('standard page checks for Removed events', async ({ page, server }) => {
   await axeCheck(page);
   await expectNoSideScroll(page);
 });
+
+async function addTask(page: Page, title: string, stage: string, dueDate: string): Promise<void> {
+  await page.fill('#new-task-title', title);
+  await page.selectOption('#new-task-stage', stage);
+  await page.fill('#new-task-due-date', dueDate);
+  await page.click('.add-task-form button[type="submit"]');
+  await ready(page);
+}
+
+// SPEC gate 2.19: unfinished tasks with due dates show on their date,
+// looking different from events (outlined, data-kind="task"), and
+// open the task; finished and removed tasks don't show at all.
+test('gate 2.19: a due task shows as an outlined chip and opens the task, but finished and removed tasks don\'t show', async ({ page, server }) => {
+  await signInAsNewPerson(page, server.baseURL, '/tasks/board');
+  await ready(page);
+
+  const dueTitle = uniqueName('Due task');
+  await addTask(page, dueTitle, 'todo', '2026-09-25');
+
+  const doneTitle = uniqueName('Finished task');
+  await addTask(page, doneTitle, 'done', '2026-09-25');
+
+  const removedTitle = uniqueName('Removed task');
+  await addTask(page, removedTitle, 'todo', '2026-09-25');
+  await page.locator('.task-card', { hasText: removedTitle }).locator('.task-card-title a').click();
+  await ready(page);
+  await page.locator('.task-remove-form button[type="submit"]').click();
+  await ready(page);
+
+  await page.goto(server.baseURL + '/calendar?month=2026-09');
+  await ready(page);
+
+  const cell = page.locator('.calendar-day[data-date="2026-09-25"]');
+  const dueChip = cell.locator('.calendar-chip', { hasText: dueTitle });
+  await expect(dueChip).toHaveAttribute('data-kind', 'task');
+  await expect(cell.locator('.calendar-chip', { hasText: doneTitle })).toHaveCount(0);
+  await expect(cell.locator('.calendar-chip', { hasText: removedTitle })).toHaveCount(0);
+
+  await dueChip.click();
+  await ready(page);
+  await expect(page).toHaveURL(/\/tasks\/\d+$/);
+  await expect(page.locator('h1')).toHaveText(dueTitle);
+});

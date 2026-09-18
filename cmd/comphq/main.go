@@ -3,6 +3,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net"
@@ -22,6 +23,25 @@ import (
 	"github.com/stas-comp/comphq/internal/settings"
 	"github.com/stas-comp/comphq/internal/tasks"
 )
+
+// taskDeadlines adapts *tasks.Store to calendar.DueTasksSource (SPEC
+// gate 2.19), converting between each section's own DueTask shape —
+// this is the one place allowed to know about both sections (SPEC B2:
+// "sections never import each other's internals"; neither
+// internal/tasks nor internal/calendar imports the other).
+type taskDeadlines struct{ store *tasks.Store }
+
+func (a taskDeadlines) DueTasks(ctx context.Context, from, to time.Time) ([]calendar.DueTask, error) {
+	rows, err := a.store.DueTasks(ctx, from, to)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]calendar.DueTask, len(rows))
+	for i, r := range rows {
+		out[i] = calendar.DueTask{ID: r.ID, Title: r.Title, DueDate: r.DueDate}
+	}
+	return out, nil
+}
 
 // version is set by ldflags at release build time (SPEC P1-03 behaviour).
 var version = "dev"
@@ -58,7 +78,7 @@ func run() error {
 	srv.Registry().Add(briefing.Section(srv))
 	srv.Registry().Add(kb.Section(srv))
 	srv.Registry().Add(tasks.Section(srv))
-	srv.Registry().Add(calendar.Section(srv))
+	srv.Registry().Add(calendar.Section(srv, taskDeadlines{store: &tasks.Store{DB: srv.DB}}))
 	srv.Registry().Add(settings.Section(srv))
 
 	sectionMigrations := make(map[string][]db.Migration)

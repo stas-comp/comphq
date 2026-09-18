@@ -21,8 +21,8 @@
 {{range .}}
 <td class="calendar-day{{if not .InMonth}} calendar-day-outside{{end}}{{if .IsToday}} calendar-day-today{{end}}{{if .IsSaturday}} calendar-day-saturday{{end}}" data-date="{{.Date}}">
 <a class="calendar-day-number" href="/calendar/new?date={{.Date}}">{{.Day}}{{if .IsToday}}<span class="visually-hidden"> (today)</span>{{end}}</a>
-{{range .Occurrences}}
-<a class="calendar-chip" href="{{.DetailsHref}}">{{if .TimeLabel}}{{.TimeLabel}} {{end}}{{.Title}}</a>
+{{range .Chips}}
+<a class="calendar-chip calendar-chip-{{.Kind}}" data-kind="{{.Kind}}" href="{{.Href}}">{{if .TimeLabel}}{{.TimeLabel}} {{end}}{{.Title}}</a>
 {{end}}
 </td>
 {{end}}

@@ -462,38 +462,40 @@ func (h *Handlers) handleRestoreEvent(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// occurrenceView is one chip on the month grid or row on the list view.
-// DetailsHref always carries the occurrence's own original date — for
-// a repeating event, handleEventDetails uses it to show gate 2.15's
-// "Change just this one" / "Change all" choice; a non-repeating one
-// just ignores it and shows its own details directly.
-type occurrenceView struct {
-	EventID     int64
-	Title       string
-	TimeLabel   string // "" for all-day
-	DetailsHref string
+// chipView is one chip on a calendar day cell (SPEC A7): a solid
+// accent-coloured "event" chip, or an outlined "task" deadline chip
+// with a tick-box icon (SPEC gate 2.19) — Kind drives the styling and
+// is also the data-kind attribute E2E tests key off. Href for an event
+// always carries the occurrence's own original date, so a repeating
+// one lands on gate 2.15's "Change just this one" / "Change all"
+// choice; a non-repeating one just ignores it.
+type chipView struct {
+	Kind      string // "event" | "task"
+	Title     string
+	TimeLabel string // "" for all-day, or for a task (SPEC B4: tasks have no time)
+	Href      string
 }
 
-func viewsFor(occs []CalendarOccurrence) []occurrenceView {
-	views := make([]occurrenceView, 0, len(occs))
-	for _, o := range occs {
-		views = append(views, occurrenceView{
-			EventID:     o.EventID,
-			Title:       o.Title,
-			TimeLabel:   o.StartTime,
-			DetailsHref: fmt.Sprintf("/calendar/events/%d?occurrence=%s", o.EventID, o.OriginalDate),
-		})
+func eventChip(o CalendarOccurrence) chipView {
+	return chipView{
+		Kind:      "event",
+		Title:     o.Title,
+		TimeLabel: o.StartTime,
+		Href:      fmt.Sprintf("/calendar/events/%d?occurrence=%s", o.EventID, o.OriginalDate),
 	}
-	return views
+}
+
+func taskChip(t DueTask) chipView {
+	return chipView{Kind: "task", Title: t.Title, Href: fmt.Sprintf("/tasks/%d", t.ID)}
 }
 
 type dayCell struct {
-	Date        string
-	Day         int
-	InMonth     bool
-	IsToday     bool
-	IsSaturday  bool
-	Occurrences []occurrenceView
+	Date       string
+	Day        int
+	InMonth    bool
+	IsToday    bool
+	IsSaturday bool
+	Chips      []chipView
 }
 
 type monthPageData struct {
@@ -539,15 +541,29 @@ func (h *Handlers) handleMonth(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	byDate := map[string][]CalendarOccurrence{}
+	byDate := map[string][]chipView{}
 	for _, occ := range occs {
 		start, err1 := time.Parse(dateLayout, occ.StartDate)
 		end, err2 := time.Parse(dateLayout, occ.EndDate)
 		if err1 != nil || err2 != nil {
 			continue
 		}
+		chip := eventChip(occ)
 		for d := start; !d.After(end); d = d.AddDate(0, 0, 1) {
-			byDate[d.Format(dateLayout)] = append(byDate[d.Format(dateLayout)], occ)
+			byDate[d.Format(dateLayout)] = append(byDate[d.Format(dateLayout)], chip)
+		}
+	}
+
+	// SPEC gate 2.19: unfinished tasks with due dates show on their
+	// date, looking different from events (outlined, data-kind="task").
+	if h.dueTasks != nil {
+		due, err := h.dueTasks.DueTasks(r.Context(), gridStart, gridEnd)
+		if err != nil {
+			http.Error(w, "internal error", http.StatusInternalServerError)
+			return
+		}
+		for _, t := range due {
+			byDate[t.DueDate] = append(byDate[t.DueDate], taskChip(t))
 		}
 	}
 
@@ -558,12 +574,12 @@ func (h *Handlers) handleMonth(w http.ResponseWriter, r *http.Request) {
 		for i := 0; i < 7; i++ {
 			dateStr := cursor.Format(dateLayout)
 			week = append(week, dayCell{
-				Date:        dateStr,
-				Day:         cursor.Day(),
-				InMonth:     cursor.Month() == month && cursor.Year() == year,
-				IsToday:     dateStr == todayStr,
-				IsSaturday:  cursor.Weekday() == time.Saturday,
-				Occurrences: viewsFor(byDate[dateStr]),
+				Date:       dateStr,
+				Day:        cursor.Day(),
+				InMonth:    cursor.Month() == month && cursor.Year() == year,
+				IsToday:    dateStr == todayStr,
+				IsSaturday: cursor.Weekday() == time.Saturday,
+				Chips:      byDate[dateStr],
 			})
 			cursor = cursor.AddDate(0, 0, 1)
 		}

@@ -3,6 +3,7 @@
 package calendar
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"io"
@@ -12,11 +13,24 @@ import (
 	"net/url"
 	"strings"
 	"testing"
+	"time"
 
 	comphq "github.com/stas-comp/comphq"
 	"github.com/stas-comp/comphq/internal/app"
 	"github.com/stas-comp/comphq/internal/db"
 )
+
+// fakeDueTasksSource is P2-16's own "a fake DueTasks in calendar
+// handler tests" (PLAN.md) — Calendar's tests never need a real
+// internal/tasks store, only something satisfying its own small
+// interface (SPEC B2).
+type fakeDueTasksSource struct {
+	tasks []DueTask
+}
+
+func (f fakeDueTasksSource) DueTasks(ctx context.Context, from, to time.Time) ([]DueTask, error) {
+	return f.tasks, nil
+}
 
 func mustCookieJar(t *testing.T) *cookiejar.Jar {
 	t.Helper()
@@ -39,6 +53,11 @@ func readBody(t *testing.T, resp *http.Response) string {
 
 func newTestServer(t *testing.T) (*httptest.Server, *sql.DB) {
 	t.Helper()
+	return newTestServerWithDueTasks(t, fakeDueTasksSource{})
+}
+
+func newTestServerWithDueTasks(t *testing.T, dueTasks DueTasksSource) (*httptest.Server, *sql.DB) {
+	t.Helper()
 	sqlDB, err := db.Open(":memory:")
 	if err != nil {
 		t.Fatalf("Open: %v", err)
@@ -59,7 +78,7 @@ func newTestServer(t *testing.T) (*httptest.Server, *sql.DB) {
 	if err != nil {
 		t.Fatalf("NewServer: %v", err)
 	}
-	srv.Registry().Add(Section(srv))
+	srv.Registry().Add(Section(srv, dueTasks))
 
 	ts := httptest.NewServer(srv.Routes())
 	t.Cleanup(ts.Close)
@@ -222,6 +241,38 @@ func TestMonthViewHTTPShowsCreatedEvent(t *testing.T) {
 	}
 	if !strings.Contains(body, `data-date="2026-10-15"`) {
 		t.Errorf("month view missing the expected day cell; got:\n%s", body)
+	}
+	if !strings.Contains(body, `data-kind="event"`) {
+		t.Errorf("event chip missing data-kind=\"event\"; got:\n%s", body)
+	}
+}
+
+// TestMonthViewHTTPShowsTaskDeadlineChip covers gate 2.19 over HTTP,
+// using a fake DueTasksSource (PLAN.md's own test guidance) so this
+// test never needs a real internal/tasks store.
+func TestMonthViewHTTPShowsTaskDeadlineChip(t *testing.T) {
+	ts, _ := newTestServerWithDueTasks(t, fakeDueTasksSource{tasks: []DueTask{
+		{ID: 42, Title: "File the report", DueDate: "2026-10-20"},
+	}})
+	client := &http.Client{Jar: mustCookieJar(t)}
+	signIn(t, client, ts, "Sam")
+
+	resp, err := client.Get(ts.URL + "/calendar?month=2026-10")
+	if err != nil {
+		t.Fatal(err)
+	}
+	body := readBody(t, resp)
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("status = %d, want 200", resp.StatusCode)
+	}
+	if !strings.Contains(body, "File the report") {
+		t.Errorf("month view missing the task deadline chip; got:\n%s", body)
+	}
+	if !strings.Contains(body, `data-kind="task"`) {
+		t.Errorf("task chip missing data-kind=\"task\"; got:\n%s", body)
+	}
+	if !strings.Contains(body, `href="/tasks/42"`) {
+		t.Errorf("task chip doesn't link to the task page; got:\n%s", body)
 	}
 }
 
