@@ -99,6 +99,22 @@ func newCardView(t Task) cardView {
 	}
 }
 
+// redirectTargetFrom reads the shared, allowlisted redirect_to field:
+// the move and assign endpoints are each reused from more than one
+// page, so a plain (non-JS) form submission needs to land back on
+// whichever page it came from — "" means the caller's own default
+// (the Board for move, Team for assign).
+func redirectTargetFrom(r *http.Request) string {
+	switch r.FormValue("redirect_to") {
+	case "team":
+		return "/tasks/team"
+	case "myjobs":
+		return "/tasks"
+	default:
+		return ""
+	}
+}
+
 func (h *Handlers) handleBoard(w http.ResponseWriter, r *http.Request) {
 	h.renderBoard(w, r, http.StatusOK, "")
 }
@@ -273,28 +289,29 @@ func (h *Handlers) handleMoveTask(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// The Team view's Up next reorder posts to this same endpoint (SPEC
-	// B4: "the existing move endpoint"), so a plain (non-JS) form
-	// submission needs to land back on /tasks/team, not always default
-	// to the Board — an explicit allowlisted field, not the Referer
-	// header, which isn't reliably present.
-	onTeam := r.FormValue("redirect_to") == "team"
+	// The Team view's Up next reorder, and My jobs' Start/Done buttons,
+	// post to this same endpoint (SPEC B4: "the existing move
+	// endpoint"), so a plain (non-JS) form submission needs to land back
+	// on whichever page it came from, not always default to the Board —
+	// an explicit allowlisted field, not the Referer header, which isn't
+	// reliably present.
+	redirectTarget := redirectTargetFrom(r)
 
 	today := app.Today(h.srv.TestMode)
 	switch err := h.tasks.Move(r.Context(), id, input, person.ID, today); err {
 	case nil:
-		if onTeam {
-			http.Redirect(w, r, "/tasks/team", http.StatusFound)
+		if redirectTarget != "" {
+			http.Redirect(w, r, redirectTarget, http.StatusFound)
 			return
 		}
 		http.Redirect(w, r, "/tasks/board", http.StatusFound)
 	case ErrTaskNotFound, ErrNeighborNotFound:
-		if onTeam {
-			// The lane changed under us — someone else moved or
+		if redirectTarget != "" {
+			// The list changed under us — someone else moved or
 			// assigned something first. A fresh redirect is simplest;
-			// Team, unlike the Board, carries no filter/message state
-			// worth preserving across it.
-			http.Redirect(w, r, "/tasks/team", http.StatusFound)
+			// neither Team nor My jobs carries filter/message state
+			// worth preserving across it (unlike the Board).
+			http.Redirect(w, r, redirectTarget, http.StatusFound)
 			return
 		}
 		// The board changed under us — someone else moved something

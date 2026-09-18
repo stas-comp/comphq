@@ -2,6 +2,7 @@ package tasks
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/stas-comp/comphq/internal/people"
@@ -190,9 +191,15 @@ func TestTakeAlreadyAssignedTaskIsError(t *testing.T) {
 		t.Fatalf("Create: %v", err)
 	}
 
-	if err := store.Take(ctx, task.ID, 0, 0, jo, fixedNow); err != ErrTaskAlreadyTaken {
-		t.Errorf("err = %v, want ErrTaskAlreadyTaken", err)
+	var taken *TakenError
+	err = store.Take(ctx, task.ID, 0, 0, jo, fixedNow)
+	if !errors.As(err, &taken) {
+		t.Fatalf("err = %v, want a *TakenError", err)
 	}
+	if len(taken.Names) != 1 || taken.Names[0] != "Alex" {
+		t.Errorf("taken.Names = %v, want [Alex]", taken.Names)
+	}
+
 	got, err := store.Get(ctx, task.ID, fixedNow)
 	if err != nil {
 		t.Fatalf("Get: %v", err)

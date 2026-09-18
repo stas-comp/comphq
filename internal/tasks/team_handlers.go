@@ -68,10 +68,18 @@ func (h *Handlers) handleAssignTask(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	// Give back (My jobs) reuses this same endpoint (SPEC B4), so a
+	// plain (non-JS) form submission needs to land back on whichever
+	// page it came from — see redirectTargetFrom.
+	redirectTarget := redirectTargetFrom(r)
+	if redirectTarget == "" {
+		redirectTarget = "/tasks/team"
+	}
+
 	today := app.Today(h.srv.TestMode)
 	switch err := h.tasks.Assign(r.Context(), id, fromPersonID, toPersonID, person.ID, today); err {
 	case nil, ErrTaskNotFound:
-		http.Redirect(w, r, "/tasks/team", http.StatusFound)
+		http.Redirect(w, r, redirectTarget, http.StatusFound)
 	case ErrInvalidAssign:
 		http.Error(w, err.Error(), http.StatusBadRequest)
 	default:

@@ -260,6 +260,150 @@ func TestTakeTaskHTTPIdeaMovesToTodo(t *testing.T) {
 	}
 }
 
+// TestTakeTaskHTTPConflictShowsMessageAndChangesNothing covers gate
+// 2.36's conflict end to end over HTTP: once someone is already on a
+// job, a second Take refuses with the exact message and adds nobody.
+func TestTakeTaskHTTPConflictShowsMessageAndChangesNothing(t *testing.T) {
+	ts, sqlDB := newTestServer(t)
+	client := &http.Client{Jar: mustCookieJar(t)}
+	signIn(t, client, ts, "Alex")
+	signIn(t, client, ts, "Sam")
+
+	postForm(t, client, ts, "/tasks", url.Values{"title": {"Contested"}, "stage": {StageTodo}}).Body.Close()
+	task := taskID(t, sqlDB, "Contested")
+
+	// Alex takes it first (Sam is currently signed in, so switch back
+	// to Alex for that request, then back to Sam for the conflicting one).
+	alex := personID(t, sqlDB, "Alex")
+	postForm(t, client, ts, "/who/select", url.Values{"person_id": {itoa(alex)}, "next": {"/"}}).Body.Close()
+	postForm(t, client, ts, fmt.Sprintf("/tasks/%d/take", task), nil).Body.Close()
+
+	sam := personID(t, sqlDB, "Sam")
+	postForm(t, client, ts, "/who/select", url.Values{"person_id": {itoa(sam)}, "next": {"/"}}).Body.Close()
+	resp := postForm(t, client, ts, fmt.Sprintf("/tasks/%d/take", task), nil)
+	body := readBody(t, resp)
+	if resp.StatusCode != http.StatusConflict {
+		t.Fatalf("status = %d, want 409", resp.StatusCode)
+	}
+	if !strings.Contains(body, "Alex has just taken this job.") {
+		t.Errorf("response missing the exact conflict message; got:\n%s", body)
+	}
+
+	var assigneeCount int
+	if err := sqlDB.QueryRow(`SELECT COUNT(*) FROM task_assignees WHERE task_id = ?`, task).Scan(&assigneeCount); err != nil {
+		t.Fatal(err)
+	}
+	if assigneeCount != 1 {
+		t.Errorf("task_assignees rows = %d, want 1 (Sam's conflicting take added nobody)", assigneeCount)
+	}
+}
+
+// TestMyJobsStartDoneAndGiveBackHTTP covers gate 2.37 end to end over
+// HTTP: Start/Done move the job, and Give back returns it to Up for
+// grabs when nobody else is on it, but not when someone else still is.
+func TestMyJobsStartDoneAndGiveBackHTTP(t *testing.T) {
+	ts, sqlDB := newTestServer(t)
+	client := &http.Client{Jar: mustCookieJar(t)}
+	signIn(t, client, ts, "Sam")
+	sam := personID(t, sqlDB, "Sam")
+
+	postForm(t, client, ts, "/tasks", url.Values{"title": {"Solo job"}, "stage": {StageTodo}, "person_id": {itoa(sam)}}).Body.Close()
+	solo := taskID(t, sqlDB, "Solo job")
+
+	// Start: todo -> doing.
+	resp := postForm(t, client, ts, fmt.Sprintf("/tasks/%d/move", solo), url.Values{
+		"stage": {StageDoing}, "to_bottom": {"1"}, "redirect_to": {"myjobs"},
+	})
+	body := readBody(t, resp)
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("Start status = %d, want 200 (following the redirect to My jobs)", resp.StatusCode)
+	}
+	if !strings.Contains(body, "Solo job") {
+		t.Errorf("My jobs missing the started job; got:\n%s", body)
+	}
+	var stage string
+	if err := sqlDB.QueryRow(`SELECT stage FROM tasks WHERE id = ?`, solo).Scan(&stage); err != nil {
+		t.Fatal(err)
+	}
+	if stage != StageDoing {
+		t.Errorf("stage after Start = %q, want %q", stage, StageDoing)
+	}
+
+	// Done: doing -> done, leaves My jobs.
+	resp = postForm(t, client, ts, fmt.Sprintf("/tasks/%d/move", solo), url.Values{
+		"stage": {StageDone}, "to_bottom": {"1"}, "redirect_to": {"myjobs"},
+	})
+	body = readBody(t, resp)
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("Done status = %d, want 200", resp.StatusCode)
+	}
+	if strings.Contains(body, "Solo job") {
+		t.Errorf("My jobs still shows a job marked Done; got:\n%s", body)
+	}
+	if err := sqlDB.QueryRow(`SELECT stage FROM tasks WHERE id = ?`, solo).Scan(&stage); err != nil {
+		t.Fatal(err)
+	}
+	if stage != StageDone {
+		t.Errorf("stage after Done = %q, want %q", stage, StageDone)
+	}
+
+	// Give back with no other assignee: returns to Up for grabs.
+	postForm(t, client, ts, "/tasks", url.Values{"title": {"Give back solo"}, "stage": {StageTodo}, "person_id": {itoa(sam)}}).Body.Close()
+	soloGiveBack := taskID(t, sqlDB, "Give back solo")
+	resp = postForm(t, client, ts, fmt.Sprintf("/tasks/%d/assign", soloGiveBack), url.Values{
+		"from_person": {itoa(sam)}, "redirect_to": {"myjobs"},
+	})
+	body = readBody(t, resp)
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("Give back status = %d, want 200 (following the redirect to My jobs)", resp.StatusCode)
+	}
+	grabsIdx := strings.Index(body, "Up for grabs")
+	if grabsIdx < 0 {
+		t.Fatalf("My jobs missing the Up for grabs heading; got:\n%s", body)
+	}
+	if strings.Contains(body[:grabsIdx], "Give back solo") {
+		t.Errorf("the given-back job still shows in the person's own lane; got:\n%s", body[:grabsIdx])
+	}
+	if !strings.Contains(body[grabsIdx:], "Give back solo") {
+		t.Errorf("Up for grabs missing the given-back job; got:\n%s", body[grabsIdx:])
+	}
+	var assigneeCount int
+	if err := sqlDB.QueryRow(`SELECT COUNT(*) FROM task_assignees WHERE task_id = ?`, soloGiveBack).Scan(&assigneeCount); err != nil {
+		t.Fatal(err)
+	}
+	if assigneeCount != 0 {
+		t.Errorf("task_assignees rows for the given-back job = %d, want 0", assigneeCount)
+	}
+
+	// Give back with another assignee still on it: stays off Up for grabs.
+	signIn(t, client, ts, "Alex")
+	alex := personID(t, sqlDB, "Alex")
+	postForm(t, client, ts, "/who/select", url.Values{"person_id": {itoa(sam)}, "next": {"/"}}).Body.Close()
+	postForm(t, client, ts, "/tasks", url.Values{
+		"title": {"Shared job"}, "stage": {StageTodo}, "person_id": {itoa(sam), itoa(alex)},
+	}).Body.Close()
+	shared := taskID(t, sqlDB, "Shared job")
+	postForm(t, client, ts, fmt.Sprintf("/tasks/%d/assign", shared), url.Values{
+		"from_person": {itoa(sam)}, "redirect_to": {"myjobs"},
+	}).Body.Close()
+
+	if err := sqlDB.QueryRow(`SELECT COUNT(*) FROM task_assignees WHERE task_id = ?`, shared).Scan(&assigneeCount); err != nil {
+		t.Fatal(err)
+	}
+	if assigneeCount != 1 {
+		t.Errorf("task_assignees rows for the shared job = %d, want 1 (Alex still on it)", assigneeCount)
+	}
+
+	grabsResp, err := client.Get(ts.URL + "/tasks")
+	if err != nil {
+		t.Fatal(err)
+	}
+	grabsBody := readBody(t, grabsResp)
+	if strings.Contains(grabsBody, "Shared job") {
+		t.Errorf("Up for grabs shows a job that still has an assignee; got:\n%s", grabsBody)
+	}
+}
+
 func taskID(t *testing.T, sqlDB *sql.DB, title string) int64 {
 	t.Helper()
 	var id int64

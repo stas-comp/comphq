@@ -3,15 +3,22 @@ package tasks
 import (
 	"context"
 	"database/sql"
-	"errors"
+	"strings"
 	"time"
 )
 
-// ErrTaskAlreadyTaken is returned by Take when someone is already on
-// the task. SPEC gate 2.36's exact conflict response (409 with the
-// assignees' names) is P2-11's own job — this only guarantees Take
-// never silently double-assigns a job two people went for at once.
-var ErrTaskAlreadyTaken = errors.New("someone has already taken this task")
+// TakenError is Take's conflict response (SPEC gate 2.36): someone was
+// already on the job by the time this transaction ran, so nothing
+// changed. Names is who's on it now — in practice always the single
+// person who won the race, since Up for grabs only ever lists jobs
+// with zero assignees to begin with.
+type TakenError struct {
+	Names []string
+}
+
+func (e *TakenError) Error() string {
+	return "already taken by " + strings.Join(e.Names, ", ")
+}
 
 // Take adds the current person to an unassigned task (SPEC B4): an
 // idea becomes a todo task, placed at the given drop position or the
@@ -34,12 +41,12 @@ func (s *Store) Take(ctx context.Context, taskID int64, beforeID, afterID int64,
 		return err
 	}
 
-	var assigneeCount int
-	if err := tx.QueryRowContext(ctx, `SELECT COUNT(*) FROM task_assignees WHERE task_id = ?`, taskID).Scan(&assigneeCount); err != nil {
+	names, err := assigneeNamesTx(ctx, tx, taskID)
+	if err != nil {
 		return err
 	}
-	if assigneeCount > 0 {
-		return ErrTaskAlreadyTaken
+	if len(names) > 0 {
+		return &TakenError{Names: names}
 	}
 
 	nowStr := now.UTC().Format(time.RFC3339)
@@ -108,4 +115,29 @@ func (s *Store) Take(ctx context.Context, taskID int64, beforeID, afterID int64,
 		return err
 	}
 	return tx.Commit()
+}
+
+// assigneeNamesTx returns a task's current assignees' names, in the
+// same deterministic (person id) order assigneesFor uses, from inside
+// an in-flight transaction — Take needs the exact names for gate
+// 2.36's conflict message before it rolls back.
+func assigneeNamesTx(ctx context.Context, tx *sql.Tx, taskID int64) ([]string, error) {
+	rows, err := tx.QueryContext(ctx, `
+		SELECT p.name FROM task_assignees ta JOIN people p ON p.id = ta.person_id
+		WHERE ta.task_id = ? ORDER BY p.id
+	`, taskID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var names []string
+	for rows.Next() {
+		var name string
+		if err := rows.Scan(&name); err != nil {
+			return nil, err
+		}
+		names = append(names, name)
+	}
+	return names, rows.Err()
 }

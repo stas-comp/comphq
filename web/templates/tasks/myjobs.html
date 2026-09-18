@@ -3,6 +3,9 @@
 {{template "tasks-view-switch" .}}
 <p class="task-board-links"><a href="/tasks/finished">Finished tasks</a> · <a href="/tasks/removed">Removed tasks</a></p>
 
+{{$lane := .Lane}}
+<div class="myjobs-page" data-refresh-version-url="/tasks/version" data-refresh-fragment-selector=".myjobs-page">
+{{if .Message}}<p class="message" role="alert">{{.Message}}</p>{{end}}
 <div class="myjobs-columns">
 <div class="myjobs-mine">
 <h2>My jobs</h2>
@@ -18,6 +21,19 @@
 {{range .Lane.WorkingOnNow}}
 <li class="team-task" data-task-id="{{.ID}}">
 <a href="/tasks/{{.ID}}">{{.Title}}</a> <span class="team-task-size">{{.SizeLabel}}</span>
+<div class="team-task-actions">
+<form method="post" action="/tasks/{{.ID}}/move" class="inline-form">
+<input type="hidden" name="stage" value="done">
+<input type="hidden" name="to_bottom" value="1">
+<input type="hidden" name="redirect_to" value="myjobs">
+<button type="submit">Done</button>
+</form>
+<form method="post" action="/tasks/{{.ID}}/assign" class="inline-form">
+<input type="hidden" name="from_person" value="{{$lane.PersonID}}">
+<input type="hidden" name="redirect_to" value="myjobs">
+<button type="submit">Give back</button>
+</form>
+</div>
 </li>
 {{end}}
 </ul>
@@ -27,6 +43,25 @@
 {{range .Lane.UpNext}}
 <li class="team-task" data-task-id="{{.ID}}">
 {{.Number}}. <a href="/tasks/{{.ID}}">{{.Title}}</a> <span class="team-task-size">{{.SizeLabel}}</span>
+<div class="team-task-actions">
+<form method="post" action="/tasks/{{.ID}}/move" class="inline-form">
+<input type="hidden" name="stage" value="doing">
+<input type="hidden" name="to_bottom" value="1">
+<input type="hidden" name="redirect_to" value="myjobs">
+<button type="submit">Start</button>
+</form>
+<form method="post" action="/tasks/{{.ID}}/move" class="inline-form">
+<input type="hidden" name="stage" value="done">
+<input type="hidden" name="to_bottom" value="1">
+<input type="hidden" name="redirect_to" value="myjobs">
+<button type="submit">Done</button>
+</form>
+<form method="post" action="/tasks/{{.ID}}/assign" class="inline-form">
+<input type="hidden" name="from_person" value="{{$lane.PersonID}}">
+<input type="hidden" name="redirect_to" value="myjobs">
+<button type="submit">Give back</button>
+</form>
+</div>
 </li>
 {{end}}
 </ul>
@@ -44,6 +79,7 @@
 </li>
 {{end}}
 </ul>
+</div>
 </div>
 </div>
 <script src="/static/vendor/sortable/Sortable-1.15.7.min.js"></script>

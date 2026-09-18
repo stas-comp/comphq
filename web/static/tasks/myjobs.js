@@ -2,7 +2,10 @@
 // of Up for grabs and into Up next takes it, placed where it was
 // dropped — the Take it button (a plain form, no JS needed) does the
 // same without a drop position. Mirrors team.js's own assign-by-drag
-// pattern, just with one target list instead of one per person.
+// pattern, just with one target list instead of one per person. Also
+// handles gate 2.36's take conflict for the drag path (the button path
+// needs no JS at all — a 409 response still renders as the response
+// body, same as any other status).
 document.addEventListener('DOMContentLoaded', initMyJobsSortable)
 document.addEventListener('refresh:applied', initMyJobsSortable)
 
@@ -44,7 +47,7 @@ function computeDropParams(item) {
 
 async function postTake(taskId, params) {
   const body = new URLSearchParams(params)
-  await fetch(`/tasks/${taskId}/take`, {
+  return fetch(`/tasks/${taskId}/take`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: body.toString(),
@@ -61,23 +64,32 @@ async function handleMyJobsDrop(evt) {
   // still says is true, the same "no defined action" pattern team.js
   // already uses for its own unhandled same-lane drops.
   if (evt.from.classList.contains('myjobs-grabs-list') && evt.to.classList.contains('myjobs-upnext-list')) {
-    await postTake(evt.item.dataset.taskId, computeDropParams(evt.item))
+    const res = await postTake(evt.item.dataset.taskId, computeDropParams(evt.item))
+    // SPEC gate 2.36: someone beat this drag to it — the response is
+    // already the current My jobs page, with the exact conflict
+    // message, so swap that straight in rather than fetching again.
+    if (res.status === 409) {
+      swapMyJobsPage(await res.text())
+      return
+    }
   }
 
   await refreshMyJobs()
 }
 
-// Re-fetches the My jobs page and swaps in just the two columns, the
-// same "server response is the truth" pattern team.js uses after its
-// own drop.
+function swapMyJobsPage(html) {
+  const newPage = new DOMParser().parseFromString(html, 'text/html').querySelector('.myjobs-page')
+  const oldPage = document.querySelector('.myjobs-page')
+  if (newPage && oldPage) {
+    oldPage.replaceWith(newPage)
+    initMyJobsSortable()
+  }
+}
+
+// Re-fetches the My jobs page and swaps it in, the same "server
+// response is the truth" pattern team.js uses after its own drop.
 async function refreshMyJobs() {
   const res = await fetch(location.pathname + location.search)
   if (!res.ok) return
-  const html = await res.text()
-  const newColumns = new DOMParser().parseFromString(html, 'text/html').querySelector('.myjobs-columns')
-  const oldColumns = document.querySelector('.myjobs-columns')
-  if (newColumns && oldColumns) {
-    oldColumns.replaceWith(newColumns)
-    initMyJobsSortable()
-  }
+  swapMyJobsPage(await res.text())
 }
