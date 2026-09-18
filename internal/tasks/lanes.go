@@ -28,12 +28,20 @@ var sizeWeight = map[string]int{"S": 1, "M": 2, "L": 4}
 
 // LaneTask is one card within a lane's Working on now or Up next group.
 // Number is Up next's 1-based priority number; 0 for Working on now,
-// which isn't numbered (SPEC B4).
+// which isn't numbered (SPEC B4). PrevID/NextID are the neighbouring
+// task's id within this lane's own Up next order (0 if there isn't
+// one), the same "computed once per render" pattern the Board's own
+// cardView uses for its Move up/down buttons — reordering still posts
+// to the shared move endpoint (SPEC B4: "before_id/after_id is the
+// neighbouring card in that lane"), just with a lane-scoped neighbour
+// instead of a board-column-scoped one.
 type LaneTask struct {
 	ID        int64
 	Title     string
 	SizeLabel string
 	Number    int
+	PrevID    int64
+	NextID    int64
 }
 
 // WorkloadGroup is one task's share of a lane's workload, kept apart
@@ -57,6 +65,11 @@ type Lane struct {
 	UpNext       []LaneTask
 	Workload     []WorkloadGroup
 	WorkloadLine string
+	// AssignOptions is every active person this lane's tasks can be
+	// assigned to by drag or "Assign to…" (SPEC gate 2.28) — every
+	// active person except this lane's own (reassigning to the person
+	// who already has it is meaningless); Unassigned excludes no one.
+	AssignOptions []personOption
 }
 
 // BuildLanes groups tasks — already filtered by the caller to
@@ -74,15 +87,20 @@ func BuildLanes(tasksList []Task, peopleList []people.Person) []Lane {
 	})
 
 	lanes := make([]Lane, 0, len(sorted)+1)
-	lanes = append(lanes, buildLane(0, "Unassigned", tasksList, false))
+	lanes = append(lanes, buildLane(0, "Unassigned", tasksList, sorted, false))
 	for _, p := range sorted {
-		lanes = append(lanes, buildLane(p.ID, p.Name, tasksList, true))
+		lanes = append(lanes, buildLane(p.ID, p.Name, tasksList, sorted, true))
 	}
 	return lanes
 }
 
-func buildLane(personID int64, name string, tasksList []Task, showWorkload bool) Lane {
+func buildLane(personID int64, name string, tasksList []Task, everyone []people.Person, showWorkload bool) Lane {
 	lane := Lane{PersonID: personID, PersonName: name}
+	for _, p := range everyone {
+		if p.ID != personID {
+			lane.AssignOptions = append(lane.AssignOptions, personOption{ID: p.ID, Name: p.Name})
+		}
+	}
 
 	var laneTasks []Task
 	for _, t := range tasksList {
@@ -99,6 +117,14 @@ func buildLane(personID int64, name string, tasksList []Task, showWorkload bool)
 		case StageTodo:
 			number++
 			lane.UpNext = append(lane.UpNext, LaneTask{ID: t.ID, Title: t.Title, SizeLabel: sizeLabels[t.Size], Number: number})
+		}
+	}
+	for i := range lane.UpNext {
+		if i > 0 {
+			lane.UpNext[i].PrevID = lane.UpNext[i-1].ID
+		}
+		if i < len(lane.UpNext)-1 {
+			lane.UpNext[i].NextID = lane.UpNext[i+1].ID
 		}
 	}
 

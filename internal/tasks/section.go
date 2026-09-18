@@ -33,6 +33,7 @@ func Section(srv *app.Server) app.Section {
 			mux.HandleFunc("GET /tasks/{id}", h.handleTaskDetails)
 			mux.HandleFunc("POST /tasks/{id}", h.handleUpdateTask)
 			mux.HandleFunc("POST /tasks/{id}/move", h.handleMoveTask)
+			mux.HandleFunc("POST /tasks/{id}/assign", h.handleAssignTask)
 			mux.HandleFunc("POST /tasks/{id}/reopen", h.handleReopenTask)
 			mux.HandleFunc("POST /tasks/{id}/remove", h.handleRemoveTask)
 			mux.HandleFunc("POST /tasks/{id}/restore", h.handleRestoreTask)

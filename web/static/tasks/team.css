@@ -83,13 +83,49 @@
   flex-direction: column;
   gap: var(--space-1);
   font-size: var(--font-size-small);
+  /* An empty list still needs a real drop target for assigning a job
+     onto someone with nothing in this group yet (SPEC gate 2.28). */
+  min-height: 1.5rem;
+}
+
+.team-task {
+  background: var(--color-white);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: var(--space-1) var(--space-2);
 }
 
 .team-task-size {
   color: var(--color-text-muted);
 }
 
-.team-lane-empty {
-  font-size: var(--font-size-small);
-  color: var(--color-text-muted);
+.team-task-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  margin-top: var(--space-1);
 }
+
+.team-task-actions button,
+.team-assign-form button {
+  font-size: var(--font-size-small);
+  padding: var(--space-1) var(--space-2);
+}
+
+.team-task-actions button[disabled] {
+  opacity: 0.5;
+}
+
+.team-assign-form {
+  display: flex;
+  gap: var(--space-1);
+  margin-top: var(--space-1);
+}
+
+.team-assign-form select {
+  font-family: var(--font-body);
+  font-size: var(--font-size-small);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+

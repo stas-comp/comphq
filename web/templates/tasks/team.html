@@ -2,9 +2,10 @@
 <h1>Team</h1>
 {{template "tasks-view-switch" .}}
 
-<div class="team-lanes">
+<div class="team-lanes" tabindex="0" role="region" aria-label="Team lanes">
 {{range .Lanes}}
-<div class="team-lane">
+{{$lane := .}}
+<div class="team-lane" data-person-id="{{.PersonID}}">
 <h2>{{.PersonName}}</h2>
 {{if .WorkloadLine}}
 <div class="workload" aria-hidden="true">
@@ -13,22 +14,60 @@
 <p class="workload-line">{{.WorkloadLine}}</p>
 {{end}}
 
-{{if .WorkingOnNow}}
 <h3>Working on now</h3>
-<ul class="team-task-list">
-{{range .WorkingOnNow}}<li><a href="/tasks/{{.ID}}">{{.Title}}</a> <span class="team-task-size">{{.SizeLabel}}</span></li>{{end}}
-</ul>
+<ul class="team-task-list team-working-list">
+{{range .WorkingOnNow}}
+<li class="team-task" data-task-id="{{.ID}}">
+<a href="/tasks/{{.ID}}">{{.Title}}</a> <span class="team-task-size">{{.SizeLabel}}</span>
+{{if $lane.AssignOptions}}
+<form method="post" action="/tasks/{{.ID}}/assign" class="team-assign-form">
+<input type="hidden" name="from_person" value="{{$lane.PersonID}}">
+<label class="visually-hidden" for="assign-{{.ID}}-{{$lane.PersonID}}">Assign {{.Title}} to</label>
+<select id="assign-{{.ID}}-{{$lane.PersonID}}" name="to_person">
+{{range $lane.AssignOptions}}<option value="{{.ID}}">{{.Name}}</option>{{end}}
+</select>
+<button type="submit">Assign to…</button>
+</form>
 {{end}}
+</li>
+{{end}}
+</ul>
 
-{{if .UpNext}}
 <h3>Up next</h3>
-<ul class="team-task-list">
-{{range .UpNext}}<li>{{.Number}}. <a href="/tasks/{{.ID}}">{{.Title}}</a> <span class="team-task-size">{{.SizeLabel}}</span></li>{{end}}
+<ul class="team-task-list team-up-next-list">
+{{range .UpNext}}
+<li class="team-task" data-task-id="{{.ID}}">
+{{.Number}}. <a href="/tasks/{{.ID}}">{{.Title}}</a> <span class="team-task-size">{{.SizeLabel}}</span>
+<div class="team-task-actions">
+<form method="post" action="/tasks/{{.ID}}/move" class="inline-form">
+<input type="hidden" name="stage" value="todo">
+<input type="hidden" name="before_id" value="{{.PrevID}}">
+<input type="hidden" name="redirect_to" value="team">
+<button type="submit" aria-label="Move {{.Title}} up"{{if not .PrevID}} disabled{{end}}>Move up</button>
+</form>
+<form method="post" action="/tasks/{{.ID}}/move" class="inline-form">
+<input type="hidden" name="stage" value="todo">
+<input type="hidden" name="after_id" value="{{.NextID}}">
+<input type="hidden" name="redirect_to" value="team">
+<button type="submit" aria-label="Move {{.Title}} down"{{if not .NextID}} disabled{{end}}>Move down</button>
+</form>
+{{if $lane.AssignOptions}}
+<form method="post" action="/tasks/{{.ID}}/assign" class="team-assign-form">
+<input type="hidden" name="from_person" value="{{$lane.PersonID}}">
+<label class="visually-hidden" for="assign-{{.ID}}-{{$lane.PersonID}}">Assign {{.Title}} to</label>
+<select id="assign-{{.ID}}-{{$lane.PersonID}}" name="to_person">
+{{range $lane.AssignOptions}}<option value="{{.ID}}">{{.Name}}</option>{{end}}
+</select>
+<button type="submit">Assign to…</button>
+</form>
+{{end}}
+</div>
+</li>
+{{end}}
 </ul>
-{{end}}
-
-{{if not .WorkingOnNow}}{{if not .UpNext}}<p class="team-lane-empty">Nothing here.</p>{{end}}{{end}}
 </div>
 {{end}}
 </div>
+<script src="/static/vendor/sortable/Sortable-1.15.7.min.js"></script>
+<script src="/static/tasks/team.js"></script>
 {{end}}

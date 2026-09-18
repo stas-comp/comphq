@@ -463,6 +463,39 @@ func TestVersionEndpointReturnsIncreasingCounter(t *testing.T) {
 	}
 }
 
+// TestAssignTaskHTTPFromUnassignedToPerson covers gate 2.28's assign
+// endpoint end to end over HTTP: dragging (or the button equivalent)
+// from Unassigned onto a person.
+func TestAssignTaskHTTPFromUnassignedToPerson(t *testing.T) {
+	ts, sqlDB := newTestServer(t)
+	client := &http.Client{Jar: mustCookieJar(t)}
+	signIn(t, client, ts, "Sam")
+	signIn(t, client, ts, "Alex")
+	alex := personID(t, sqlDB, "Alex")
+
+	postForm(t, client, ts, "/tasks", url.Values{"title": {"Task"}, "stage": {StageTodo}}).Body.Close()
+	task := taskID(t, sqlDB, "Task")
+
+	resp := postForm(t, client, ts, fmt.Sprintf("/tasks/%d/assign", task), url.Values{
+		"to_person": {itoa(alex)},
+	})
+	body := readBody(t, resp)
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("status = %d, want 200 (following the redirect to Team)", resp.StatusCode)
+	}
+	if !strings.Contains(body, "Alex") {
+		t.Errorf("Team page missing Alex's lane with the assigned task; got:\n%s", body)
+	}
+
+	var assigneeCount int
+	if err := sqlDB.QueryRow(`SELECT COUNT(*) FROM task_assignees WHERE task_id = ? AND person_id = ?`, task, alex).Scan(&assigneeCount); err != nil {
+		t.Fatal(err)
+	}
+	if assigneeCount != 1 {
+		t.Errorf("task_assignees rows for Alex = %d, want 1", assigneeCount)
+	}
+}
+
 func itoa(id int64) string {
 	return strconv.FormatInt(id, 10)
 }

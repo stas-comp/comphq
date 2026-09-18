@@ -87,7 +87,9 @@ test('Team view: lane order, grouping, numbering, and workload blocks', async ({
   await expect(laneA.locator('h3', { hasText: 'Working on now' })).toHaveCount(1);
   await expect(laneA.locator('.team-task-list', { hasText: doingTitle })).toHaveCount(1);
 
-  const upNextItems = await laneA.locator('h3', { hasText: 'Up next' }).locator('xpath=following-sibling::ul[1]/li').allTextContents();
+  const upNextItems = (
+    await laneA.locator('h3', { hasText: 'Up next' }).locator('xpath=following-sibling::ul[1]/li').allTextContents()
+  ).map((t) => t.trim());
   expect(upNextItems.some((t) => t.startsWith('1.') && t.includes(upNext1))).toBe(true);
   expect(upNextItems.some((t) => t.startsWith('2.') && t.includes(upNext2))).toBe(true);
   expect(upNextItems.some((t) => t.startsWith('3.') && t.includes(sharedTitle))).toBe(true);

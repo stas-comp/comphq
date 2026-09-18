@@ -277,11 +277,30 @@ func (h *Handlers) handleMoveTask(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	// The Team view's Up next reorder posts to this same endpoint (SPEC
+	// B4: "the existing move endpoint"), so a plain (non-JS) form
+	// submission needs to land back on /tasks/team, not always default
+	// to the Board — an explicit allowlisted field, not the Referer
+	// header, which isn't reliably present.
+	onTeam := r.FormValue("redirect_to") == "team"
+
 	today := app.Today(h.srv.TestMode)
 	switch err := h.tasks.Move(r.Context(), id, input, person.ID, today); err {
 	case nil:
+		if onTeam {
+			http.Redirect(w, r, "/tasks/team", http.StatusFound)
+			return
+		}
 		http.Redirect(w, r, "/tasks/board", http.StatusFound)
 	case ErrTaskNotFound, ErrNeighborNotFound:
+		if onTeam {
+			// The lane changed under us — someone else moved or
+			// assigned something first. A fresh redirect is simplest;
+			// Team, unlike the Board, carries no filter/message state
+			// worth preserving across it.
+			http.Redirect(w, r, "/tasks/team", http.StatusFound)
+			return
+		}
 		// The board changed under us — someone else moved something
 		// first. Just show the current board rather than an error page.
 		h.renderBoard(w, r, http.StatusOK, "")
