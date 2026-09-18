@@ -2,7 +2,7 @@
 
 Comp HQ is a small, private staff hub: a Knowledge Base, a task Board, a Team view, a Calendar, and a daily Briefing — self-hosted on your own TrueNAS, with no logins and no outside services.
 
-This README is written for you, the owner — plain language, no coding knowledge needed. It's updated as the app is built; some sections below are still placeholders until later phases.
+This README is written for you, the owner — plain language, no coding knowledge needed. It's updated as the app is built; the Briefing section is still to come.
 
 ## Opening Comp HQ
 
@@ -134,6 +134,55 @@ For each article in HelpScout (there should be fewer than 20):
 
 Once you've moved everything, go to **Settings → Content check**. It should show 0 — if anything's listed, open it, look for a red dashed box (something that didn't come across cleanly), fix or remove it, and publish again.
 
+## Using Tasks
+
+Click **Tasks** in the left-hand list. Across the top there's a switch: **My jobs · Board · Team**.
+
+**My jobs** is where Tasks opens. On the left are your own jobs: what you're **Working on now**, then **Up next** in priority order, with a row of little blocks showing how much you've got on (a small job is one block, a medium two, a large four). On the right is **Up for grabs** — jobs, then ideas, that nobody has taken yet.
+
+- **To take a job**, press **Take it**, or drag it from Up for grabs into your Up next list. Dragging puts it exactly where you drop it; **Take it** keeps the job's place in the priority order. Taking an idea moves it to To do.
+- If two people go for the same job at the same moment, the second person is told who got there first, and nothing changes for them.
+- **Start** moves a job to In progress, **Done** finishes it, and **Give back** takes you off a job you can't do — it returns to Up for grabs if nobody else is on it.
+
+The **Board** shows every job in four columns: **Ideas → To do → In progress → Done**. Add a job at the top, drag cards between columns or use the small buttons (they do the same thing). In **To do**, the top of the column is the most important. Click a card's title to open it: you can change its title, notes, people, due date and size, remove it, and see the **Activity** list of who changed what. Jobs that have sat in Done for more than two weeks tuck away into **Finished tasks** (a link at the top of the Board), where **Reopen** brings one back. **Removed tasks** lists removed ones, where **Restore** brings them back. Nothing is ever permanently deleted.
+
+The **Team** view has one column for each person, plus **Unassigned**, each showing that person's jobs and how much they have on. It's the quick way to see who can take on more. Drag a job onto someone else's column (or use **Assign to…**) to hand it over.
+
+Any page that shows the same jobs on more than one computer refreshes itself within a minute, or straight away when you click back into the window.
+
+## Using the Calendar
+
+Click **Calendar**. It opens on this month, weeks starting on Monday, with Saturdays shaded and today outlined. Use **Previous**, **Next** and **Today** to move around, or **List** for the next twelve weeks in date order. Jobs with a due date appear on their day as outlined boxes with a tick-box; events are solid orange. Click a job to open it.
+
+- **To add an event**, click a day's number (or **Add event**). Give it a title and a date. You can also give it an end date (for something lasting several days), a start and end time (leave the start blank for an all-day event), notes, how often it **Repeats** (Never, Weekly, Monthly or Yearly, with an optional **Until** date), and **Show in briefing ahead** — how many days or weeks before it should start appearing in the Saturday Briefing.
+- Weekly events fall on the same weekday. Monthly ones fall on the same date, and an event on the 31st shows on the last day of shorter months. Yearly ones fall on the same date, and 29 February shows on 28 February in other years.
+- **To change a repeating event**, click any of its dates. You're asked **Change just this one** or **Change all**. *Just this one* only offers a new date and time — for example, moving this year's concert a week — or **Cancel just this one**; every other date is untouched. *Change all* edits the whole series, including its title and notes, everywhere. A date you moved on its own keeps its own date but takes on any new title.
+- **Remove event** (at the bottom of an event) hides the whole event. **Removed events**, linked at the top, lists them and lets you **Restore** one.
+- Each event shows who last changed it and when.
+
+## Entering your yearly events
+
+This is your Phase 2 check with real content. Set aside about half an hour.
+
+1. Go to **Calendar** and press **Add event**.
+2. For each yearly event (the concert, the card campaign, exams, and so on): type the title, pick the date of the *next* one, set **Repeats** to **Yearly**, and choose **Show in briefing ahead** — for example 6 weeks for a big campaign. Add notes if it helps ("Print exam papers").
+3. Press **Save**. Look at the month it falls in, then at the same month next year, to check it's there.
+4. If one year is different, click that year's date, choose **Change just this one**, and move it — next year stays as it was.
+
+## Moving your Trello cards
+
+As with HelpScout, this is one way and one time. Only move cards that are still active — finished ones can stay behind in Trello.
+
+1. In **Tasks**, open the **Board**.
+2. For each active Trello card, type its title in the box at the top, pick the column it's in now (**Ideas**, **To do** or **In progress**), add the due date if it has one, choose the people, and press **Add task**.
+3. Open the new card and paste in any notes from Trello, and set its size (small, medium or large) so the Team view shows people's load fairly.
+4. Put the **To do** cards in priority order, most important at the top.
+5. When you've been through them all, look at the **Team** view and check it matches who's really doing what. If nothing is missing, you can close Trello.
+
+## Keeping a copy of your tasks and events
+
+**Settings → Export everything** now also includes two spreadsheets, `tasks.csv` and `events.csv`, that open straight in Excel with clear column names and readable dates (removed items are included and marked). The zip's own `index.html` is still the place to read your articles offline.
+
 ## Word samples
 
 If you have real Word documents (with pictures and tables, nothing private) you'd like Import from Word tested against, put 1–3 of them in the `samples\word` folder inside the Comp HQ project folder. This is entirely optional.
@@ -150,5 +199,6 @@ Everything you're asked to do yourself, start to finish, and where to find the s
 | Once, end of Phase 1 | Install Comp HQ on TrueNAS, with automatic snapshots. | "Installing on TrueNAS" above. |
 | Once per office computer | Create the desktop shortcut and pick a name. | "Setting up an office computer" above. |
 | Once, end of Phase 1 | Copy your HelpScout articles into Comp HQ. | "Moving your HelpScout articles" above. |
+| End of Phase 2 | Enter your yearly events, and move your active Trello cards. | "Entering your yearly events" and "Moving your Trello cards" above. |
 | End of each phase (3 times) | Check what's been built so far. | Walked through live with the build agent at each phase's close; nothing to prepare. |
 | Each future update | Change the version number in TrueNAS. | "Updating" above. |
