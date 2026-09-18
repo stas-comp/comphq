@@ -2,7 +2,7 @@
 # Change the three lines marked "← CHANGE THIS" below, then click Save.
 services:
   comphq:
-    image: ghcr.io/stas-comp/comphq:0.2.0
+    image: ghcr.io/stas-comp/comphq:1.0.0
     restart: unless-stopped
     user: "568:568"
     ports:
