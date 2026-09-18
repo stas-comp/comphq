@@ -40,6 +40,7 @@ func NewServer(sqlDB *sql.DB, version, dataDir string, testMode bool) (*Server, 
 		"web/templates/settings/*.html",
 		"web/templates/kb/*.html",
 		"web/templates/tasks/*.html",
+		"web/templates/calendar/*.html",
 	)
 	if err != nil {
 		return nil, err

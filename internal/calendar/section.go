@@ -1,5 +1,4 @@
-// Package calendar will hold events and recurrence (P2-13–P2-17). For now
-// it registers only the "Coming soon" placeholder (SPEC gate 1.08).
+// Package calendar holds events and recurrence (SPEC A7).
 package calendar
 
 import (
@@ -8,11 +7,23 @@ import (
 	"github.com/stas-comp/comphq/internal/app"
 )
 
+type Handlers struct {
+	srv   *app.Server
+	store *Store
+}
+
 func Section(srv *app.Server) app.Section {
+	h := &Handlers{srv: srv, store: &Store{DB: srv.DB}}
 	return app.Section{
-		Nav: &app.NavItem{Label: "Calendar", Path: "/calendar", Icon: "/static/theme/icons/calendar.svg"},
+		MigrationName: "calendar",
+		Nav:           &app.NavItem{Label: "Calendar", Path: "/calendar", Icon: "/static/theme/icons/calendar.svg"},
 		RegisterRoutes: func(mux *http.ServeMux) {
-			mux.HandleFunc("GET /calendar", srv.ComingSoon("Calendar"))
+			mux.HandleFunc("GET /calendar", h.handleMonth)
+			mux.HandleFunc("GET /calendar/list", h.handleList)
+			mux.HandleFunc("GET /calendar/new", h.handleNewEventForm)
+			mux.HandleFunc("POST /calendar/events", h.handleCreateEvent)
+			mux.HandleFunc("GET /calendar/events/{id}", h.handleEventDetails)
+			mux.HandleFunc("POST /calendar/events/{id}", h.handleUpdateEvent)
 		},
 	}
 }

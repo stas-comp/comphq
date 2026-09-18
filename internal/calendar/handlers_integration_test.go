@@ -1,0 +1,263 @@
+//go:build integration
+
+package calendar
+
+import (
+	"database/sql"
+	"fmt"
+	"io"
+	"net/http"
+	"net/http/cookiejar"
+	"net/http/httptest"
+	"net/url"
+	"strings"
+	"testing"
+
+	comphq "github.com/stas-comp/comphq"
+	"github.com/stas-comp/comphq/internal/app"
+	"github.com/stas-comp/comphq/internal/db"
+)
+
+func mustCookieJar(t *testing.T) *cookiejar.Jar {
+	t.Helper()
+	jar, err := cookiejar.New(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return jar
+}
+
+func readBody(t *testing.T, resp *http.Response) string {
+	t.Helper()
+	defer resp.Body.Close()
+	data, err := io.ReadAll(resp.Body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return string(data)
+}
+
+func newTestServer(t *testing.T) (*httptest.Server, *sql.DB) {
+	t.Helper()
+	sqlDB, err := db.Open(":memory:")
+	if err != nil {
+		t.Fatalf("Open: %v", err)
+	}
+	t.Cleanup(func() { sqlDB.Close() })
+
+	for _, section := range []string{"app", "people", "calendar"} {
+		migrations, err := db.LoadMigrations(comphq.Migrations, section)
+		if err != nil {
+			t.Fatalf("LoadMigrations(%s): %v", section, err)
+		}
+		if err := db.RunMigrations(sqlDB, "test", migrations); err != nil {
+			t.Fatalf("RunMigrations(%s): %v", section, err)
+		}
+	}
+
+	srv, err := app.NewServer(sqlDB, "test", t.TempDir(), false)
+	if err != nil {
+		t.Fatalf("NewServer: %v", err)
+	}
+	srv.Registry().Add(Section(srv))
+
+	ts := httptest.NewServer(srv.Routes())
+	t.Cleanup(ts.Close)
+	return ts, sqlDB
+}
+
+func postForm(t *testing.T, client *http.Client, ts *httptest.Server, path string, form url.Values) *http.Response {
+	t.Helper()
+	req, err := http.NewRequest(http.MethodPost, ts.URL+path, strings.NewReader(form.Encode()))
+	if err != nil {
+		t.Fatal(err)
+	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("Origin", ts.URL)
+	resp, err := client.Do(req)
+	if err != nil {
+		t.Fatalf("POST %s: %v", path, err)
+	}
+	return resp
+}
+
+func signIn(t *testing.T, client *http.Client, ts *httptest.Server, name string) {
+	t.Helper()
+	resp := postForm(t, client, ts, "/who/add", url.Values{"name": {name}, "next": {"/"}})
+	resp.Body.Close()
+}
+
+func eventID(t *testing.T, sqlDB *sql.DB, title string) int64 {
+	t.Helper()
+	var id int64
+	if err := sqlDB.QueryRow(`SELECT id FROM events WHERE title = ?`, title).Scan(&id); err != nil {
+		t.Fatalf("find event %q: %v", title, err)
+	}
+	return id
+}
+
+// TestCreateEventHTTPRedisplaysEveryField covers gate 2.13's add-event
+// path over HTTP: every field saved and redisplayed on the details page.
+func TestCreateEventHTTPRedisplaysEveryField(t *testing.T) {
+	ts, _ := newTestServer(t)
+	client := &http.Client{Jar: mustCookieJar(t)}
+	signIn(t, client, ts, "Sam")
+
+	resp := postForm(t, client, ts, "/calendar/events", url.Values{
+		"title": {"Christmas concert"}, "notes": {"Bring programmes"},
+		"start_date": {"2026-12-12"}, "end_date": {"2026-12-13"},
+		"start_time": {"18:00"}, "end_time": {"20:00"},
+		"recurrence": {"yearly"}, "until_date": {"2030-12-31"},
+		"notice_amount": {"2"}, "notice_unit": {"weeks"},
+	})
+	body := readBody(t, resp)
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("status = %d, want 200 (following the redirect to the details page)", resp.StatusCode)
+	}
+	for _, want := range []string{"Christmas concert", "Bring programmes", "2026-12-12", "2026-12-13", "18:00", "20:00", "2030-12-31"} {
+		if !strings.Contains(body, want) {
+			t.Errorf("details page missing %q; got:\n%s", want, body)
+		}
+	}
+}
+
+// TestCreateEventHTTPBlankTitleShowsMessage covers the empty-title refusal.
+func TestCreateEventHTTPBlankTitleShowsMessage(t *testing.T) {
+	ts, _ := newTestServer(t)
+	client := &http.Client{Jar: mustCookieJar(t)}
+	signIn(t, client, ts, "Sam")
+
+	resp := postForm(t, client, ts, "/calendar/events", url.Values{"title": {"  "}, "start_date": {"2026-10-01"}})
+	body := readBody(t, resp)
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("status = %d, want 200 (refused with a message, not an error page)", resp.StatusCode)
+	}
+	if !strings.Contains(body, "Please type a title.") {
+		t.Errorf("response missing the refusal message; got:\n%s", body)
+	}
+}
+
+// TestCreateEventHTTPEndDateBeforeStartShowsMessage covers gate 2.13's
+// end-date-not-before-start validation over HTTP.
+func TestCreateEventHTTPEndDateBeforeStartShowsMessage(t *testing.T) {
+	ts, _ := newTestServer(t)
+	client := &http.Client{Jar: mustCookieJar(t)}
+	signIn(t, client, ts, "Sam")
+
+	resp := postForm(t, client, ts, "/calendar/events", url.Values{
+		"title": {"Backwards"}, "start_date": {"2026-10-05"}, "end_date": {"2026-10-01"},
+	})
+	body := readBody(t, resp)
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("status = %d, want 200", resp.StatusCode)
+	}
+	if !strings.Contains(body, "end date can") || !strings.Contains(body, "before the start date") {
+		t.Errorf("response missing the refusal message; got:\n%s", body)
+	}
+}
+
+// TestCreateEventHTTPEndTimeWithoutStartTimeShowsMessage covers gate
+// 2.13's end-time-needs-start-time validation over HTTP.
+func TestCreateEventHTTPEndTimeWithoutStartTimeShowsMessage(t *testing.T) {
+	ts, _ := newTestServer(t)
+	client := &http.Client{Jar: mustCookieJar(t)}
+	signIn(t, client, ts, "Sam")
+
+	resp := postForm(t, client, ts, "/calendar/events", url.Values{
+		"title": {"No start time"}, "start_date": {"2026-10-05"}, "end_time": {"10:00"},
+	})
+	body := readBody(t, resp)
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("status = %d, want 200", resp.StatusCode)
+	}
+	if !strings.Contains(body, "Add a start time before an end time.") {
+		t.Errorf("response missing the refusal message; got:\n%s", body)
+	}
+}
+
+// TestUpdateEventHTTPSavesChanges covers gate 2.20's edit-from-details
+// path over HTTP.
+func TestUpdateEventHTTPSavesChanges(t *testing.T) {
+	ts, sqlDB := newTestServer(t)
+	client := &http.Client{Jar: mustCookieJar(t)}
+	signIn(t, client, ts, "Sam")
+
+	postForm(t, client, ts, "/calendar/events", url.Values{"title": {"Original"}, "start_date": {"2026-10-01"}}).Body.Close()
+	id := eventID(t, sqlDB, "Original")
+
+	resp := postForm(t, client, ts, fmt.Sprintf("/calendar/events/%d", id), url.Values{
+		"title": {"Edited"}, "start_date": {"2026-10-02"}, "notes": {"Updated notes"},
+	})
+	body := readBody(t, resp)
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("status = %d, want 200 (following the redirect back to the details page)", resp.StatusCode)
+	}
+	if !strings.Contains(body, "Edited") || !strings.Contains(body, "2026-10-02") || !strings.Contains(body, "Updated notes") {
+		t.Errorf("details page missing the edited fields; got:\n%s", body)
+	}
+	if !strings.Contains(body, "Last changed by Sam") {
+		t.Errorf("details page missing the last-changed line; got:\n%s", body)
+	}
+}
+
+// TestMonthViewHTTPShowsCreatedEvent covers gate 2.12's month view
+// wiring over HTTP: a created event's chip appears on its own date.
+func TestMonthViewHTTPShowsCreatedEvent(t *testing.T) {
+	ts, _ := newTestServer(t)
+	client := &http.Client{Jar: mustCookieJar(t)}
+	signIn(t, client, ts, "Sam")
+
+	postForm(t, client, ts, "/calendar/events", url.Values{"title": {"October event"}, "start_date": {"2026-10-15"}}).Body.Close()
+
+	resp, err := client.Get(ts.URL + "/calendar?month=2026-10")
+	if err != nil {
+		t.Fatal(err)
+	}
+	body := readBody(t, resp)
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("status = %d, want 200", resp.StatusCode)
+	}
+	if !strings.Contains(body, "October event") {
+		t.Errorf("month view missing the created event's chip; got:\n%s", body)
+	}
+	if !strings.Contains(body, `data-date="2026-10-15"`) {
+		t.Errorf("month view missing the expected day cell; got:\n%s", body)
+	}
+}
+
+// TestNoDeleteRouteForCalendar covers SPEC's "nothing is permanently
+// deleted" for the routes that exist so far — matching the Tasks
+// section's own route-table precedent.
+func TestNoDeleteRouteForCalendar(t *testing.T) {
+	ts, sqlDB := newTestServer(t)
+	client := &http.Client{Jar: mustCookieJar(t)}
+	signIn(t, client, ts, "Sam")
+
+	postForm(t, client, ts, "/calendar/events", url.Values{"title": {"Event"}, "start_date": {"2026-10-01"}}).Body.Close()
+	id := eventID(t, sqlDB, "Event")
+
+	paths := []string{"/calendar", "/calendar/list", "/calendar/new", fmt.Sprintf("/calendar/events/%d", id)}
+	for _, path := range paths {
+		req, err := http.NewRequest(http.MethodDelete, ts.URL+path, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		req.Header.Set("Origin", ts.URL)
+		resp, err := client.Do(req)
+		if err != nil {
+			t.Fatalf("DELETE %s: %v", path, err)
+		}
+		resp.Body.Close()
+		if resp.StatusCode == http.StatusOK || resp.StatusCode == http.StatusNoContent {
+			t.Errorf("DELETE %s = %d, want a non-success status (no delete route exists)", path, resp.StatusCode)
+		}
+	}
+
+	var stillExists int
+	if err := sqlDB.QueryRow(`SELECT COUNT(*) FROM events WHERE id = ?`, id).Scan(&stillExists); err != nil {
+		t.Fatal(err)
+	}
+	if stillExists != 1 {
+		t.Error("event no longer exists after DELETE attempts")
+	}
+}

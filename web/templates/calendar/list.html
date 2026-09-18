@@ -1,0 +1,20 @@
+{{define "calendar-list.html"}}
+<h1>Calendar</h1>
+{{template "calendar-view-switch" .}}
+
+<p><a href="/calendar/new">Add event</a></p>
+
+{{if .Rows}}
+<ul class="calendar-list">
+{{range .Rows}}
+<li class="calendar-list-row">
+<p class="calendar-list-date">{{.DateLabel}}{{if .TimeLabel}}, {{.TimeLabel}}{{end}}</p>
+<p class="calendar-list-title"><a href="/calendar/events/{{.EventID}}">{{.Title}}</a></p>
+{{if .Notes}}<p class="calendar-list-notes">{{.Notes}}</p>{{end}}
+</li>
+{{end}}
+</ul>
+{{else}}
+<p>Nothing in the next 12 weeks.</p>
+{{end}}
+{{end}}

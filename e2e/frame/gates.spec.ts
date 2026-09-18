@@ -34,7 +34,6 @@ test('placeholder sections show Coming soon with status 200', async ({ page, ser
 
   for (const [path, title] of [
     ['/briefing', 'Briefing'],
-    ['/calendar', 'Calendar'],
   ] as const) {
     const res = await page.request.get(server.baseURL + path);
     expect(res.status()).toBe(200);

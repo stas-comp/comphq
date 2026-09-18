@@ -1,0 +1,6 @@
+{{define "calendar-details.html"}}
+<p><a href="/calendar">Back to Calendar</a></p>
+<h1>{{.Title}}</h1>
+<p class="calendar-last-changed">Last changed by {{.UpdatedByName}} · {{.UpdatedAt}}</p>
+{{template "calendar-event-form" .}}
+{{end}}
