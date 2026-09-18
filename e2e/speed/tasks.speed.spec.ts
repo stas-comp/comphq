@@ -83,4 +83,18 @@ test.describe('Tasks speed (SPEC gates 2.21, 2.31, 2.38)', () => {
     await axeCheck(page);
     await expectNoSideScroll(page);
   });
+
+  // SPEC gate 2.23: every remaining Tasks page type, too.
+  test('Board, a task page, Finished and Removed pass standard page checks with the seeded library', async ({ page, server }) => {
+    // axe walks every node of a 1,500-row Removed list: the check itself is
+    // slow on the real library, so this test needs more than the default 30s.
+    test.setTimeout(120_000);
+    await signInAsNewPerson(page, server.baseURL, '/tasks/board');
+    for (const path of ['/tasks/board', taskPath, '/tasks/finished', '/tasks/removed']) {
+      await page.goto(server.baseURL + path);
+      await ready(page);
+      await axeCheck(page);
+      await expectNoSideScroll(page);
+    }
+  });
 });

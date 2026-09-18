@@ -29,6 +29,7 @@ import (
 	"time"
 
 	comphq "github.com/stas-comp/comphq"
+	"github.com/stas-comp/comphq/internal/calendar"
 	"github.com/stas-comp/comphq/internal/db"
 	"github.com/stas-comp/comphq/internal/kb"
 	"github.com/stas-comp/comphq/internal/kb/images"
@@ -55,6 +56,7 @@ func main() {
 	withImages := flag.Bool("images", true, "embed generated images in some articles")
 	taskCount := flag.Int("tasks", 2000, "number of tasks to create")
 	peopleCount := flag.Int("people", 10, "number of active people to create, for tasks to be assigned to")
+	eventCount := flag.Int("events", 300, "number of calendar events to create")
 	flag.Parse()
 
 	if *dataDir == "" {
@@ -62,12 +64,12 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err := run(*dataDir, *articleCount, *wordsPerArticle, *categoryCount, *withImages, *taskCount, *peopleCount); err != nil {
+	if err := run(*dataDir, *articleCount, *wordsPerArticle, *categoryCount, *withImages, *taskCount, *peopleCount, *eventCount); err != nil {
 		log.Fatalf("seed: %v", err)
 	}
 }
 
-func run(dataDir string, articleCount, wordsPerArticle, categoryCount int, withImages bool, taskCount, peopleCount int) error {
+func run(dataDir string, articleCount, wordsPerArticle, categoryCount int, withImages bool, taskCount, peopleCount, eventCount int) error {
 	if err := os.MkdirAll(dataDir, 0o755); err != nil {
 		return fmt.Errorf("create data dir: %w", err)
 	}
@@ -78,7 +80,7 @@ func run(dataDir string, articleCount, wordsPerArticle, categoryCount int, withI
 	}
 	defer sqlDB.Close()
 
-	for _, section := range []string{"app", "people", "kb", "tasks"} {
+	for _, section := range []string{"app", "people", "kb", "tasks", "calendar"} {
 		migrations, err := db.LoadMigrations(comphq.Migrations, section)
 		if err != nil {
 			return fmt.Errorf("load %s migrations: %w", section, err)
@@ -160,6 +162,11 @@ func run(dataDir string, articleCount, wordsPerArticle, categoryCount int, withI
 		return fmt.Errorf("seed tasks: %w", err)
 	}
 	log.Printf("seeded %d tasks across %d people into %s", taskCount, peopleCount, dataDir)
+
+	if err := seedEvents(ctx, sqlDB, rng, person.ID, eventCount); err != nil {
+		return fmt.Errorf("seed events: %w", err)
+	}
+	log.Printf("seeded %d events into %s", eventCount, dataDir)
 
 	return nil
 }
@@ -438,4 +445,73 @@ func articleBody(rng *rand.Rand, wordCount int, imageTags []string) string {
 	}
 
 	return b.String()
+}
+
+// seedEvents builds PLAN.md P2-17's calendar library: eventCount events
+// (SPEC: 300, of which 100 repeat) spread from a year back to two years
+// ahead. Repeats skew yearly (SPEC O2.2's own use case: concert, card
+// campaign, exams), with fewer monthly and only a handful of weekly ones -
+// weekly events fan out to a dozen list rows each, which no real events
+// calendar would have much of. About one event in seven is removed (so
+// Removed events isn't empty), and a few repeating occurrences are moved
+// or cancelled.
+func seedEvents(ctx context.Context, sqlDB *sql.DB, rng *rand.Rand, creator int64, eventCount int) error {
+	store := &calendar.Store{DB: sqlDB}
+	now := time.Now()
+	base := now.AddDate(-1, 0, 0)
+	notices := []int{0, 3, 7, 14, 42}
+
+	var repeatingIDs []int64
+	var repeatingStarts []string
+	for i := 0; i < eventCount; i++ {
+		start := base.AddDate(0, 0, rng.Intn(365*3))
+		in := calendar.Input{
+			Title:      titleCase(pickWords(rng, 2+rng.Intn(3))) + fmt.Sprintf(" (%d)", i+1),
+			Notes:      sentence(rng, 8),
+			StartDate:  start.Format("2006-01-02"),
+			NoticeDays: notices[i%len(notices)],
+		}
+		if i%4 == 0 {
+			in.StartTime = fmt.Sprintf("%02d:00", 8+i%10)
+			in.EndTime = fmt.Sprintf("%02d:00", 9+i%10)
+		}
+		if i%9 == 0 {
+			in.EndDate = start.AddDate(0, 0, 1+i%3).Format("2006-01-02")
+		}
+		switch {
+		case i%3 == 0 && i/3 < 70:
+			in.Recurrence = calendar.RecurrenceYearly
+		case i%3 == 1 && i/3 < 20:
+			in.Recurrence = calendar.RecurrenceMonthly
+		case i%30 == 2:
+			in.Recurrence = calendar.RecurrenceWeekly
+		}
+		e, err := store.Create(ctx, in, creator, now)
+		if err != nil {
+			return fmt.Errorf("create event %d: %w", i, err)
+		}
+		if in.Recurrence != "" {
+			repeatingIDs = append(repeatingIDs, e.ID)
+			repeatingStarts = append(repeatingStarts, in.StartDate)
+		}
+		if i%7 == 6 {
+			if err := store.Remove(ctx, e.ID, creator, now); err != nil {
+				return fmt.Errorf("remove event %d: %w", i, err)
+			}
+		}
+	}
+
+	for j := 0; j < len(repeatingIDs) && j < 20; j++ {
+		var err error
+		if j%2 == 0 {
+			d, _ := time.Parse("2006-01-02", repeatingStarts[j])
+			err = store.SetMovedException(ctx, repeatingIDs[j], repeatingStarts[j], d.AddDate(0, 0, 7).Format("2006-01-02"), "", "", "", creator, now)
+		} else {
+			err = store.SetCancelledException(ctx, repeatingIDs[j], repeatingStarts[j], creator, now)
+		}
+		if err != nil && err != calendar.ErrEventNotFound {
+			return fmt.Errorf("exception %d: %w", j, err)
+		}
+	}
+	return nil
 }
