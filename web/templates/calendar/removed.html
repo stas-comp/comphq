@@ -1,0 +1,20 @@
+{{define "calendar-removed.html"}}
+<p><a href="/calendar">Back to Calendar</a></p>
+<h1>Removed events</h1>
+
+{{if .Events}}
+<ul class="calendar-list">
+{{range .Events}}
+<li class="calendar-list-row">
+<p class="calendar-list-date">{{.DateLabel}}</p>
+<p class="calendar-list-title">{{.Title}}</p>
+<form method="post" action="/calendar/events/{{.ID}}/restore" class="inline-form">
+<button type="submit">Restore</button>
+</form>
+</li>
+{{end}}
+</ul>
+{{else}}
+<p>No removed events.</p>
+{{end}}
+{{end}}

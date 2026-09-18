@@ -3,4 +3,8 @@
 <h1>{{.Title}}</h1>
 <p class="calendar-last-changed">Last changed by {{.UpdatedByName}} · {{.UpdatedAt}}</p>
 {{template "calendar-event-form" .}}
+
+<form method="post" action="/calendar/events/{{.EventID}}/remove" class="calendar-remove-form">
+<button type="submit">Remove event</button>
+</form>
 {{end}}

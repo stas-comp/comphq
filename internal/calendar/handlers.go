@@ -198,8 +198,19 @@ func inputFromEvent(event Event) Input {
 	}
 }
 
+// choicePageData backs gate 2.15's "Change just this one" / "Change
+// all" choice, shown when a repeating occurrence's own chip is clicked
+// (SPEC A7: "Clicking a repeating event asks...").
+type choicePageData struct {
+	EventID        int64
+	EventTitle     string
+	OccurrenceDate string
+}
+
 // handleEventDetails serves gate 2.20's details page: every field
 // redisplayed in an editable form, plus who last changed it and when.
+// A repeating event reached via a specific occurrence's own chip
+// (?occurrence=) shows gate 2.15's choice first instead.
 func (h *Handlers) handleEventDetails(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
@@ -211,6 +222,14 @@ func (h *Handlers) handleEventDetails(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
+
+	if occurrenceDate := r.URL.Query().Get("occurrence"); occurrenceDate != "" && event.Recurrence != RecurrenceNone {
+		h.srv.RenderFrame(w, r, http.StatusOK, "calendar-choice.html", event.Title, choicePageData{
+			EventID: id, EventTitle: event.Title, OccurrenceDate: occurrenceDate,
+		})
+		return
+	}
+
 	h.renderEventDetails(w, r, http.StatusOK, event, inputFromEvent(event), "")
 }
 
@@ -253,17 +272,217 @@ func (h *Handlers) handleUpdateEvent(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// occurrenceView is one chip on the month grid or row on the list view.
-type occurrenceView struct {
-	EventID   int64
+// occurrenceFormData backs gate 2.15's "just this one" form: date and
+// time changes plus Cancel just this one — never title or notes,
+// which always come from the series (SPEC B4).
+type occurrenceFormData struct {
+	Message      string
+	EventID      int64
+	EventTitle   string
+	OriginalDate string
+	StartDate    string
+	EndDate      string
+	StartTime    string
+	EndTime      string
+}
+
+func (h *Handlers) renderOccurrenceForm(w http.ResponseWriter, r *http.Request, status int, eventID int64, eventTitle, originalDate string, input Input, message string) {
+	h.srv.RenderFrame(w, r, status, "calendar-occurrence.html", eventTitle, occurrenceFormData{
+		Message:      message,
+		EventID:      eventID,
+		EventTitle:   eventTitle,
+		OriginalDate: originalDate,
+		StartDate:    input.StartDate,
+		EndDate:      input.EndDate,
+		StartTime:    input.StartTime,
+		EndTime:      input.EndTime,
+	})
+}
+
+// handleOccurrenceForm serves gate 2.15's "Change just this one" form.
+func (h *Handlers) handleOccurrenceForm(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil {
+		http.Error(w, "invalid id", http.StatusBadRequest)
+		return
+	}
+	originalDate := r.URL.Query().Get("date")
+	if originalDate == "" {
+		http.Error(w, "missing date", http.StatusBadRequest)
+		return
+	}
+	event, err := h.store.Get(r.Context(), id)
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+	input, err := h.store.OccurrenceForEdit(r.Context(), id, originalDate)
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+	h.renderOccurrenceForm(w, r, http.StatusOK, id, event.Title, originalDate, input, "")
+}
+
+// handleSetOccurrence serves gate 2.15's "just this one" save.
+func (h *Handlers) handleSetOccurrence(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil {
+		http.Error(w, "invalid id", http.StatusBadRequest)
+		return
+	}
+	person, ok := people.FromContext(r.Context())
+	if !ok {
+		http.Error(w, "not signed in", http.StatusForbidden)
+		return
+	}
+	if err := r.ParseForm(); err != nil {
+		http.Error(w, "invalid form", http.StatusBadRequest)
+		return
+	}
+
+	originalDate := r.FormValue("original_date")
+	input := Input{
+		StartDate: r.FormValue("start_date"),
+		EndDate:   r.FormValue("end_date"),
+		StartTime: r.FormValue("start_time"),
+		EndTime:   r.FormValue("end_time"),
+	}
+	today := app.Today(h.srv.TestMode)
+	err = h.store.SetMovedException(r.Context(), id, originalDate, input.StartDate, input.EndDate, input.StartTime, input.EndTime, person.ID, today)
+	switch err {
+	case nil:
+		http.Redirect(w, r, fmt.Sprintf("/calendar/events/%d", id), http.StatusFound)
+	case ErrEmptyStartDate, ErrEndDateBeforeStart, ErrEndTimeNeedsStartTime:
+		event, getErr := h.store.Get(r.Context(), id)
+		if getErr != nil {
+			http.NotFound(w, r)
+			return
+		}
+		h.renderOccurrenceForm(w, r, http.StatusOK, id, event.Title, originalDate, input, friendlyMessage(err))
+	case ErrEventNotFound:
+		http.NotFound(w, r)
+	default:
+		http.Error(w, "internal error", http.StatusInternalServerError)
+	}
+}
+
+// handleCancelOccurrence serves gate 2.16's "Cancel just this one".
+func (h *Handlers) handleCancelOccurrence(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil {
+		http.Error(w, "invalid id", http.StatusBadRequest)
+		return
+	}
+	person, ok := people.FromContext(r.Context())
+	if !ok {
+		http.Error(w, "not signed in", http.StatusForbidden)
+		return
+	}
+	if err := r.ParseForm(); err != nil {
+		http.Error(w, "invalid form", http.StatusBadRequest)
+		return
+	}
+
+	today := app.Today(h.srv.TestMode)
+	switch err := h.store.SetCancelledException(r.Context(), id, r.FormValue("original_date"), person.ID, today); err {
+	case nil, ErrEventNotFound:
+		http.Redirect(w, r, "/calendar", http.StatusFound)
+	default:
+		http.Error(w, "internal error", http.StatusInternalServerError)
+	}
+}
+
+// handleRemoveEvent serves gate 2.18's "Remove event".
+func (h *Handlers) handleRemoveEvent(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil {
+		http.Error(w, "invalid id", http.StatusBadRequest)
+		return
+	}
+	person, ok := people.FromContext(r.Context())
+	if !ok {
+		http.Error(w, "not signed in", http.StatusForbidden)
+		return
+	}
+	today := app.Today(h.srv.TestMode)
+	switch err := h.store.Remove(r.Context(), id, person.ID, today); err {
+	case nil:
+		http.Redirect(w, r, "/calendar", http.StatusFound)
+	case ErrEventNotFound:
+		http.NotFound(w, r)
+	default:
+		http.Error(w, "internal error", http.StatusInternalServerError)
+	}
+}
+
+// removedEventView is one row of the Removed events list.
+type removedEventView struct {
+	ID        int64
 	Title     string
-	TimeLabel string // "" for all-day
+	DateLabel string
+}
+
+type removedPageData struct {
+	Events []removedEventView
+}
+
+// handleRemovedEvents serves gate 2.18's Removed events list.
+func (h *Handlers) handleRemovedEvents(w http.ResponseWriter, r *http.Request) {
+	removed, err := h.store.ListRemoved(r.Context())
+	if err != nil {
+		http.Error(w, "internal error", http.StatusInternalServerError)
+		return
+	}
+	views := make([]removedEventView, 0, len(removed))
+	for _, e := range removed {
+		views = append(views, removedEventView{ID: e.ID, Title: e.Title, DateLabel: dateLabel(e.StartDate)})
+	}
+	h.srv.RenderFrame(w, r, http.StatusOK, "calendar-removed.html", "Removed events", removedPageData{Events: views})
+}
+
+// handleRestoreEvent serves gate 2.18's Restore action.
+func (h *Handlers) handleRestoreEvent(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil {
+		http.Error(w, "invalid id", http.StatusBadRequest)
+		return
+	}
+	person, ok := people.FromContext(r.Context())
+	if !ok {
+		http.Error(w, "not signed in", http.StatusForbidden)
+		return
+	}
+	today := app.Today(h.srv.TestMode)
+	switch err := h.store.Restore(r.Context(), id, person.ID, today); err {
+	case nil, ErrEventNotFound:
+		http.Redirect(w, r, "/calendar/removed", http.StatusFound)
+	default:
+		http.Error(w, "internal error", http.StatusInternalServerError)
+	}
+}
+
+// occurrenceView is one chip on the month grid or row on the list view.
+// DetailsHref always carries the occurrence's own original date — for
+// a repeating event, handleEventDetails uses it to show gate 2.15's
+// "Change just this one" / "Change all" choice; a non-repeating one
+// just ignores it and shows its own details directly.
+type occurrenceView struct {
+	EventID     int64
+	Title       string
+	TimeLabel   string // "" for all-day
+	DetailsHref string
 }
 
 func viewsFor(occs []CalendarOccurrence) []occurrenceView {
 	views := make([]occurrenceView, 0, len(occs))
 	for _, o := range occs {
-		views = append(views, occurrenceView{EventID: o.EventID, Title: o.Title, TimeLabel: o.StartTime})
+		views = append(views, occurrenceView{
+			EventID:     o.EventID,
+			Title:       o.Title,
+			TimeLabel:   o.StartTime,
+			DetailsHref: fmt.Sprintf("/calendar/events/%d?occurrence=%s", o.EventID, o.OriginalDate),
+		})
 	}
 	return views
 }
@@ -363,11 +582,12 @@ func (h *Handlers) handleMonth(w http.ResponseWriter, r *http.Request) {
 
 // listRowView is one row of the 12-week list view.
 type listRowView struct {
-	EventID   int64
-	DateLabel string
-	Title     string
-	Notes     string
-	TimeLabel string
+	EventID     int64
+	DateLabel   string
+	Title       string
+	Notes       string
+	TimeLabel   string
+	DetailsHref string
 }
 
 type listPageData struct {
@@ -397,11 +617,12 @@ func (h *Handlers) handleList(w http.ResponseWriter, r *http.Request) {
 	rows := make([]listRowView, 0, len(occs))
 	for _, o := range occs {
 		rows = append(rows, listRowView{
-			EventID:   o.EventID,
-			DateLabel: dateLabel(o.StartDate),
-			Title:     o.Title,
-			Notes:     o.Notes,
-			TimeLabel: o.StartTime,
+			EventID:     o.EventID,
+			DateLabel:   dateLabel(o.StartDate),
+			Title:       o.Title,
+			Notes:       o.Notes,
+			TimeLabel:   o.StartTime,
+			DetailsHref: fmt.Sprintf("/calendar/events/%d?occurrence=%s", o.EventID, o.OriginalDate),
 		})
 	}
 

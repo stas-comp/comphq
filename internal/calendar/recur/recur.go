@@ -58,6 +58,11 @@ type Occurrence struct {
 	EndTime   string
 	Title     string
 	Notes     string
+	// OriginalDate is the date this occurrence would have fallen on
+	// before any exception — the key a "just this one" edit needs to
+	// address it (SPEC B4: "exceptions are keyed by the original
+	// date"). Equal to StartDate unless this occurrence has been moved.
+	OriginalDate string
 }
 
 // Occurrences expands event into every occurrence overlapping [from,
@@ -72,7 +77,7 @@ func Occurrences(event Event, exceptions []Exception, from, to time.Time) []Occu
 		byOriginal[ex.OriginalDate] = ex
 	}
 
-	length := lengthDays(event.StartDate, event.EndDate)
+	length := LengthDays(event.StartDate, event.EndDate)
 	searchFrom := from.AddDate(0, 0, -length)
 
 	var out []Occurrence
@@ -87,12 +92,13 @@ func Occurrences(event Event, exceptions []Exception, from, to time.Time) []Occu
 		end := start.AddDate(0, 0, length)
 		if overlaps(start, end, from, to) {
 			out = append(out, Occurrence{
-				StartDate: startStr,
-				EndDate:   end.Format(dateLayout),
-				StartTime: event.StartTime,
-				EndTime:   event.EndTime,
-				Title:     event.Title,
-				Notes:     event.Notes,
+				StartDate:    startStr,
+				EndDate:      end.Format(dateLayout),
+				StartTime:    event.StartTime,
+				EndTime:      event.EndTime,
+				Title:        event.Title,
+				Notes:        event.Notes,
+				OriginalDate: startStr,
 			})
 		}
 	}
@@ -113,12 +119,13 @@ func Occurrences(event Event, exceptions []Exception, from, to time.Time) []Occu
 		}
 		if overlaps(start, end, from, to) {
 			out = append(out, Occurrence{
-				StartDate: ex.NewStartDate,
-				EndDate:   end.Format(dateLayout),
-				StartTime: ex.NewStartTime,
-				EndTime:   ex.NewEndTime,
-				Title:     event.Title,
-				Notes:     event.Notes,
+				StartDate:    ex.NewStartDate,
+				EndDate:      end.Format(dateLayout),
+				StartTime:    ex.NewStartTime,
+				EndTime:      ex.NewEndTime,
+				Title:        event.Title,
+				Notes:        event.Notes,
+				OriginalDate: ex.OriginalDate,
 			})
 		}
 	}
@@ -132,10 +139,12 @@ func Occurrences(event Event, exceptions []Exception, from, to time.Time) []Occu
 	return out
 }
 
-// lengthDays is a multi-day event's length in days (SPEC B4: "Multi-day
+// LengthDays is a multi-day event's length in days (SPEC B4: "Multi-day
 // events keep their length (end_date − start_date)"). An unset or
-// invalid end date means a single-day event.
-func lengthDays(startDate, endDate string) int {
+// invalid end date means a single-day event. Exported so callers
+// outside this package (P2-15's single-occurrence editing) can compute
+// the same length without reimplementing it.
+func LengthDays(startDate, endDate string) int {
 	if endDate == "" {
 		return 0
 	}

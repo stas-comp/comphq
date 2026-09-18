@@ -1,0 +1,28 @@
+{{define "calendar-occurrence.html"}}
+<p><a href="/calendar/events/{{.EventID}}">Back to {{.EventTitle}}</a></p>
+<h1>Change just this one</h1>
+{{if .Message}}<p class="message" role="alert">{{.Message}}</p>{{end}}
+
+<form method="post" action="/calendar/events/{{.EventID}}/occurrence" class="calendar-event-form">
+<input type="hidden" name="original_date" value="{{.OriginalDate}}">
+
+<label for="occurrence-start-date">Date</label>
+<input type="date" id="occurrence-start-date" name="start_date" value="{{.StartDate}}" required>
+
+<label for="occurrence-end-date">End date (optional, for an event lasting several days)</label>
+<input type="date" id="occurrence-end-date" name="end_date" value="{{.EndDate}}">
+
+<label for="occurrence-start-time">Start time (leave blank for an all-day event)</label>
+<input type="time" id="occurrence-start-time" name="start_time" value="{{.StartTime}}">
+
+<label for="occurrence-end-time">End time (optional)</label>
+<input type="time" id="occurrence-end-time" name="end_time" value="{{.EndTime}}">
+
+<button type="submit">Save</button>
+</form>
+
+<form method="post" action="/calendar/events/{{.EventID}}/occurrence/cancel" class="calendar-cancel-occurrence-form">
+<input type="hidden" name="original_date" value="{{.OriginalDate}}">
+<button type="submit">Cancel just this one</button>
+</form>
+{{end}}

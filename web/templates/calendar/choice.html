@@ -1,0 +1,9 @@
+{{define "calendar-choice.html"}}
+<p><a href="/calendar">Back to Calendar</a></p>
+<h1>{{.EventTitle}}</h1>
+<p>This event repeats. What would you like to change?</p>
+<ul class="calendar-choice-list">
+<li><a href="/calendar/events/{{.EventID}}/occurrence?date={{.OccurrenceDate}}">Change just this one</a></li>
+<li><a href="/calendar/events/{{.EventID}}">Change all</a></li>
+</ul>
+{{end}}

@@ -250,10 +250,7 @@ func (s *Store) Occurrences(ctx context.Context, from, to time.Time) ([]Calendar
 	return out, nil
 }
 
-// exceptionsFor returns one event's own event_exceptions rows — always
-// empty today (nothing writes to this table until P2-15), but
-// Occurrences already needs the real query wired to the real table its
-// own migration creates.
+// exceptionsFor returns one event's own event_exceptions rows.
 func (s *Store) exceptionsFor(ctx context.Context, eventID int64) ([]recur.Exception, error) {
 	rows, err := s.DB.QueryContext(ctx, `
 		SELECT original_date, kind, new_start_date, new_end_date, new_start_time, new_end_time
@@ -276,6 +273,157 @@ func (s *Store) exceptionsFor(ctx context.Context, eventID int64) ([]recur.Excep
 		ex.NewStartTime = newStartTime.String
 		ex.NewEndTime = newEndTime.String
 		out = append(out, ex)
+	}
+	return out, rows.Err()
+}
+
+// ErrEmptyStartDate is returned by SetMovedException when no new date
+// is given — "just this one" still needs a date to move to.
+var ErrEmptyStartDate = errors.New("date can't be empty")
+
+// SetMovedException records "Change just this one" (SPEC gate 2.15):
+// keyed by the occurrence's original date, replacing only its own
+// dates and times — never its title or notes, which always come from
+// the series (SPEC B4). Editing an already-moved occurrence again just
+// replaces its exception row.
+func (s *Store) SetMovedException(ctx context.Context, eventID int64, originalDate, newStartDate, newEndDate, newStartTime, newEndTime string, actorID int64, now time.Time) error {
+	if newStartDate == "" {
+		return ErrEmptyStartDate
+	}
+	if newEndDate != "" && newEndDate < newStartDate {
+		return ErrEndDateBeforeStart
+	}
+	if newEndTime != "" && newStartTime == "" {
+		return ErrEndTimeNeedsStartTime
+	}
+	return s.upsertException(ctx, eventID, originalDate, recur.Moved, newStartDate, newEndDate, newStartTime, newEndTime, actorID, now)
+}
+
+// SetCancelledException records "Cancel just this one" (SPEC gate
+// 2.16): the other occurrences are untouched.
+func (s *Store) SetCancelledException(ctx context.Context, eventID int64, originalDate string, actorID int64, now time.Time) error {
+	return s.upsertException(ctx, eventID, originalDate, recur.Cancelled, "", "", "", "", actorID, now)
+}
+
+func (s *Store) upsertException(ctx context.Context, eventID int64, originalDate, kind, newStartDate, newEndDate, newStartTime, newEndTime string, actorID int64, now time.Time) error {
+	var exists int
+	if err := s.DB.QueryRowContext(ctx, `SELECT COUNT(*) FROM events WHERE id = ? AND removed_at IS NULL`, eventID).Scan(&exists); err != nil {
+		return err
+	}
+	if exists == 0 {
+		return ErrEventNotFound
+	}
+
+	nowStr := now.UTC().Format(time.RFC3339)
+	_, err := s.DB.ExecContext(ctx, `
+		INSERT INTO event_exceptions (event_id, original_date, kind, new_start_date, new_end_date, new_start_time, new_end_time, updated_by, updated_at)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+		ON CONFLICT(event_id, original_date) DO UPDATE SET
+			kind = excluded.kind,
+			new_start_date = excluded.new_start_date,
+			new_end_date = excluded.new_end_date,
+			new_start_time = excluded.new_start_time,
+			new_end_time = excluded.new_end_time,
+			updated_by = excluded.updated_by,
+			updated_at = excluded.updated_at
+	`, eventID, originalDate, kind, newStartDate, newEndDate, newStartTime, newEndTime, actorID, nowStr)
+	return err
+}
+
+// OccurrenceForEdit returns what the "just this one" form should show
+// for a specific original date (SPEC gate 2.15): an existing moved
+// exception's own dates/times if one exists (re-editing an earlier
+// move), otherwise the series' own computed occurrence — the original
+// date itself, its length preserved, and the series' own times.
+func (s *Store) OccurrenceForEdit(ctx context.Context, eventID int64, originalDate string) (Input, error) {
+	event, err := s.Get(ctx, eventID)
+	if err != nil {
+		return Input{}, err
+	}
+
+	exceptions, err := s.exceptionsFor(ctx, eventID)
+	if err != nil {
+		return Input{}, err
+	}
+	for _, ex := range exceptions {
+		if ex.OriginalDate == originalDate && ex.Kind == recur.Moved {
+			return Input{StartDate: ex.NewStartDate, EndDate: ex.NewEndDate, StartTime: ex.NewStartTime, EndTime: ex.NewEndTime}, nil
+		}
+	}
+
+	input := Input{StartDate: originalDate, StartTime: event.StartTime, EndTime: event.EndTime}
+	if length := recur.LengthDays(event.StartDate, event.EndDate); length > 0 {
+		if start, err := time.Parse(dateLayout, originalDate); err == nil {
+			input.EndDate = start.AddDate(0, 0, length).Format(dateLayout)
+		}
+	}
+	return input, nil
+}
+
+// Remove hides the whole event (SPEC gate 2.18) — nothing is ever
+// permanently deleted; Restore brings it back.
+func (s *Store) Remove(ctx context.Context, id int64, actorID int64, now time.Time) error {
+	nowStr := now.UTC().Format(time.RFC3339)
+	res, err := s.DB.ExecContext(ctx, `
+		UPDATE events SET removed_at = ?, updated_by = ?, updated_at = ? WHERE id = ? AND removed_at IS NULL
+	`, nowStr, actorID, nowStr, id)
+	if err != nil {
+		return err
+	}
+	n, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if n == 0 {
+		return ErrEventNotFound
+	}
+	return nil
+}
+
+// Restore brings a removed event back (SPEC gate 2.18).
+func (s *Store) Restore(ctx context.Context, id int64, actorID int64, now time.Time) error {
+	nowStr := now.UTC().Format(time.RFC3339)
+	res, err := s.DB.ExecContext(ctx, `
+		UPDATE events SET removed_at = NULL, updated_by = ?, updated_at = ? WHERE id = ? AND removed_at IS NOT NULL
+	`, actorID, nowStr, id)
+	if err != nil {
+		return err
+	}
+	n, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if n == 0 {
+		return ErrEventNotFound
+	}
+	return nil
+}
+
+// RemovedEvent is one row of the Removed events list (SPEC gate 2.18).
+type RemovedEvent struct {
+	ID        int64
+	Title     string
+	StartDate string
+}
+
+// ListRemoved lists every removed event, newest-removed first —
+// matching Tasks' own Removed tasks precedent.
+func (s *Store) ListRemoved(ctx context.Context) ([]RemovedEvent, error) {
+	rows, err := s.DB.QueryContext(ctx, `
+		SELECT id, title, start_date FROM events WHERE removed_at IS NOT NULL ORDER BY removed_at DESC
+	`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var out []RemovedEvent
+	for rows.Next() {
+		var re RemovedEvent
+		if err := rows.Scan(&re.ID, &re.Title, &re.StartDate); err != nil {
+			return nil, err
+		}
+		out = append(out, re)
 	}
 	return out, rows.Err()
 }

@@ -182,3 +182,141 @@ test('standard page checks for the month view, list view, add form and event det
   await axeCheck(page);
   await expectNoSideScroll(page);
 });
+
+// Opens a repeating occurrence's own chip and picks "Change just this
+// one" (SPEC A7: "Clicking a repeating event asks...").
+async function openJustThisOne(page: Page, title: string): Promise<void> {
+  await page.locator('.calendar-chip', { hasText: title }).click();
+  await ready(page);
+  await page.click('text=Change just this one');
+  await ready(page);
+}
+
+// SPEC gate 2.15: the exact script — a yearly Christmas concert moved
+// just once shows on its new date, and the other year is unaffected.
+test('gate 2.15: moving just one occurrence of a repeating event leaves other years unaffected', async ({ page, server }) => {
+  await signInAsNewPerson(page, server.baseURL, '/calendar');
+  await ready(page);
+
+  const title = uniqueName('Christmas concert');
+  await addEvent(page, server.baseURL, { title, start_date: '2026-12-12' });
+  await page.selectOption('#event-recurrence', 'yearly');
+  await page.locator('.calendar-event-form button[type="submit"]').click();
+  await ready(page);
+
+  await page.goto(server.baseURL + '/calendar?month=2026-12');
+  await ready(page);
+  await openJustThisOne(page, title);
+
+  await expect(page.locator('h1')).toHaveText('Change just this one');
+  await expect(page.locator('#occurrence-start-date')).toHaveValue('2026-12-12');
+  await page.fill('#occurrence-start-date', '2026-12-19');
+  await page.locator('.calendar-event-form button[type="submit"]').click();
+  await ready(page);
+
+  await page.goto(server.baseURL + '/calendar?month=2026-12');
+  await ready(page);
+  await expect(page.locator('.calendar-day[data-date="2026-12-12"] .calendar-chip', { hasText: title })).toHaveCount(0);
+  await expect(page.locator('.calendar-day[data-date="2026-12-19"] .calendar-chip', { hasText: title })).toHaveCount(1);
+
+  await page.goto(server.baseURL + '/calendar?month=2027-12');
+  await ready(page);
+  await expect(page.locator('.calendar-day[data-date="2027-12-12"] .calendar-chip', { hasText: title })).toHaveCount(1);
+});
+
+// SPEC gate 2.16: "Cancel just this one" hides only that occurrence.
+test('gate 2.16: cancelling just one occurrence leaves the others', async ({ page, server }) => {
+  await signInAsNewPerson(page, server.baseURL, '/calendar');
+  await ready(page);
+
+  const title = uniqueName('Weekly sync');
+  await addEvent(page, server.baseURL, { title, start_date: '2026-03-02' });
+  await page.selectOption('#event-recurrence', 'weekly');
+  await page.locator('.calendar-event-form button[type="submit"]').click();
+  await ready(page);
+
+  await page.goto(server.baseURL + '/calendar?month=2026-03');
+  await ready(page);
+  await page.locator('.calendar-day[data-date="2026-03-09"] .calendar-chip', { hasText: title }).click();
+  await ready(page);
+  await page.click('text=Change just this one');
+  await ready(page);
+  await page.click('text=Cancel just this one');
+  await ready(page);
+
+  await page.goto(server.baseURL + '/calendar?month=2026-03');
+  await ready(page);
+  await expect(page.locator('.calendar-day[data-date="2026-03-09"] .calendar-chip', { hasText: title })).toHaveCount(0);
+  await expect(page.locator('.calendar-day[data-date="2026-03-02"] .calendar-chip', { hasText: title })).toHaveCount(1);
+  await expect(page.locator('.calendar-day[data-date="2026-03-16"] .calendar-chip', { hasText: title })).toHaveCount(1);
+});
+
+// SPEC gate 2.17: "Change all" shows on every occurrence, and a
+// previously moved occurrence keeps its own date but shows the new title.
+test('gate 2.17: Change all updates every occurrence, and a moved one keeps its date with the new title', async ({ page, server }) => {
+  await signInAsNewPerson(page, server.baseURL, '/calendar');
+  await ready(page);
+
+  const originalTitle = uniqueName('Annual gala');
+  await addEvent(page, server.baseURL, { title: originalTitle, start_date: '2026-06-01' });
+  await page.selectOption('#event-recurrence', 'yearly');
+  await page.locator('.calendar-event-form button[type="submit"]').click();
+  await ready(page);
+
+  // Move the 2027 occurrence just this once.
+  await page.goto(server.baseURL + '/calendar?month=2027-06');
+  await ready(page);
+  await openJustThisOne(page, originalTitle);
+  await page.fill('#occurrence-start-date', '2027-06-08');
+  await page.locator('.calendar-event-form button[type="submit"]').click();
+  await ready(page);
+
+  // Change all: edit the series' own title from its details page.
+  const newTitle = uniqueName('Annual gala renamed');
+  await page.fill('#event-title', newTitle);
+  await page.locator('.calendar-event-form button[type="submit"]').click();
+  await ready(page);
+
+  await page.goto(server.baseURL + '/calendar?month=2026-06');
+  await ready(page);
+  await expect(page.locator('.calendar-day[data-date="2026-06-01"] .calendar-chip', { hasText: newTitle })).toHaveCount(1);
+
+  await page.goto(server.baseURL + '/calendar?month=2027-06');
+  await ready(page);
+  await expect(page.locator('.calendar-day[data-date="2027-06-01"] .calendar-chip', { hasText: newTitle })).toHaveCount(0);
+  await expect(page.locator('.calendar-day[data-date="2027-06-08"] .calendar-chip', { hasText: newTitle })).toHaveCount(1);
+});
+
+// SPEC gate 2.18: Remove hides the whole event; Restore brings it back.
+test('gate 2.18: Remove hides an event and lists it in Removed events, and Restore brings it back', async ({ page, server }) => {
+  await signInAsNewPerson(page, server.baseURL, '/calendar');
+  await ready(page);
+
+  const title = uniqueName('Removable event');
+  await addEvent(page, server.baseURL, { title, start_date: '2026-10-10' });
+  await page.locator('.calendar-remove-form button[type="submit"]').click();
+  await ready(page);
+
+  await page.goto(server.baseURL + '/calendar?month=2026-10');
+  await ready(page);
+  await expect(page.locator('.calendar-day[data-date="2026-10-10"] .calendar-chip', { hasText: title })).toHaveCount(0);
+
+  await page.goto(server.baseURL + '/calendar/removed');
+  await ready(page);
+  await expect(page.locator('.calendar-list-title', { hasText: title })).toHaveCount(1);
+
+  await page.locator('.calendar-list-row', { hasText: title }).locator('button', { hasText: 'Restore' }).click();
+  await ready(page);
+  await expect(page.locator('.calendar-list-title', { hasText: title })).toHaveCount(0);
+
+  await page.goto(server.baseURL + '/calendar?month=2026-10');
+  await ready(page);
+  await expect(page.locator('.calendar-day[data-date="2026-10-10"] .calendar-chip', { hasText: title })).toHaveCount(1);
+});
+
+test('standard page checks for Removed events', async ({ page, server }) => {
+  await signInAsNewPerson(page, server.baseURL, '/calendar/removed');
+  await ready(page);
+  await axeCheck(page);
+  await expectNoSideScroll(page);
+});

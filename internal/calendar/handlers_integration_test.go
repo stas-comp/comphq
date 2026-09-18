@@ -236,7 +236,11 @@ func TestNoDeleteRouteForCalendar(t *testing.T) {
 	postForm(t, client, ts, "/calendar/events", url.Values{"title": {"Event"}, "start_date": {"2026-10-01"}}).Body.Close()
 	id := eventID(t, sqlDB, "Event")
 
-	paths := []string{"/calendar", "/calendar/list", "/calendar/new", fmt.Sprintf("/calendar/events/%d", id)}
+	paths := []string{
+		"/calendar", "/calendar/list", "/calendar/new", "/calendar/removed",
+		fmt.Sprintf("/calendar/events/%d", id),
+		fmt.Sprintf("/calendar/events/%d/occurrence", id),
+	}
 	for _, path := range paths {
 		req, err := http.NewRequest(http.MethodDelete, ts.URL+path, nil)
 		if err != nil {
@@ -259,5 +263,163 @@ func TestNoDeleteRouteForCalendar(t *testing.T) {
 	}
 	if stillExists != 1 {
 		t.Error("event no longer exists after DELETE attempts")
+	}
+}
+
+// TestEventDetailsHTTPShowsChoiceForARepeatingOccurrence covers gate
+// 2.15's "Change just this one" / "Change all" choice over HTTP: it
+// only appears for a repeating event reached via ?occurrence=, never
+// for a plain visit or a non-repeating event.
+func TestEventDetailsHTTPShowsChoiceForARepeatingOccurrence(t *testing.T) {
+	ts, sqlDB := newTestServer(t)
+	client := &http.Client{Jar: mustCookieJar(t)}
+	signIn(t, client, ts, "Sam")
+
+	postForm(t, client, ts, "/calendar/events", url.Values{
+		"title": {"Christmas concert"}, "start_date": {"2026-12-12"}, "recurrence": {"yearly"},
+	}).Body.Close()
+	id := eventID(t, sqlDB, "Christmas concert")
+
+	resp, err := client.Get(ts.URL + fmt.Sprintf("/calendar/events/%d?occurrence=2026-12-12", id))
+	if err != nil {
+		t.Fatal(err)
+	}
+	body := readBody(t, resp)
+	if !strings.Contains(body, "Change just this one") || !strings.Contains(body, "Change all") {
+		t.Errorf("response missing the gate 2.15 choice; got:\n%s", body)
+	}
+
+	resp, err = client.Get(ts.URL + fmt.Sprintf("/calendar/events/%d", id))
+	if err != nil {
+		t.Fatal(err)
+	}
+	body = readBody(t, resp)
+	if strings.Contains(body, "Change just this one") {
+		t.Errorf("a plain visit (no occurrence param) shows the choice; got:\n%s", body)
+	}
+}
+
+// TestMoveJustThisOneHTTP covers the exact gate 2.15 script over HTTP:
+// a yearly event moved just once shows on its new date, and the other
+// year is unaffected.
+func TestMoveJustThisOneHTTP(t *testing.T) {
+	ts, sqlDB := newTestServer(t)
+	client := &http.Client{Jar: mustCookieJar(t)}
+	signIn(t, client, ts, "Sam")
+
+	postForm(t, client, ts, "/calendar/events", url.Values{
+		"title": {"Christmas concert"}, "start_date": {"2026-12-12"}, "recurrence": {"yearly"},
+	}).Body.Close()
+	id := eventID(t, sqlDB, "Christmas concert")
+
+	resp := postForm(t, client, ts, fmt.Sprintf("/calendar/events/%d/occurrence", id), url.Values{
+		"original_date": {"2026-12-12"}, "start_date": {"2026-12-19"},
+	})
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("status = %d, want 200 (following the redirect back to the event)", resp.StatusCode)
+	}
+	resp.Body.Close()
+
+	dec2026, err := client.Get(ts.URL + "/calendar?month=2026-12")
+	if err != nil {
+		t.Fatal(err)
+	}
+	dec2026Body := readBody(t, dec2026)
+	cell12 := dec2026Body[strings.Index(dec2026Body, `data-date="2026-12-12"`):strings.Index(dec2026Body, `data-date="2026-12-13"`)]
+	if strings.Contains(cell12, "Christmas concert") {
+		t.Errorf("the moved-away original date still shows a chip; cell:\n%s", cell12)
+	}
+	if !strings.Contains(dec2026Body, "Christmas concert") {
+		t.Errorf("December 2026 missing the moved concert on its new date; got:\n%s", dec2026Body)
+	}
+
+	dec2027, err := client.Get(ts.URL + "/calendar?month=2027-12")
+	if err != nil {
+		t.Fatal(err)
+	}
+	dec2027Body := readBody(t, dec2027)
+	if !strings.Contains(dec2027Body, `data-date="2027-12-12"`) || !strings.Contains(dec2027Body, "Christmas concert") {
+		t.Errorf("December 2027 missing the unaffected concert on the 12th; got:\n%s", dec2027Body)
+	}
+}
+
+// TestCancelJustThisOneHTTP covers gate 2.16 over HTTP.
+func TestCancelJustThisOneHTTP(t *testing.T) {
+	ts, sqlDB := newTestServer(t)
+	client := &http.Client{Jar: mustCookieJar(t)}
+	signIn(t, client, ts, "Sam")
+
+	postForm(t, client, ts, "/calendar/events", url.Values{
+		"title": {"Weekly sync"}, "start_date": {"2026-03-02"}, "recurrence": {"weekly"},
+	}).Body.Close()
+	id := eventID(t, sqlDB, "Weekly sync")
+
+	resp := postForm(t, client, ts, fmt.Sprintf("/calendar/events/%d/occurrence/cancel", id), url.Values{
+		"original_date": {"2026-03-09"},
+	})
+	resp.Body.Close()
+
+	monthResp, err := client.Get(ts.URL + "/calendar?month=2026-03")
+	if err != nil {
+		t.Fatal(err)
+	}
+	body := readBody(t, monthResp)
+	if !strings.Contains(body, `data-date="2026-03-02"`) {
+		t.Fatalf("missing expected day cells; got:\n%s", body)
+	}
+	// The cancelled week's cell exists but has no chip; the others do.
+	cell09 := body[strings.Index(body, `data-date="2026-03-09"`):strings.Index(body, `data-date="2026-03-10"`)]
+	if strings.Contains(cell09, "Weekly sync") {
+		t.Errorf("cancelled occurrence still shows a chip; cell:\n%s", cell09)
+	}
+	cell16 := body[strings.Index(body, `data-date="2026-03-16"`):strings.Index(body, `data-date="2026-03-17"`)]
+	if !strings.Contains(cell16, "Weekly sync") {
+		t.Errorf("an unrelated occurrence disappeared too; cell:\n%s", cell16)
+	}
+}
+
+// TestRemoveAndRestoreEventHTTP covers gate 2.18 over HTTP.
+func TestRemoveAndRestoreEventHTTP(t *testing.T) {
+	ts, sqlDB := newTestServer(t)
+	client := &http.Client{Jar: mustCookieJar(t)}
+	signIn(t, client, ts, "Sam")
+
+	postForm(t, client, ts, "/calendar/events", url.Values{"title": {"Removable"}, "start_date": {"2026-10-01"}}).Body.Close()
+	id := eventID(t, sqlDB, "Removable")
+
+	resp := postForm(t, client, ts, fmt.Sprintf("/calendar/events/%d/remove", id), nil)
+	monthBody := readBody(t, resp)
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("remove status = %d, want 200 (following the redirect to the Calendar)", resp.StatusCode)
+	}
+	if strings.Contains(monthBody, "Removable") {
+		t.Errorf("month view still shows a removed event; got:\n%s", monthBody)
+	}
+
+	removedResp, err := client.Get(ts.URL + "/calendar/removed")
+	if err != nil {
+		t.Fatal(err)
+	}
+	removedBody := readBody(t, removedResp)
+	if !strings.Contains(removedBody, "Removable") {
+		t.Errorf("Removed events page missing the removed event; got:\n%s", removedBody)
+	}
+
+	resp = postForm(t, client, ts, fmt.Sprintf("/calendar/events/%d/restore", id), nil)
+	restoredListBody := readBody(t, resp)
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("restore status = %d, want 200 (following the redirect to Removed events)", resp.StatusCode)
+	}
+	if strings.Contains(restoredListBody, "Removable") {
+		t.Errorf("Removed events still lists the restored event; got:\n%s", restoredListBody)
+	}
+
+	monthResp, err := client.Get(ts.URL + "/calendar?month=2026-10")
+	if err != nil {
+		t.Fatal(err)
+	}
+	monthBody = readBody(t, monthResp)
+	if !strings.Contains(monthBody, "Removable") {
+		t.Errorf("month view missing the restored event; got:\n%s", monthBody)
 	}
 }

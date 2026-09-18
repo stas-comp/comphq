@@ -9,7 +9,7 @@
 <h2>{{.MonthLabel}}</h2>
 </div>
 
-<p><a href="/calendar/new">Add event</a></p>
+<p><a href="/calendar/new">Add event</a> · <a href="/calendar/removed">Removed events</a></p>
 
 <table class="calendar-grid">
 <thead>
@@ -22,7 +22,7 @@
 <td class="calendar-day{{if not .InMonth}} calendar-day-outside{{end}}{{if .IsToday}} calendar-day-today{{end}}{{if .IsSaturday}} calendar-day-saturday{{end}}" data-date="{{.Date}}">
 <a class="calendar-day-number" href="/calendar/new?date={{.Date}}">{{.Day}}{{if .IsToday}}<span class="visually-hidden"> (today)</span>{{end}}</a>
 {{range .Occurrences}}
-<a class="calendar-chip" href="/calendar/events/{{.EventID}}">{{if .TimeLabel}}{{.TimeLabel}} {{end}}{{.Title}}</a>
+<a class="calendar-chip" href="{{.DetailsHref}}">{{if .TimeLabel}}{{.TimeLabel}} {{end}}{{.Title}}</a>
 {{end}}
 </td>
 {{end}}

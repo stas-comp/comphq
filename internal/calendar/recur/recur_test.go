@@ -91,6 +91,16 @@ func TestMovedExactGate215Dates(t *testing.T) {
 	}
 	got := Occurrences(event, exceptions, date("2026-01-01"), date("2027-12-31"))
 	assertDates(t, got, []string{"2026-12-19", "2027-12-12"})
+
+	// OriginalDate is what a "just this one" edit keys off — the moved
+	// occurrence's is its old date, not its new one, and an unaffected
+	// occurrence's is simply its own date.
+	if got[0].OriginalDate != "2026-12-12" {
+		t.Errorf("moved occurrence's OriginalDate = %q, want 2026-12-12", got[0].OriginalDate)
+	}
+	if got[1].OriginalDate != "2027-12-12" {
+		t.Errorf("unaffected occurrence's OriginalDate = %q, want 2027-12-12", got[1].OriginalDate)
+	}
 }
 
 // SPEC B4: "cancelled removes the occurrence."

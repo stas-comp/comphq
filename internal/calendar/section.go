@@ -21,9 +21,15 @@ func Section(srv *app.Server) app.Section {
 			mux.HandleFunc("GET /calendar", h.handleMonth)
 			mux.HandleFunc("GET /calendar/list", h.handleList)
 			mux.HandleFunc("GET /calendar/new", h.handleNewEventForm)
+			mux.HandleFunc("GET /calendar/removed", h.handleRemovedEvents)
 			mux.HandleFunc("POST /calendar/events", h.handleCreateEvent)
 			mux.HandleFunc("GET /calendar/events/{id}", h.handleEventDetails)
 			mux.HandleFunc("POST /calendar/events/{id}", h.handleUpdateEvent)
+			mux.HandleFunc("POST /calendar/events/{id}/remove", h.handleRemoveEvent)
+			mux.HandleFunc("POST /calendar/events/{id}/restore", h.handleRestoreEvent)
+			mux.HandleFunc("GET /calendar/events/{id}/occurrence", h.handleOccurrenceForm)
+			mux.HandleFunc("POST /calendar/events/{id}/occurrence", h.handleSetOccurrence)
+			mux.HandleFunc("POST /calendar/events/{id}/occurrence/cancel", h.handleCancelOccurrence)
 		},
 	}
 }

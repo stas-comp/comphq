@@ -270,3 +270,264 @@ func date(t *testing.T, s string) time.Time {
 	}
 	return d
 }
+
+// SPEC gate 2.15: the exact 2.15 script at the store layer — a yearly
+// Christmas concert moved just once shows on its new date, and the
+// other year is unaffected.
+func TestSetMovedExceptionAppliesOnlyToThatOccurrence(t *testing.T) {
+	sqlDB := openTestDB(t)
+	store := &Store{DB: sqlDB}
+	sam := testPerson(t, sqlDB, "Sam")
+	ctx := context.Background()
+
+	event, err := store.Create(ctx, Input{
+		Title: "Christmas concert", StartDate: "2026-12-12", Recurrence: RecurrenceYearly,
+	}, sam, fixedNow)
+	if err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+
+	if err := store.SetMovedException(ctx, event.ID, "2026-12-12", "2026-12-19", "", "", "", sam, fixedNow); err != nil {
+		t.Fatalf("SetMovedException: %v", err)
+	}
+
+	occs, err := store.Occurrences(ctx, date(t, "2026-01-01"), date(t, "2027-12-31"))
+	if err != nil {
+		t.Fatalf("Occurrences: %v", err)
+	}
+	want := []string{"2026-12-19", "2027-12-12"}
+	if len(occs) != len(want) {
+		t.Fatalf("occurrences = %v, want dates %v", occs, want)
+	}
+	for i, w := range want {
+		if occs[i].StartDate != w {
+			t.Errorf("occs[%d].StartDate = %q, want %q", i, occs[i].StartDate, w)
+		}
+		if occs[i].Title != "Christmas concert" {
+			t.Errorf("occs[%d].Title = %q, want the series title even though moved", i, occs[i].Title)
+		}
+	}
+}
+
+// Editing an already-moved occurrence again replaces its exception
+// rather than failing on the composite primary key.
+func TestSetMovedExceptionCanBeEditedAgain(t *testing.T) {
+	sqlDB := openTestDB(t)
+	store := &Store{DB: sqlDB}
+	sam := testPerson(t, sqlDB, "Sam")
+	ctx := context.Background()
+
+	event, err := store.Create(ctx, Input{Title: "Weekly sync", StartDate: "2026-03-02", Recurrence: RecurrenceWeekly}, sam, fixedNow)
+	if err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+
+	if err := store.SetMovedException(ctx, event.ID, "2026-03-09", "2026-03-10", "", "", "", sam, fixedNow); err != nil {
+		t.Fatalf("SetMovedException (first): %v", err)
+	}
+	if err := store.SetMovedException(ctx, event.ID, "2026-03-09", "2026-03-11", "", "", "", sam, fixedNow); err != nil {
+		t.Fatalf("SetMovedException (second): %v", err)
+	}
+
+	occs, err := store.Occurrences(ctx, date(t, "2026-03-01"), date(t, "2026-03-31"))
+	if err != nil {
+		t.Fatalf("Occurrences: %v", err)
+	}
+	var found bool
+	for _, o := range occs {
+		if o.StartDate == "2026-03-10" {
+			t.Errorf("occurrences still show the first move (2026-03-10); want only the latest edit")
+		}
+		if o.StartDate == "2026-03-11" {
+			found = true
+		}
+	}
+	if !found {
+		t.Errorf("occurrences = %v, want the latest move (2026-03-11)", occs)
+	}
+}
+
+// SPEC gate 2.16: "Cancel just this one" hides only that occurrence.
+func TestSetCancelledExceptionRemovesOnlyThatOccurrence(t *testing.T) {
+	sqlDB := openTestDB(t)
+	store := &Store{DB: sqlDB}
+	sam := testPerson(t, sqlDB, "Sam")
+	ctx := context.Background()
+
+	event, err := store.Create(ctx, Input{Title: "Weekly sync", StartDate: "2026-03-02", Recurrence: RecurrenceWeekly}, sam, fixedNow)
+	if err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+	if err := store.SetCancelledException(ctx, event.ID, "2026-03-09", sam, fixedNow); err != nil {
+		t.Fatalf("SetCancelledException: %v", err)
+	}
+
+	occs, err := store.Occurrences(ctx, date(t, "2026-03-01"), date(t, "2026-03-31"))
+	if err != nil {
+		t.Fatalf("Occurrences: %v", err)
+	}
+	want := []string{"2026-03-02", "2026-03-16", "2026-03-23", "2026-03-30"}
+	if len(occs) != len(want) {
+		t.Fatalf("occurrences = %v, want %v", occs, want)
+	}
+	for i, w := range want {
+		if occs[i].StartDate != w {
+			t.Errorf("occs[%d].StartDate = %q, want %q", i, occs[i].StartDate, w)
+		}
+	}
+}
+
+func TestSetMovedExceptionValidation(t *testing.T) {
+	sqlDB := openTestDB(t)
+	store := &Store{DB: sqlDB}
+	sam := testPerson(t, sqlDB, "Sam")
+	ctx := context.Background()
+
+	event, err := store.Create(ctx, Input{Title: "Weekly sync", StartDate: "2026-03-02", Recurrence: RecurrenceWeekly}, sam, fixedNow)
+	if err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+
+	if err := store.SetMovedException(ctx, event.ID, "2026-03-09", "", "", "", "", sam, fixedNow); err != ErrEmptyStartDate {
+		t.Errorf("empty new start date: err = %v, want ErrEmptyStartDate", err)
+	}
+	if err := store.SetMovedException(ctx, event.ID, "2026-03-09", "2026-03-10", "2026-03-09", "", "", sam, fixedNow); err != ErrEndDateBeforeStart {
+		t.Errorf("end date before start: err = %v, want ErrEndDateBeforeStart", err)
+	}
+	if err := store.SetMovedException(ctx, event.ID, "2026-03-09", "2026-03-10", "", "", "10:00", sam, fixedNow); err != ErrEndTimeNeedsStartTime {
+		t.Errorf("end time without start time: err = %v, want ErrEndTimeNeedsStartTime", err)
+	}
+}
+
+func TestSetExceptionMissingEventIsError(t *testing.T) {
+	sqlDB := openTestDB(t)
+	store := &Store{DB: sqlDB}
+	sam := testPerson(t, sqlDB, "Sam")
+
+	if err := store.SetMovedException(context.Background(), 9999, "2026-03-09", "2026-03-10", "", "", "", sam, fixedNow); err != ErrEventNotFound {
+		t.Errorf("err = %v, want ErrEventNotFound", err)
+	}
+	if err := store.SetCancelledException(context.Background(), 9999, "2026-03-09", sam, fixedNow); err != ErrEventNotFound {
+		t.Errorf("err = %v, want ErrEventNotFound", err)
+	}
+}
+
+func TestOccurrenceForEditPrefillsFromSeriesWhenNoException(t *testing.T) {
+	sqlDB := openTestDB(t)
+	store := &Store{DB: sqlDB}
+	sam := testPerson(t, sqlDB, "Sam")
+	ctx := context.Background()
+
+	event, err := store.Create(ctx, Input{
+		Title: "Offsite", StartDate: "2026-01-30", EndDate: "2026-02-02",
+		StartTime: "09:00", EndTime: "17:00", Recurrence: RecurrenceYearly,
+	}, sam, fixedNow)
+	if err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+
+	got, err := store.OccurrenceForEdit(ctx, event.ID, "2026-01-30")
+	if err != nil {
+		t.Fatalf("OccurrenceForEdit: %v", err)
+	}
+	if got.StartDate != "2026-01-30" || got.EndDate != "2026-02-02" || got.StartTime != "09:00" || got.EndTime != "17:00" {
+		t.Errorf("OccurrenceForEdit = %+v, want the series' own dates/times with length preserved", got)
+	}
+}
+
+func TestOccurrenceForEditPrefillsFromExistingException(t *testing.T) {
+	sqlDB := openTestDB(t)
+	store := &Store{DB: sqlDB}
+	sam := testPerson(t, sqlDB, "Sam")
+	ctx := context.Background()
+
+	event, err := store.Create(ctx, Input{Title: "Weekly sync", StartDate: "2026-03-02", Recurrence: RecurrenceWeekly}, sam, fixedNow)
+	if err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+	if err := store.SetMovedException(ctx, event.ID, "2026-03-09", "2026-03-10", "", "14:00", "", sam, fixedNow); err != nil {
+		t.Fatalf("SetMovedException: %v", err)
+	}
+
+	got, err := store.OccurrenceForEdit(ctx, event.ID, "2026-03-09")
+	if err != nil {
+		t.Fatalf("OccurrenceForEdit: %v", err)
+	}
+	if got.StartDate != "2026-03-10" || got.StartTime != "14:00" {
+		t.Errorf("OccurrenceForEdit = %+v, want the existing exception's own dates/times", got)
+	}
+}
+
+// SPEC gate 2.18: Remove hides the whole event; Restore brings it back.
+func TestRemoveAndRestore(t *testing.T) {
+	sqlDB := openTestDB(t)
+	store := &Store{DB: sqlDB}
+	sam := testPerson(t, sqlDB, "Sam")
+	ctx := context.Background()
+
+	event, err := store.Create(ctx, Input{Title: "Removable", StartDate: "2026-09-10"}, sam, fixedNow)
+	if err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+
+	if err := store.Remove(ctx, event.ID, sam, fixedNow); err != nil {
+		t.Fatalf("Remove: %v", err)
+	}
+	occs, err := store.Occurrences(ctx, date(t, "2026-09-01"), date(t, "2026-09-30"))
+	if err != nil {
+		t.Fatalf("Occurrences: %v", err)
+	}
+	if len(occs) != 0 {
+		t.Errorf("occurrences after Remove = %v, want none", occs)
+	}
+	removed, err := store.ListRemoved(ctx)
+	if err != nil {
+		t.Fatalf("ListRemoved: %v", err)
+	}
+	if len(removed) != 1 || removed[0].ID != event.ID {
+		t.Errorf("ListRemoved = %+v, want just the removed event", removed)
+	}
+
+	if err := store.Restore(ctx, event.ID, sam, fixedNow); err != nil {
+		t.Fatalf("Restore: %v", err)
+	}
+	occs, err = store.Occurrences(ctx, date(t, "2026-09-01"), date(t, "2026-09-30"))
+	if err != nil {
+		t.Fatalf("Occurrences: %v", err)
+	}
+	if len(occs) != 1 {
+		t.Errorf("occurrences after Restore = %v, want the event back", occs)
+	}
+	removed, err = store.ListRemoved(ctx)
+	if err != nil {
+		t.Fatalf("ListRemoved: %v", err)
+	}
+	if len(removed) != 0 {
+		t.Errorf("ListRemoved after Restore = %v, want none", removed)
+	}
+}
+
+func TestRemoveMissingEventIsError(t *testing.T) {
+	sqlDB := openTestDB(t)
+	store := &Store{DB: sqlDB}
+	sam := testPerson(t, sqlDB, "Sam")
+
+	if err := store.Remove(context.Background(), 9999, sam, fixedNow); err != ErrEventNotFound {
+		t.Errorf("err = %v, want ErrEventNotFound", err)
+	}
+}
+
+func TestRestoreNotRemovedEventIsError(t *testing.T) {
+	sqlDB := openTestDB(t)
+	store := &Store{DB: sqlDB}
+	sam := testPerson(t, sqlDB, "Sam")
+	ctx := context.Background()
+
+	event, err := store.Create(ctx, Input{Title: "Not removed", StartDate: "2026-09-10"}, sam, fixedNow)
+	if err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+	if err := store.Restore(ctx, event.ID, sam, fixedNow); err != ErrEventNotFound {
+		t.Errorf("err = %v, want ErrEventNotFound", err)
+	}
+}
