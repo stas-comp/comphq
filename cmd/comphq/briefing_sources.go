@@ -30,6 +30,8 @@ func (a briefingTasks) Tasks(ctx context.Context, dueOnOrBefore time.Time) ([]br
 	return out, nil
 }
 
+func (a briefingTasks) Version(ctx context.Context) (int64, error) { return a.store.Version(ctx) }
+
 // briefingEvents adapts *calendar.Store to briefing.EventSource.
 type briefingEvents struct{ store *calendar.Store }
 
@@ -56,6 +58,8 @@ func (a briefingEvents) UpcomingWithNotice(ctx context.Context, after, saturday 
 	}
 	return out, nil
 }
+
+func (a briefingEvents) Version(ctx context.Context) (int64, error) { return a.store.Version(ctx) }
 
 func briefingOccurrence(o calendar.CalendarOccurrence, noticeDays int) briefing.Occurrence {
 	return briefing.Occurrence{

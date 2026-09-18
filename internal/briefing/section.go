@@ -2,6 +2,7 @@ package briefing
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"time"
 
@@ -16,6 +17,8 @@ type TaskSource interface {
 	// Tasks returns every unfinished, unremoved task due on or before
 	// the given date, overdue included, with its people.
 	Tasks(ctx context.Context, dueOnOrBefore time.Time) ([]Task, error)
+	// Version is the tasks change counter (SPEC B4's refresh design).
+	Version(ctx context.Context) (int64, error)
 }
 
 // EventSource is the small query interface the Briefing needs from the
@@ -27,6 +30,8 @@ type EventSource interface {
 	// UpcomingWithNotice returns each series' next occurrence starting
 	// after `after` whose show-ahead time has started by `saturday`.
 	UpcomingWithNotice(ctx context.Context, after, saturday time.Time) ([]Occurrence, error)
+	// Version is the calendar change counter.
+	Version(ctx context.Context) (int64, error)
 }
 
 // Handlers serves the Briefing.
@@ -50,6 +55,7 @@ func Section(srv *app.Server, tasks TaskSource, events EventSource) app.Section 
 		RegisterRoutes: func(mux *http.ServeMux) {
 			mux.HandleFunc("GET /{$}", h.handleBriefing)
 			mux.HandleFunc("GET /briefing", h.handleBriefing)
+			mux.HandleFunc("GET /briefing/version", h.handleVersion)
 		},
 	}
 }
@@ -105,4 +111,23 @@ func (h *Handlers) handleBriefing(w http.ResponseWriter, r *http.Request) {
 		data.MustDo = "Must be done this Saturday"
 	}
 	h.srv.RenderFrame(w, r, http.StatusOK, "briefing.html", "Briefing", data)
+}
+
+// handleVersion answers with one number that changes whenever either
+// tasks or the calendar does (SPEC gate 3.12): refresh.js polls this,
+// not the whole page. Each counter only ever goes up, so their sum
+// does too, and any single change moves it.
+func (h *Handlers) handleVersion(w http.ResponseWriter, r *http.Request) {
+	tasksVersion, err := h.tasks.Version(r.Context())
+	if err != nil {
+		http.Error(w, "internal error", http.StatusInternalServerError)
+		return
+	}
+	calendarVersion, err := h.events.Version(r.Context())
+	if err != nil {
+		http.Error(w, "internal error", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]any{"version": tasksVersion + calendarVersion})
 }

@@ -122,14 +122,18 @@ func (s *Store) Create(ctx context.Context, input Input, actorID int64, now time
 	}
 
 	nowStr := now.UTC().Format(time.RFC3339)
-	res, err := s.DB.ExecContext(ctx, `
-		INSERT INTO events (title, notes, start_date, end_date, start_time, end_time, recurrence, until_date, notice_days, created_by, created_at, updated_by, updated_at)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-	`, input.Title, input.Notes, input.StartDate, input.EndDate, input.StartTime, input.EndTime, input.Recurrence, input.UntilDate, input.NoticeDays, actorID, nowStr, actorID, nowStr)
-	if err != nil {
-		return Event{}, err
-	}
-	id, err := res.LastInsertId()
+	var id int64
+	err = s.inTx(ctx, func(tx *sql.Tx) error {
+		res, err := tx.ExecContext(ctx, `
+			INSERT INTO events (title, notes, start_date, end_date, start_time, end_time, recurrence, until_date, notice_days, created_by, created_at, updated_by, updated_at)
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+		`, input.Title, input.Notes, input.StartDate, input.EndDate, input.StartTime, input.EndTime, input.Recurrence, input.UntilDate, input.NoticeDays, actorID, nowStr, actorID, nowStr)
+		if err != nil {
+			return err
+		}
+		id, err = res.LastInsertId()
+		return err
+	})
 	if err != nil {
 		return Event{}, err
 	}
@@ -145,23 +149,14 @@ func (s *Store) Update(ctx context.Context, id int64, input Input, actorID int64
 	}
 
 	nowStr := now.UTC().Format(time.RFC3339)
-	res, err := s.DB.ExecContext(ctx, `
-		UPDATE events SET title = ?, notes = ?, start_date = ?, end_date = ?, start_time = ?, end_time = ?,
-			recurrence = ?, until_date = ?, notice_days = ?, updated_by = ?, updated_at = ?
-		WHERE id = ? AND removed_at IS NULL
-	`, input.Title, input.Notes, input.StartDate, input.EndDate, input.StartTime, input.EndTime,
-		input.Recurrence, input.UntilDate, input.NoticeDays, actorID, nowStr, id)
-	if err != nil {
-		return err
-	}
-	n, err := res.RowsAffected()
-	if err != nil {
-		return err
-	}
-	if n == 0 {
-		return ErrEventNotFound
-	}
-	return nil
+	return s.inTx(ctx, func(tx *sql.Tx) error {
+		return expectOneRow(tx.ExecContext(ctx, `
+			UPDATE events SET title = ?, notes = ?, start_date = ?, end_date = ?, start_time = ?, end_time = ?,
+				recurrence = ?, until_date = ?, notice_days = ?, updated_by = ?, updated_at = ?
+			WHERE id = ? AND removed_at IS NULL
+		`, input.Title, input.Notes, input.StartDate, input.EndDate, input.StartTime, input.EndTime,
+			input.Recurrence, input.UntilDate, input.NoticeDays, actorID, nowStr, id))
+	})
 }
 
 // Get returns one event by id, for the details/edit page (SPEC gate 2.20).
@@ -374,28 +369,29 @@ func (s *Store) SetCancelledException(ctx context.Context, eventID int64, origin
 }
 
 func (s *Store) upsertException(ctx context.Context, eventID int64, originalDate, kind, newStartDate, newEndDate, newStartTime, newEndTime string, actorID int64, now time.Time) error {
-	var exists int
-	if err := s.DB.QueryRowContext(ctx, `SELECT COUNT(*) FROM events WHERE id = ? AND removed_at IS NULL`, eventID).Scan(&exists); err != nil {
-		return err
-	}
-	if exists == 0 {
-		return ErrEventNotFound
-	}
-
 	nowStr := now.UTC().Format(time.RFC3339)
-	_, err := s.DB.ExecContext(ctx, `
-		INSERT INTO event_exceptions (event_id, original_date, kind, new_start_date, new_end_date, new_start_time, new_end_time, updated_by, updated_at)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-		ON CONFLICT(event_id, original_date) DO UPDATE SET
-			kind = excluded.kind,
-			new_start_date = excluded.new_start_date,
-			new_end_date = excluded.new_end_date,
-			new_start_time = excluded.new_start_time,
-			new_end_time = excluded.new_end_time,
-			updated_by = excluded.updated_by,
-			updated_at = excluded.updated_at
-	`, eventID, originalDate, kind, newStartDate, newEndDate, newStartTime, newEndTime, actorID, nowStr)
-	return err
+	return s.inTx(ctx, func(tx *sql.Tx) error {
+		var exists int
+		if err := tx.QueryRowContext(ctx, `SELECT COUNT(*) FROM events WHERE id = ? AND removed_at IS NULL`, eventID).Scan(&exists); err != nil {
+			return err
+		}
+		if exists == 0 {
+			return ErrEventNotFound
+		}
+		_, err := tx.ExecContext(ctx, `
+			INSERT INTO event_exceptions (event_id, original_date, kind, new_start_date, new_end_date, new_start_time, new_end_time, updated_by, updated_at)
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+			ON CONFLICT(event_id, original_date) DO UPDATE SET
+				kind = excluded.kind,
+				new_start_date = excluded.new_start_date,
+				new_end_date = excluded.new_end_date,
+				new_start_time = excluded.new_start_time,
+				new_end_time = excluded.new_end_time,
+				updated_by = excluded.updated_by,
+				updated_at = excluded.updated_at
+		`, eventID, originalDate, kind, newStartDate, newEndDate, newStartTime, newEndTime, actorID, nowStr)
+		return err
+	})
 }
 
 // OccurrenceForEdit returns what the "just this one" form should show
@@ -432,39 +428,21 @@ func (s *Store) OccurrenceForEdit(ctx context.Context, eventID int64, originalDa
 // permanently deleted; Restore brings it back.
 func (s *Store) Remove(ctx context.Context, id int64, actorID int64, now time.Time) error {
 	nowStr := now.UTC().Format(time.RFC3339)
-	res, err := s.DB.ExecContext(ctx, `
-		UPDATE events SET removed_at = ?, updated_by = ?, updated_at = ? WHERE id = ? AND removed_at IS NULL
-	`, nowStr, actorID, nowStr, id)
-	if err != nil {
-		return err
-	}
-	n, err := res.RowsAffected()
-	if err != nil {
-		return err
-	}
-	if n == 0 {
-		return ErrEventNotFound
-	}
-	return nil
+	return s.inTx(ctx, func(tx *sql.Tx) error {
+		return expectOneRow(tx.ExecContext(ctx, `
+			UPDATE events SET removed_at = ?, updated_by = ?, updated_at = ? WHERE id = ? AND removed_at IS NULL
+		`, nowStr, actorID, nowStr, id))
+	})
 }
 
 // Restore brings a removed event back (SPEC gate 2.18).
 func (s *Store) Restore(ctx context.Context, id int64, actorID int64, now time.Time) error {
 	nowStr := now.UTC().Format(time.RFC3339)
-	res, err := s.DB.ExecContext(ctx, `
-		UPDATE events SET removed_at = NULL, updated_by = ?, updated_at = ? WHERE id = ? AND removed_at IS NOT NULL
-	`, actorID, nowStr, id)
-	if err != nil {
-		return err
-	}
-	n, err := res.RowsAffected()
-	if err != nil {
-		return err
-	}
-	if n == 0 {
-		return ErrEventNotFound
-	}
-	return nil
+	return s.inTx(ctx, func(tx *sql.Tx) error {
+		return expectOneRow(tx.ExecContext(ctx, `
+			UPDATE events SET removed_at = NULL, updated_by = ?, updated_at = ? WHERE id = ? AND removed_at IS NOT NULL
+		`, actorID, nowStr, id))
+	})
 }
 
 // RemovedEvent is one row of the Removed events list (SPEC gate 2.18).
