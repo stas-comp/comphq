@@ -1,0 +1,7 @@
+{{define "tasks-view-switch"}}
+<nav class="tasks-view-switch" aria-label="Tasks views">
+<a href="/tasks"{{if eq .CurrentView "myjobs"}} aria-current="page"{{end}}>My jobs</a>
+<a href="/tasks/board"{{if eq .CurrentView "board"}} aria-current="page"{{end}}>Board</a>
+<a href="/tasks/team"{{if eq .CurrentView "team"}} aria-current="page"{{end}}>Team</a>
+</nav>
+{{end}}

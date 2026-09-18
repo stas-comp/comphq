@@ -26,6 +26,7 @@ type boardColumn struct {
 }
 
 type boardPageData struct {
+	CurrentView    string
 	Columns        []boardColumn
 	People         []people.Person
 	Message        string
@@ -177,6 +178,7 @@ func (h *Handlers) renderBoard(w http.ResponseWriter, r *http.Request, status in
 	}
 
 	h.srv.RenderFrame(w, r, status, "tasks-board.html", "Tasks", boardPageData{
+		CurrentView:    "board",
 		Columns:        columns,
 		People:         activePeople,
 		Message:        message,

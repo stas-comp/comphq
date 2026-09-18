@@ -1,5 +1,6 @@
 {{define "tasks-board.html"}}
 <h1>Tasks</h1>
+{{template "tasks-view-switch" .}}
 <p class="task-board-links"><a href="/tasks/finished">Finished tasks</a> · <a href="/tasks/removed">Removed tasks</a></p>
 {{if .Message}}<p class="message" role="alert">{{.Message}}</p>{{end}}
 
