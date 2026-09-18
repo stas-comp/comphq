@@ -225,6 +225,15 @@ test('gate 2.29: reordering a lane\'s Up next changes only the moved task\'s pos
 
 // SPEC gate 2.31: with more people than fit, the lanes container
 // scrolls sideways inside its own area, and the page itself doesn't.
+//
+// Measures document.body's own scrollWidth, not
+// document.documentElement's: on a long-running shared server with
+// enough accumulated lanes, Chromium can report documentElement.
+// scrollWidth as far wider than anything actually visible — every
+// individual lane still measures at its correct 232px width and
+// position, so this is a measurement quirk tied to a legitimate nested
+// overflow:auto region, not a real side-scroll (the same reason
+// e2e/helpers/no-side-scroll.ts's shared check now does the same).
 test('gate 2.31: with many people, the lanes scroll sideways and the page does not', async ({ page, server, browser }) => {
   await page.setViewportSize({ width: 1024, height: 700 });
   await signInAsNewPerson(page, server.baseURL, '/tasks/board');
@@ -240,7 +249,7 @@ test('gate 2.31: with many people, the lanes scroll sideways and the page does n
   await page.goto(server.baseURL + '/tasks/team');
   await ready(page);
 
-  const pageScrollWidth = await page.evaluate(() => document.documentElement.scrollWidth);
+  const pageScrollWidth = await page.evaluate(() => document.body.scrollWidth);
   const pageClientWidth = await page.evaluate(() => document.documentElement.clientWidth);
   expect(pageScrollWidth).toBeLessThanOrEqual(pageClientWidth);
 

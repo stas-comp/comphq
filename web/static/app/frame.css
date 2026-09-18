@@ -138,6 +138,14 @@
 
 main {
   flex: 1;
+  /* Without this, a flex item's default min-width is its content's
+     intrinsic width — a wide-enough overflow:auto descendant (the
+     Team view's lanes, once enough of them exist) can otherwise force
+     main itself wider than the viewport instead of scrolling inside
+     its own container, blowing out the whole page's scrollWidth
+     (SPEC gate 2.31's "the page itself doesn't [scroll]"). Same fix
+     .main-column already has, one level up. */
+  min-width: 0;
   padding: var(--space-8);
   max-width: 60rem;
 }
