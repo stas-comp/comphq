@@ -59,7 +59,7 @@ These steps use TrueNAS SCALE 25.04's menu names.
 When a new version is ready, you'll be told the version number and a short summary of what's new.
 
 1. Go to **Apps → comphq → Edit**.
-2. Find the line with the image name (it ends in a version number, like `comphq:0.1.0`) and change the number to the new version.
+2. Find the line with the image name (it ends in a version number, like `comphq:0.2.0`) and change the number to the new version.
 3. Click **Save**.
 
 TrueNAS downloads the new version and restarts Comp HQ automatically. Your data is never affected by an update.
