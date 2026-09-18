@@ -103,3 +103,54 @@ test('exported zip opens offline with every article, its image, and archived one
   expect(failedRequests, JSON.stringify(failedRequests)).toEqual([]);
   await offlineContext.close();
 });
+
+// SPEC gate 2.22: Export everything also holds tasks.csv and events.csv,
+// which open in Excel — a UTF-8 byte-order mark, CRLF line endings, clear
+// column names and readable dates.
+test('exported zip includes tasks.csv and events.csv with clear headers and readable dates', async ({ page, server }) => {
+  await signInAsNewPerson(page, server.baseURL, '/tasks/board');
+
+  const taskTitle = uniqueName('Export task');
+  await page.fill('#new-task-title', taskTitle);
+  await page.selectOption('#new-task-stage', 'todo');
+  await page.fill('#new-task-due-date', '2026-09-19');
+  await page.click('.add-task-form button[type="submit"]');
+  await ready(page);
+
+  const eventTitle = uniqueName('Export event');
+  await page.goto(server.baseURL + '/calendar/new');
+  await page.fill('#event-title', eventTitle);
+  await page.fill('#event-start-date', '2026-12-12');
+  await page.selectOption('#event-recurrence', 'yearly');
+  await page.locator('.calendar-event-form button[type="submit"]').click();
+  await ready(page);
+
+  const res = await page.request.get(server.baseURL + '/settings/export');
+  expect(res.ok()).toBeTruthy();
+  const workDir = fs.mkdtempSync(path.join(os.tmpdir(), 'comphq-export-csv-'));
+  const zipPath = path.join(workDir, 'export.zip');
+  const extractDir = path.join(workDir, 'extracted');
+  fs.writeFileSync(zipPath, await res.body());
+  const unzipBin = process.env.COMPHQ_UNZIP_BINARY;
+  if (!unzipBin) throw new Error('COMPHQ_UNZIP_BINARY is not set; global setup should have built it');
+  execFileSync(unzipBin, [zipPath, extractDir]);
+
+  const read = (name: string) => fs.readFileSync(path.join(extractDir, name));
+  const bom = Buffer.from([0xef, 0xbb, 0xbf]);
+
+  const tasksCSV = read('tasks.csv');
+  expect(tasksCSV.subarray(0, 3).equals(bom)).toBe(true);
+  const tasksText = tasksCSV.subarray(3).toString('utf8');
+  expect(tasksText.startsWith('Title,Column,Size,People,Due date,Created by,Created,Finished,Removed\r\n')).toBe(true);
+  const taskRow = tasksText.split('\r\n').find((l) => l.includes(taskTitle));
+  expect(taskRow, 'the new task is a row in tasks.csv').toBeTruthy();
+  expect(taskRow).toContain(',To do,Medium,,Sat 19 Sep 2026,');
+
+  const eventsCSV = read('events.csv');
+  expect(eventsCSV.subarray(0, 3).equals(bom)).toBe(true);
+  const eventsText = eventsCSV.subarray(3).toString('utf8');
+  expect(eventsText.startsWith('Title,Date,End date,Start time,End time,Repeats,Until,Show ahead,Notes,Removed\r\n')).toBe(true);
+  const eventRow = eventsText.split('\r\n').find((l) => l.includes(eventTitle));
+  expect(eventRow, 'the new event is a row in events.csv').toBeTruthy();
+  expect(eventRow).toContain(`${eventTitle},Sat 12 Dec 2026,,,,Yearly,,1 week,,`);
+});

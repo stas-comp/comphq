@@ -4,7 +4,9 @@ import (
 	"archive/zip"
 	"context"
 	"database/sql"
+	"encoding/csv"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"strings"
@@ -72,6 +74,23 @@ func (h *Handlers) handleExport(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	for _, f := range []struct {
+		name string
+		src  CSVSource
+	}{{"tasks.csv", h.tasks}, {"events.csv", h.events}} {
+		csvRows, err := f.src.ExportRows(ctx)
+		if err != nil {
+			return
+		}
+		fw, err := zw.Create(f.name)
+		if err != nil {
+			return
+		}
+		if err := writeCSV(fw, csvRows); err != nil {
+			return
+		}
+	}
+
 	if fw, err := zw.Create("comphq.db"); err == nil {
 		fw.Write(dbBytes)
 	}
@@ -107,4 +126,19 @@ func parseImageSrc(src string) (sha, ext string, ok bool) {
 		return "", "", false
 	}
 	return name[:dot], name[dot+1:], true
+}
+
+// writeCSV writes rows the way Excel expects to open a spreadsheet by
+// double-click (SPEC B5, gate 2.22): a UTF-8 byte-order mark so accented
+// names aren't garbled, and CRLF line endings.
+func writeCSV(w io.Writer, rows [][]string) error {
+	if _, err := w.Write([]byte{0xEF, 0xBB, 0xBF}); err != nil {
+		return err
+	}
+	cw := csv.NewWriter(w)
+	cw.UseCRLF = true
+	if err := cw.WriteAll(rows); err != nil {
+		return err
+	}
+	return cw.Error()
 }

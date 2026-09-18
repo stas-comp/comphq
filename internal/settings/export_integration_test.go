@@ -4,6 +4,7 @@ package settings
 
 import (
 	"archive/zip"
+	"context"
 	"bytes"
 	"database/sql"
 	"io"
@@ -20,6 +21,12 @@ import (
 	"github.com/stas-comp/comphq/internal/db"
 	"github.com/stas-comp/comphq/internal/kb"
 )
+
+// fakeCSV stands in for the Tasks and Calendar stores (SPEC B2: Settings
+// only knows the one-method CSVSource interface, never their internals).
+type fakeCSV [][]string
+
+func (f fakeCSV) ExportRows(ctx context.Context) ([][]string, error) { return f, nil }
 
 func newTestServer(t *testing.T) (*httptest.Server, *sql.DB) {
 	t.Helper()
@@ -44,7 +51,7 @@ func newTestServer(t *testing.T) (*httptest.Server, *sql.DB) {
 		t.Fatalf("NewServer: %v", err)
 	}
 	srv.Registry().Add(kb.Section(srv))
-	srv.Registry().Add(Section(srv))
+	srv.Registry().Add(Section(srv, fakeCSV{{"Title", "Column"}, {"Fix printer", "To do"}}, fakeCSV{{"Title", "Date"}, {"Café night", "Sat 19 Sep 2026"}}))
 
 	ts := httptest.NewServer(srv.Routes())
 	t.Cleanup(ts.Close)
@@ -150,6 +157,8 @@ func TestExportHTTPZipContainsIndexArticlesAndDatabase(t *testing.T) {
 	for _, want := range []string{
 		"index.html",
 		"comphq.db",
+		"tasks.csv",
+		"events.csv",
 		"articles/Printers/Changing the toner.html",
 		"articles/_Archived/Old policy.html",
 	} {
@@ -172,6 +181,28 @@ func TestExportHTTPZipContainsIndexArticlesAndDatabase(t *testing.T) {
 	}
 	if !strings.Contains(index, "Old policy") {
 		t.Error("index.html doesn't mention the archived article")
+	}
+
+	// SPEC B5: the spreadsheets open cleanly in Excel — a UTF-8 byte-order
+	// mark first, then CRLF line endings.
+	for name, want := range map[string]string{
+		"tasks.csv":  "Title,Column\r\nFix printer,To do\r\n",
+		"events.csv": "Title,Date\r\nCafé night,Sat 19 Sep 2026\r\n",
+	} {
+		f, err := zr.Open(name)
+		if err != nil {
+			t.Fatal(err)
+		}
+		b, err := io.ReadAll(f)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !bytes.HasPrefix(b, []byte{0xEF, 0xBB, 0xBF}) {
+			t.Errorf("%s doesn't start with a UTF-8 byte-order mark", name)
+		}
+		if got := string(bytes.TrimPrefix(b, []byte{0xEF, 0xBB, 0xBF})); got != want {
+			t.Errorf("%s = %q, want %q", name, got, want)
+		}
 	}
 
 	dbFile, err := zr.Open("comphq.db")

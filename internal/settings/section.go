@@ -3,6 +3,7 @@
 package settings
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/stas-comp/comphq/internal/app"
@@ -11,17 +12,29 @@ import (
 	"github.com/stas-comp/comphq/internal/people"
 )
 
+// CSVSource is the one method Settings needs from Tasks and Calendar to
+// build tasks.csv and events.csv (SPEC B2: settings depends on the other
+// sections' export interfaces, not their internals). Both stores satisfy
+// it directly, since it deals only in plain text rows.
+type CSVSource interface {
+	ExportRows(ctx context.Context) ([][]string, error)
+}
+
 type Handlers struct {
+	tasks    CSVSource
+	events   CSVSource
 	srv      *app.Server
 	people   *people.Store
 	articles *kb.ArticleStore
 	images   *images.Store
 }
 
-func Section(srv *app.Server) app.Section {
+func Section(srv *app.Server, tasksCSV, eventsCSV CSVSource) app.Section {
 	imagesStore := &images.Store{DB: srv.DB, DataDir: srv.DataDir}
 	h := &Handlers{
 		srv:      srv,
+		tasks:    tasksCSV,
+		events:   eventsCSV,
 		people:   srv.PeopleStore(),
 		articles: &kb.ArticleStore{DB: srv.DB, Images: imagesStore},
 		images:   imagesStore,
