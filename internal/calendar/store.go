@@ -196,11 +196,19 @@ func (s *Store) Get(ctx context.Context, id int64) (Event, error) {
 	return e, nil
 }
 
-// Occurrences expands every non-removed event overlapping [from, to]
-// (SPEC gates 2.12/2.14), for the month and list views alike.
-func (s *Store) Occurrences(ctx context.Context, from, to time.Time) ([]CalendarOccurrence, error) {
+// series is one events row with the fields recurrence expansion and
+// "show ahead" need, ready to expand.
+type series struct {
+	id         int64
+	event      recur.Event
+	noticeDays int
+}
+
+// loadSeries reads every non-removed event, closing its rows before
+// returning so callers can query each one's exceptions (D-44).
+func (s *Store) loadSeries(ctx context.Context) ([]series, error) {
 	rows, err := s.DB.QueryContext(ctx, `
-		SELECT id, title, notes, start_date, end_date, start_time, end_time, recurrence, until_date
+		SELECT id, title, notes, start_date, end_date, start_time, end_time, recurrence, until_date, notice_days
 		FROM events WHERE removed_at IS NULL
 	`)
 	if err != nil {
@@ -208,16 +216,12 @@ func (s *Store) Occurrences(ctx context.Context, from, to time.Time) ([]Calendar
 	}
 	defer rows.Close()
 
-	type series struct {
-		id    int64
-		event recur.Event
-	}
 	var all []series
 	for rows.Next() {
 		var sr series
 		var endDate, startTime, endTime, untilDate sql.NullString
 		if err := rows.Scan(&sr.id, &sr.event.Title, &sr.event.Notes, &sr.event.StartDate, &endDate,
-			&startTime, &endTime, &sr.event.Recurrence, &untilDate); err != nil {
+			&startTime, &endTime, &sr.event.Recurrence, &untilDate, &sr.noticeDays); err != nil {
 			return nil, err
 		}
 		sr.event.EndDate = endDate.String
@@ -226,7 +230,23 @@ func (s *Store) Occurrences(ctx context.Context, from, to time.Time) ([]Calendar
 		sr.event.UntilDate = untilDate.String
 		all = append(all, sr)
 	}
-	if err := rows.Err(); err != nil {
+	return all, rows.Err()
+}
+
+func sortOccurrences(out []CalendarOccurrence) {
+	sort.Slice(out, func(i, j int) bool {
+		if out[i].StartDate != out[j].StartDate {
+			return out[i].StartDate < out[j].StartDate
+		}
+		return out[i].StartTime < out[j].StartTime
+	})
+}
+
+// Occurrences expands every non-removed event overlapping [from, to]
+// (SPEC gates 2.12/2.14), for the month and list views alike.
+func (s *Store) Occurrences(ctx context.Context, from, to time.Time) ([]CalendarOccurrence, error) {
+	all, err := s.loadSeries(ctx)
+	if err != nil {
 		return nil, err
 	}
 
@@ -240,7 +260,55 @@ func (s *Store) Occurrences(ctx context.Context, from, to time.Time) ([]Calendar
 			out = append(out, CalendarOccurrence{EventID: sr.id, Occurrence: occ})
 		}
 	}
+	sortOccurrences(out)
+	return out, nil
+}
 
+// NoticeOccurrence is one series' next occurrence whose "show ahead"
+// time has started, with that notice so the Briefing can label it.
+type NoticeOccurrence struct {
+	CalendarOccurrence
+	NoticeDays int
+}
+
+// UpcomingWithNotice returns, for each series, only its next
+// occurrence starting after `after` — provided that occurrence's own
+// show-ahead time has started by `saturday` (SPEC A8's "Coming up":
+// start − notice ≤ saturday). Cancelled occurrences never count, and a
+// moved one counts at its new date (SPEC gate 3.08). An event with no
+// notice, or whose next date is still too far off, contributes nothing.
+func (s *Store) UpcomingWithNotice(ctx context.Context, after, saturday time.Time) ([]NoticeOccurrence, error) {
+	all, err := s.loadSeries(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	afterStr := after.Format(dateLayout)
+	var out []NoticeOccurrence
+	for _, sr := range all {
+		if sr.noticeDays <= 0 {
+			continue
+		}
+		exceptions, err := s.exceptionsFor(ctx, sr.id)
+		if err != nil {
+			return nil, err
+		}
+		// A qualifying occurrence starts no later than saturday+notice,
+		// so that bounds the expansion (a yearly series needs only that
+		// window, not years of dates). Occurrences already under way
+		// before `after` overlap the window but belong to "This week".
+		window := recur.Occurrences(sr.event, exceptions, after.AddDate(0, 0, 1), saturday.AddDate(0, 0, sr.noticeDays))
+		for _, occ := range window {
+			if occ.StartDate <= afterStr {
+				continue
+			}
+			out = append(out, NoticeOccurrence{
+				CalendarOccurrence: CalendarOccurrence{EventID: sr.id, Occurrence: occ},
+				NoticeDays:         sr.noticeDays,
+			})
+			break
+		}
+	}
 	sort.Slice(out, func(i, j int) bool {
 		if out[i].StartDate != out[j].StartDate {
 			return out[i].StartDate < out[j].StartDate
