@@ -339,6 +339,7 @@ func TestReadmeHasRequiredHeadings(t *testing.T) {
 		"## Moving your HelpScout articles",
 		"## Using Tasks",
 		"## Using the Calendar",
+		"## Using the Saturday Briefing",
 		"## Entering your yearly events",
 		"## Moving your Trello cards",
 		"## Word samples",

@@ -2,7 +2,7 @@
 
 Comp HQ is a small, private staff hub: a Knowledge Base, a task Board, a Team view, a Calendar, and a daily Briefing — self-hosted on your own TrueNAS, with no logins and no outside services.
 
-This README is written for you, the owner — plain language, no coding knowledge needed. It's updated as the app is built; the Briefing section is still to come.
+This README is written for you, the owner — plain language, no coding knowledge needed. It covers everything Comp HQ does, from installing it to the daily Briefing.
 
 ## Opening Comp HQ
 
@@ -160,6 +160,22 @@ Click **Calendar**. It opens on this month, weeks starting on Monday, with Satur
 - **Remove event** (at the bottom of an event) hides the whole event. **Removed events**, linked at the top, lists them and lets you **Restore** one.
 - Each event shows who last changed it and when.
 
+## Using the Saturday Briefing
+
+The **Briefing** is the first thing anyone sees when they open Comp HQ (the **Briefing** link at the top of the left-hand list brings you back to it). It's always **for a Saturday** — today if it's a Saturday, otherwise the coming one — so the big headline reads **Saturday 19 September — today's briefing** on a Saturday and **Briefing for Saturday 19 September** on any other day. Saturday is the last chance to get things ready before the week ahead.
+
+It has three sections, each item a card with a stamp on it. Click any card to open its job or event.
+
+- **Must be done today** (on other days, **Must be done this Saturday**) lists every unfinished job due on or before the Friday after that Saturday, earliest first, with who's on it. A job that's already late is stamped **OVERDUE**; one due today is stamped **TODAY**; the rest carry their day, such as **WED 23 SEP**. A job due on the Saturday after that isn't listed yet.
+- **This week** lists events happening from today up to that Friday, in date order, with their notes right on the card — so "Exams — Print exam papers today" is there without opening anything. An event lasting several days that has already started says **until** and its last day.
+- **Coming up** lists later events whose **show ahead** time has started, stamped with how far away they are, such as **IN 6 WEEKS**.
+
+Jobs that are yours carry a **YOURS** stamp. Press **Just mine** (under the headline) to show only your own jobs, and **Everything** to go back. Events don't belong to anyone, so they stay in both views.
+
+**What "show ahead" means.** When you add or change an event, **Show in briefing ahead** sets how early it starts appearing in **Coming up**. A campaign on Saturday 31 October set to 6 weeks first appears on the briefing for Saturday 19 September (in 6 weeks), and not on the one before it. Set it to 0 for an event that should only appear in **This week**. For a repeating event, only its *next* date is shown in **Coming up**, and a date you cancelled, or moved with **Change just this one**, is respected.
+
+If a section is empty it says so — for example "Nothing due before next Saturday." The page refreshes itself within a minute of anyone changing a job or an event, or straight away when you click back into the window.
+
 ## Entering your yearly events
 
 This is your Phase 2 check with real content. Set aside about half an hour.
@@ -200,5 +216,6 @@ Everything you're asked to do yourself, start to finish, and where to find the s
 | Once per office computer | Create the desktop shortcut and pick a name. | "Setting up an office computer" above. |
 | Once, end of Phase 1 | Copy your HelpScout articles into Comp HQ. | "Moving your HelpScout articles" above. |
 | End of Phase 2 | Enter your yearly events, and move your active Trello cards. | "Entering your yearly events" and "Moving your Trello cards" above. |
+| End of Phase 3 | Look at the Briefing on a real Saturday (or a practice run), then a final look-and-feel check of the whole app. | "Using the Saturday Briefing" above. |
 | End of each phase (3 times) | Check what's been built so far. | Walked through live with the build agent at each phase's close; nothing to prepare. |
 | Each future update | Change the version number in TrueNAS. | "Updating" above. |
