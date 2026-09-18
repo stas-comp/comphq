@@ -70,7 +70,7 @@ Status values: `todo` · `in-progress` · `blocked` · `done`.
 | P3-02 | Briefing page | done | 006d2d8 | https://github.com/stas-comp/comphq/actions/runs/35389518131 | Briefing renders at `/` and `/briefing` (headline, three sections, stamps, YOURS, Just mine, friendly empty messages, links). New: `internal/briefing` section + adapters in `cmd/comphq/briefing_sources.go`, `web/templates/briefing/`, `web/static/briefing/`, `NavItem.AlsoCurrentAt`. E2E `e2e/briefing/briefing.spec.ts` covers gates 3.01–3.11 (+ axe/size for a populated page) with three test dates. Rule 2.5 changes: gate 1.08 test replaced; picker/skeleton tests now expect the Briefing at "/"; `ComingSoon` removed. See D-56. |
 | P3-03 | Briefing refresh, speed and checks | done | 5c28485 | https://github.com/stas-comp/comphq/actions/runs/35390099536 (go/browser/speed, all green) | `GET /briefing/version` (tasks_version + calendar_version); Calendar gains `calendar_version`, bumped in the same transaction as every write (`Store.inTx`). E2E `e2e/briefing/refresh.spec.ts` (two contexts: `page.clock.runFor(61_000)` and focus, for a task, an event edit and a new event). `e2e/speed/briefing.speed.spec.ts` (median of 5 <= 1,500 ms with the seeded library, plus axe and size). See D-57. |
 | P3-04 | Final README and full sweep | done | 8764b64 | https://github.com/stas-comp/comphq/actions/runs/35391128930 (full dispatch: go, browser, container, speed, screens, all green) | README gains "Using the Saturday Briefing" (Just mine, show ahead explained) and the Phase 3 hands-on row; the README policy test requires the new heading. `reports/gates-phase-3.md` (13 rows). New populated-Briefing screenshot spec. README sections re-read against the current app: the Briefing is now the first screen, no placeholder wording remains. |
-| P3-05 | Release v1.0.0 and final report (STOP S5) | todo | | | |
+| P3-05 | Release v1.0.0 and final report (STOP S5) | blocked | 5fff7d3 (tag v1.0.0) | https://github.com/stas-comp/comphq/actions/runs/35395930805 (release.yml incl. `publish`); full dispatch https://github.com/stas-comp/comphq/actions/runs/35394576555 (go, browser, container, speed, screens) | v1.0.0 published, anonymous ghcr manifest 200. `reports/phase-3-report.md`, `reports/gates-phase-3.md` and `reports/phase-3/screens/` written. Waiting for owner checks O3.1, O3.2 (and the still-pending O1.1-O1.4, O2.1-O2.2). Two flaky search tests fixed at their cause on the way (D-58). |
 
 ## Stop log
 
@@ -80,10 +80,12 @@ Status values: `todo` · `in-progress` · `blocked` · `done`.
 | 2026-09-16 | S2 (P1-07) | Make-the-package-public instructions sent in chat | done |
 | 2026-09-17 | S3 (P1-39) | Phase 1 report and owner checks prepared (`reports/phase-1-report.md`) | not sent as a stop point — owner explicitly instructed continuing straight into Phase 2 without waiting; see Owner feedback below |
 | 2026-09-18 | S4 (P2-20) | Phase 2 report and owner checks sent in chat (`reports/phase-2-report.md`); O1.3 asked about again | owner had no time for the checks and explicitly instructed continuing into Phase 3 with them pending (D-55); asked again at S5 |
+| 2026-09-18 | S5 (P3-05) | Phase 3 (final) report and owner checks sent in chat (`reports/phase-3-report.md`); all pending Phase 1 and Phase 2 checks asked about again | waiting |
 
 ## Owner feedback
 
 | Date | Phase / check | Owner's words | Fix task(s) | Status |
 |---|---|---|---|---|
+| 2026-09-18 | Phase 3 / O3.1–O3.2 | (none yet — report sent at S5) | — | pending |
 | 2026-09-18 | Phase 2 / O2.1–O2.2 (+ O1.3) | (none yet — owner instructed the build agent to mark these pending and start Phase 3 rather than wait) | — | pending |
 | 2026-09-17 | Phase 1 / O1.1–O1.4 | (none yet — owner instructed the build agent to mark these pending and start Phase 2 early rather than wait) | — | pending |
