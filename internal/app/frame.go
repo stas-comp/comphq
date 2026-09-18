@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"slices"
 	"strings"
 	"time"
 
@@ -35,7 +36,7 @@ type navItemData struct {
 // embeds the result in the shared layout: wordmark, nav, top bar with
 // search-box placeholder and "You: name · Change", and the current
 // section marked with aria-current (SPEC gate 1.07). Exported so section
-// packages can render their own pages the same way ComingSoon does.
+// packages can render their own pages inside the same frame.
 func (s *Server) RenderFrame(w http.ResponseWriter, r *http.Request, status int, contentTemplate, title string, pageData any) {
 	var body bytes.Buffer
 	if err := s.tmpl.ExecuteTemplate(&body, contentTemplate, pageData); err != nil {
@@ -56,7 +57,7 @@ func (s *Server) RenderFrame(w http.ResponseWriter, r *http.Request, status int,
 			Icon:  item.Icon,
 			// A sub-page (e.g. "/settings/people") still marks its
 			// section's nav item current, not just an exact match.
-			Current: r.URL.Path == item.Path || strings.HasPrefix(r.URL.Path, item.Path+"/"),
+			Current: r.URL.Path == item.Path || strings.HasPrefix(r.URL.Path, item.Path+"/") || slices.Contains(item.AlsoCurrentAt, r.URL.Path),
 		})
 	}
 
@@ -80,15 +81,5 @@ func (s *Server) RenderFrame(w http.ResponseWriter, r *http.Request, status int,
 	w.WriteHeader(status)
 	if err := s.tmpl.ExecuteTemplate(w, "layout.html", data); err != nil {
 		http.Error(w, "internal error", http.StatusInternalServerError)
-	}
-}
-
-// ComingSoon shows the shared placeholder for a section that isn't built
-// yet (SPEC gate 1.08), inside the normal frame. Removed for a section
-// the moment it's actually built (SPEC B7 rule 5's one allowed test
-// change).
-func (s *Server) ComingSoon(title string) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		s.RenderFrame(w, r, http.StatusOK, "coming-soon.html", title, struct{ Title string }{Title: title})
 	}
 }

@@ -1,0 +1,63 @@
+{{define "briefing.html"}}
+<div class="briefing-page">
+<h1 class="briefing-headline">{{.Headline}}</h1>
+
+<p class="briefing-filter">
+<a href="{{.Path}}"{{if not .Mine}} aria-current="true"{{end}}>Everything</a>
+<a href="{{.Path}}?mine=1"{{if .Mine}} aria-current="true"{{end}}>Just mine</a>
+</p>
+{{if .Mine}}<p class="briefing-filter-note">Showing only the jobs that are yours. Events are for everyone, so they stay.</p>{{end}}
+
+<section class="briefing-section" aria-labelledby="briefing-mustdo">
+<h2 id="briefing-mustdo">{{.MustDo}}</h2>
+{{if .Briefing.MustDo}}
+<ul class="briefing-list">
+{{range .Briefing.MustDo}}
+<li class="briefing-card briefing-task{{if .Overdue}} is-overdue{{end}}{{if .Yours}} is-yours{{end}}">
+<p class="briefing-stamps">
+<span class="stamp stamp-{{.StampKind}}">{{.Stamp}}</span>
+{{if .Yours}}<span class="stamp stamp-yours">YOURS</span>{{end}}
+</p>
+<a class="briefing-card-title" href="/tasks/{{.ID}}">{{.Title}}</a>
+{{if .Notes}}<p class="briefing-notes">{{.Notes}}</p>{{end}}
+{{if .People}}<p class="briefing-people">{{range $i, $p := .People}}{{if $i}}, {{end}}{{$p.Name}}{{if $p.Removed}} (removed){{end}}{{end}}</p>{{end}}
+</li>
+{{end}}
+</ul>
+{{else}}
+<p class="briefing-empty">{{if .Mine}}Nothing of yours is due before next Saturday.{{else}}Nothing due before next Saturday.{{end}}</p>
+{{end}}
+</section>
+
+<section class="briefing-section" aria-labelledby="briefing-week">
+<h2 id="briefing-week">This week</h2>
+{{if .Briefing.ThisWeek}}
+<ul class="briefing-list">
+{{range .Briefing.ThisWeek}}{{template "briefing-event-card" .}}{{end}}
+</ul>
+{{else}}
+<p class="briefing-empty">Nothing on the calendar this week.</p>
+{{end}}
+</section>
+
+<section class="briefing-section" aria-labelledby="briefing-coming">
+<h2 id="briefing-coming">Coming up</h2>
+{{if .Briefing.ComingUp}}
+<ul class="briefing-list">
+{{range .Briefing.ComingUp}}{{template "briefing-event-card" .}}{{end}}
+</ul>
+{{else}}
+<p class="briefing-empty">Nothing coming up yet.</p>
+{{end}}
+</section>
+</div>
+{{end}}
+
+{{define "briefing-event-card"}}
+<li class="briefing-card briefing-event">
+<p class="briefing-stamps"><span class="stamp stamp-{{.StampKind}}">{{.Stamp}}</span></p>
+<a class="briefing-card-title" href="/calendar/events/{{.EventID}}?occurrence={{.OriginalDate}}">{{.Title}}</a>
+<p class="briefing-when">{{.DateLabel}}{{if .TimeLabel}} · {{.TimeLabel}}{{end}}{{if .UntilLabel}} · {{.UntilLabel}}{{end}}</p>
+{{if .Notes}}<p class="briefing-notes">{{.Notes}}</p>{{end}}
+</li>
+{{end}}

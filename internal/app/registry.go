@@ -7,6 +7,9 @@ type NavItem struct {
 	Label string
 	Path  string
 	Icon  string // static path to an SVG, e.g. "/static/theme/icons/kb.svg"
+	// AlsoCurrentAt lists other exact paths that mark this item current
+	// too (the Briefing is also the home page, "/").
+	AlsoCurrentAt []string
 }
 
 // Section is what SPEC B2 means by "each section registers its routes,

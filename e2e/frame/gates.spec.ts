@@ -27,21 +27,23 @@ test('every registered route shows the frame, with the current section marked', 
   }
 });
 
-// SPEC gate 1.08: each placeholder section shows its own "Coming soon"
-// heading with status 200, never an error.
-test('placeholder sections show Coming soon with status 200', async ({ page, server }) => {
+// SPEC gate 1.08 (retired by P3-02, SPEC rule 2.5's one allowed
+// change): the last placeholder section, the Briefing, is now real.
+// It answers with status 200 at both addresses, and no section is left
+// showing "Coming soon".
+test('every section is built: no "Coming soon" placeholder is left', async ({ page, server }) => {
   await signInAsNewPerson(page, server.baseURL, '/');
 
-  for (const [path, title] of [
-    ['/briefing', 'Briefing'],
-  ] as const) {
+  for (const path of ['/', '/briefing', '/kb', '/tasks', '/calendar', '/settings/people']) {
     const res = await page.request.get(server.baseURL + path);
     expect(res.status()).toBe(200);
     await page.goto(server.baseURL + path);
     await ready(page);
-    await expect(page.locator('main h1')).toHaveText(title);
-    await expect(page.locator('main')).toContainText('Coming soon');
+    await expect(page.locator('main')).not.toContainText('Coming soon');
   }
+  await page.goto(server.baseURL + '/briefing');
+  await ready(page);
+  await expect(page.locator('main h1')).toContainText('riefing');
 });
 
 // SPEC gate 1.11: an unknown address shows a friendly "Page not found"

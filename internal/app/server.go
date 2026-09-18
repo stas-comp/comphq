@@ -41,6 +41,7 @@ func NewServer(sqlDB *sql.DB, version, dataDir string, testMode bool) (*Server, 
 		"web/templates/kb/*.html",
 		"web/templates/tasks/*.html",
 		"web/templates/calendar/*.html",
+		"web/templates/briefing/*.html",
 	)
 	if err != nil {
 		return nil, err
@@ -105,7 +106,6 @@ func (s *Server) Routes() http.Handler {
 		}
 	}
 
-	mux.HandleFunc("GET /{$}", s.handleRoot)
 	mux.HandleFunc("GET /", s.handleNotFound)
 
 	// Order: security headers outermost, then the CSRF-style origin check
@@ -123,10 +123,6 @@ func securityHeaders(next http.Handler) http.Handler {
 		w.Header().Set("Referrer-Policy", "same-origin")
 		next.ServeHTTP(w, r)
 	})
-}
-
-func (s *Server) handleRoot(w http.ResponseWriter, r *http.Request) {
-	http.Redirect(w, r, "/kb", http.StatusFound)
 }
 
 func (s *Server) handleNotFound(w http.ResponseWriter, r *http.Request) {

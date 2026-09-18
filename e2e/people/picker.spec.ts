@@ -38,12 +38,12 @@ test('names appear as buttons in alphabetical order', async ({ page, server }) =
 test('a picked name persists across a new page in the same context', async ({ page, server }) => {
   const name = uniqueName('Test');
   await addName(page, server.baseURL, name);
-  expect(new URL(page.url()).pathname).toBe('/kb'); // "/" redirects to "/kb" (P1-14)
+  expect(new URL(page.url()).pathname).toBe('/'); // "/" is the Briefing (SPEC gate 3.01, P3-02)
   await expect(page.locator('.topbar')).toContainText(`You: ${name}`);
 
   await page.goto(server.baseURL + '/');
   await ready(page);
-  expect(new URL(page.url()).pathname).toBe('/kb'); // no bounce back to /who
+  expect(new URL(page.url()).pathname).toBe('/'); // no bounce back to /who
 });
 
 // SPEC gate 1.03: "Change" (simulated by visiting /who directly, since the
@@ -128,6 +128,6 @@ test('the picker works with keyboard only', async ({ page, server }) => {
   await page.locator('#add-name-input').fill(name);
   await page.keyboard.press('Enter');
 
-  await page.waitForURL('**/kb');
-  expect(new URL(page.url()).pathname).toBe('/kb'); // "/" (the default next) redirects to "/kb" (P1-14)
+  await page.waitForFunction(() => location.pathname === '/');
+  expect(new URL(page.url()).pathname).toBe('/'); // "/" (the default next) is the Briefing (SPEC gate 3.01, P3-02)
 });

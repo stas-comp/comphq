@@ -247,3 +247,23 @@ func TestEmptyInputGivesEmptySections(t *testing.T) {
 		t.Errorf("Build(empty) = %+v, want empty sections", b)
 	}
 }
+
+// SPEC gate 3.05: Just mine keeps only the current person's tasks, and
+// leaves events (which belong to nobody) alone.
+func TestJustMineKeepsOnlyYoursAndAllEvents(t *testing.T) {
+	b := Build(Input{
+		Today:    day(t, "2026-09-19"),
+		PersonID: 2,
+		Tasks: []Task{
+			{ID: 1, Title: "Mine", DueDate: "2026-09-20", People: []Person{{ID: 2, Name: "Kim"}}},
+			{ID: 2, Title: "Theirs", DueDate: "2026-09-21", People: []Person{{ID: 1, Name: "Alex"}}},
+		},
+		ThisWeek: []Occurrence{{EventID: 1, Title: "Exams", StartDate: "2026-09-21"}},
+	}).JustMine()
+	if len(b.MustDo) != 1 || b.MustDo[0].Title != "Mine" {
+		t.Errorf("MustDo = %+v, want just Mine", b.MustDo)
+	}
+	if len(b.ThisWeek) != 1 {
+		t.Errorf("ThisWeek = %+v, want the event kept", b.ThisWeek)
+	}
+}

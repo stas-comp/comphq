@@ -75,7 +75,9 @@ func run() error {
 
 	// Sidebar order (SPEC A4): Briefing, Knowledge Base, Tasks, Calendar,
 	// Settings.
-	srv.Registry().Add(briefing.Section(srv))
+	srv.Registry().Add(briefing.Section(srv,
+		briefingTasks{store: &tasks.Store{DB: srv.DB}},
+		briefingEvents{store: &calendar.Store{DB: srv.DB}}))
 	srv.Registry().Add(kb.Section(srv))
 	srv.Registry().Add(tasks.Section(srv))
 	srv.Registry().Add(calendar.Section(srv, taskDeadlines{store: &tasks.Store{DB: srv.DB}}))

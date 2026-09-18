@@ -63,13 +63,15 @@ type Input struct {
 
 // TaskCard is one "Must be done" card.
 type TaskCard struct {
-	ID      int64
-	Title   string
-	Notes   string
-	Stamp   string // TODAY, OVERDUE or a weekday date such as WED 23 SEP
-	Overdue bool
-	Yours   bool
-	People  []Person
+	ID    int64
+	Title string
+	Notes string
+	Stamp string // TODAY, OVERDUE or a weekday date such as WED 23 SEP
+	// StampKind is "overdue", "today" or "date", for the stamp's styling.
+	StampKind string
+	Overdue   bool
+	Yours     bool
+	People    []Person
 }
 
 // EventCard is one "This week" or "Coming up" card.
@@ -78,6 +80,7 @@ type EventCard struct {
 	Title        string
 	Notes        string
 	Stamp        string // TODAY, MON 21 SEP, IN 6 WEEKS, …
+	StampKind    string // "today" or "date"
 	DateLabel    string // "Mon 21 Sep 2026"
 	TimeLabel    string // "18:00–20:00", "" for all day
 	UntilLabel   string // "until Tue 22 Sep" for multi-day events; "" otherwise
@@ -92,6 +95,19 @@ type Briefing struct {
 	MustDo   []TaskCard
 	ThisWeek []EventCard
 	ComingUp []EventCard
+}
+
+// JustMine keeps only the tasks assigned to the current person (SPEC
+// gate 3.05). Events belong to nobody, so they stay.
+func (b Briefing) JustMine() Briefing {
+	var mine []TaskCard
+	for _, c := range b.MustDo {
+		if c.Yours {
+			mine = append(mine, c)
+		}
+	}
+	b.MustDo = mine
+	return b
 }
 
 // SaturdayFor returns the Saturday a briefing dated `today` is for:
@@ -130,7 +146,7 @@ func Build(in Input) Briefing {
 				card.Yours = true
 			}
 		}
-		card.Stamp = taskStamp(t.DueDate, today)
+		card.Stamp, card.StampKind = taskStamp(t.DueDate, today)
 		b.MustDo = append(b.MustDo, card)
 	}
 
@@ -168,7 +184,7 @@ func Build(in Input) Briefing {
 	for _, o := range coming {
 		start, _ := time.ParseInLocation(dateLayout, o.StartDate, today.Location())
 		card := baseEventCard(o, start)
-		card.Stamp = strings.ToUpper(distance(saturday, start))
+		card.Stamp, card.StampKind = strings.ToUpper(distance(saturday, start)), "date"
 		b.ComingUp = append(b.ComingUp, card)
 	}
 	return b
@@ -194,20 +210,21 @@ func sortOccurrences(occs []Occurrence) {
 	})
 }
 
-// taskStamp is TODAY, OVERDUE, or a weekday date like "WED 23 SEP".
-func taskStamp(due string, today time.Time) string {
+// taskStamp is TODAY, OVERDUE, or a weekday date like "WED 23 SEP",
+// with the kind the stamp is styled by.
+func taskStamp(due string, today time.Time) (stamp, kind string) {
 	todayStr := today.Format(dateLayout)
 	switch {
 	case due < todayStr:
-		return "OVERDUE"
+		return "OVERDUE", "overdue"
 	case due == todayStr:
-		return "TODAY"
+		return "TODAY", "today"
 	}
 	d, err := time.Parse(dateLayout, due)
 	if err != nil {
-		return ""
+		return "", "date"
 	}
-	return strings.ToUpper(d.Format("Mon 2 Jan"))
+	return strings.ToUpper(d.Format("Mon 2 Jan")), "date"
 }
 
 func weekCard(o Occurrence, today time.Time) EventCard {
@@ -215,9 +232,9 @@ func weekCard(o Occurrence, today time.Time) EventCard {
 	card := baseEventCard(o, start)
 	todayStr := today.Format(dateLayout)
 	if o.StartDate <= todayStr {
-		card.Stamp = "TODAY"
+		card.Stamp, card.StampKind = "TODAY", "today"
 	} else {
-		card.Stamp = strings.ToUpper(start.Format("Mon 2 Jan"))
+		card.Stamp, card.StampKind = strings.ToUpper(start.Format("Mon 2 Jan")), "date"
 	}
 	// An event already under way (started before today) shows how long
 	// it still runs — SPEC gate 3.09.
