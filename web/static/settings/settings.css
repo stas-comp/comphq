@@ -14,7 +14,7 @@
 }
 
 .settings-subnav a[aria-current="page"] {
-  color: var(--color-signal-orange-dark);
+  color: var(--color-signal-orange-deep);
   border-bottom: 2px solid var(--color-signal-orange);
 }
 

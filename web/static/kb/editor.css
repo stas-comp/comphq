@@ -23,7 +23,7 @@
 }
 
 .ProseMirror a {
-  color: var(--color-accent, #d9531e);
+  color: var(--color-signal-orange-deep);
   text-decoration: underline;
 }
 
@@ -48,11 +48,11 @@
   justify-content: center;
   min-height: 3em;
   margin: 0 0 0.75em;
-  border: 2px dashed var(--color-danger, #a4222c);
-  border-radius: var(--radius-sm, 4px);
-  padding: var(--space-3, 0.75rem);
-  color: var(--color-danger, #a4222c);
-  font-size: var(--font-size-small, 0.875rem);
+  border: 2px dashed var(--color-danger);
+  border-radius: var(--radius-sm);
+  padding: var(--space-3);
+  color: var(--color-danger);
+  font-size: var(--font-size-small);
   text-align: center;
 }
 
@@ -97,7 +97,7 @@
 
 .ProseMirror td,
 .ProseMirror th {
-  border: 1px solid var(--color-border, #ccc);
+  border: 1px solid var(--color-border);
   padding: 0.4em 0.6em;
   vertical-align: top;
   box-sizing: border-box;
@@ -107,19 +107,20 @@
 .ProseMirror th {
   font-weight: 600;
   text-align: left;
-  background: var(--color-surface-muted, #f3f3f3);
+  background: var(--color-paper-muted);
 }
 
 .ProseMirror .selectedCell:after {
   content: "";
   position: absolute;
   inset: 0;
-  background: rgba(217, 83, 30, 0.15);
+  background: var(--color-accent-soft);
+  opacity: 0.6;
   pointer-events: none;
 }
 
 .ProseMirror .ProseMirror-selectednode {
-  outline: 2px solid var(--color-accent, #d95312);
+  outline: 2px solid var(--color-signal-orange-deep);
 }
 
 .ProseMirror-gapcursor {
@@ -134,7 +135,7 @@
   position: absolute;
   top: -2px;
   width: 20px;
-  border-top: 1px solid black;
+  border-top: 1px solid var(--color-ink-text);
   animation: ProseMirror-cursor-blink 1.1s steps(2, start) infinite;
 }
 

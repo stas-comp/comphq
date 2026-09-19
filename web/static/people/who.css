@@ -18,7 +18,7 @@ main {
 }
 
 h1 {
-  font-family: var(--font-heading);
+  font-family: var(--font-display);
   color: var(--color-white);
 }
 
@@ -45,13 +45,13 @@ h1 {
 .person-button:hover,
 .person-button:focus-visible {
   background: var(--color-signal-orange);
-  color: var(--color-white);
+  color: var(--color-ink-navy);
 }
 
 .link-button {
   background: none;
   border: none;
-  color: var(--color-nav-text-muted);
+  color: var(--color-sidebar-text);
   text-decoration: underline;
   cursor: pointer;
   font-family: var(--font-body);
@@ -66,7 +66,7 @@ h1 {
 .message {
   font-weight: 700;
   color: var(--color-white);
-  background: var(--color-signal-orange-dark);
+  background: var(--color-signal-orange-deep);
   display: inline-block;
   padding: var(--space-2) var(--space-4);
   border-radius: var(--radius-md);
@@ -95,6 +95,6 @@ h1 {
   border-radius: var(--radius-sm);
   border: none;
   background: var(--color-signal-orange);
-  color: var(--color-white);
+  color: var(--color-ink-navy);
   cursor: pointer;
 }

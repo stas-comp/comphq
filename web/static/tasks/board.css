@@ -119,26 +119,6 @@
   font-weight: 700;
 }
 
-/* A person's avatar colour (internal/tasks.AvatarColorClass) has to be a
-   fixed class, not an inline style: the app's CSP has no 'unsafe-inline'
-   for style-src (or default-src, which style-src falls back to), so an
-   inline background-color is silently dropped rather than applied. All
-   12 are hsl(*, 50%, 25%) — verified by
-   TestAvatarColorMeetsContrastForEveryHue to give white text at least a
-   4.5:1 WCAG AA contrast ratio at every hue, not just these twelve. */
-.task-avatar-0  { background-color: hsl(0, 50%, 25%); }
-.task-avatar-1  { background-color: hsl(30, 50%, 25%); }
-.task-avatar-2  { background-color: hsl(60, 50%, 25%); }
-.task-avatar-3  { background-color: hsl(90, 50%, 25%); }
-.task-avatar-4  { background-color: hsl(120, 50%, 25%); }
-.task-avatar-5  { background-color: hsl(150, 50%, 25%); }
-.task-avatar-6  { background-color: hsl(180, 50%, 25%); }
-.task-avatar-7  { background-color: hsl(210, 50%, 25%); }
-.task-avatar-8  { background-color: hsl(240, 50%, 25%); }
-.task-avatar-9  { background-color: hsl(270, 50%, 25%); }
-.task-avatar-10 { background-color: hsl(300, 50%, 25%); }
-.task-avatar-11 { background-color: hsl(330, 50%, 25%); }
-
 .task-card-due {
   margin: 0;
   font-size: var(--font-size-small);

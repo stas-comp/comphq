@@ -101,13 +101,13 @@
 }
 
 .calendar-chip-event {
-  background: var(--color-signal-orange);
+  background: var(--color-ink-navy);
   color: var(--color-white);
 }
 
 .calendar-chip-event:hover,
 .calendar-chip-event:focus-visible {
-  background: var(--color-signal-orange-dark);
+  background: var(--color-signal-orange-deep);
 }
 
 .calendar-chip-task {

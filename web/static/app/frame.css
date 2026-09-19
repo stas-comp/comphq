@@ -19,12 +19,12 @@
   width: var(--sidebar-width);
   flex-shrink: 0;
   background: var(--color-ink-navy);
-  color: var(--color-nav-text);
+  color: var(--color-sidebar-text);
   padding: var(--space-6) var(--space-4);
 }
 
 .wordmark {
-  font-family: var(--font-heading);
+  font-family: var(--font-display);
   font-weight: 700;
   font-size: 1.5rem;
   color: var(--color-white);
@@ -43,7 +43,7 @@
   gap: var(--space-2);
   padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-md);
-  color: var(--color-nav-text-muted);
+  color: var(--color-sidebar-text);
   text-decoration: none;
   font-weight: 600;
   margin-bottom: var(--space-1);
@@ -57,7 +57,7 @@
 
 .sidebar nav a.current {
   background: var(--color-signal-orange);
-  color: var(--color-white);
+  color: var(--color-ink-navy);
 }
 
 .sidebar nav a img {
@@ -74,7 +74,7 @@
 
 .backup-banner {
   padding: var(--space-3) var(--space-6);
-  background: var(--color-danger, #a4222c);
+  background: var(--color-danger);
   color: var(--color-white);
   font-weight: 600;
   text-align: center;
@@ -90,7 +90,7 @@
   margin: 0 0 var(--space-3);
   padding: var(--space-2) var(--space-3);
   background: var(--color-signal-orange);
-  color: var(--color-white);
+  color: var(--color-ink-navy);
   border: none;
   border-radius: var(--radius-sm);
   font-weight: 600;
@@ -133,7 +133,7 @@
 }
 
 .topbar .who a {
-  color: var(--color-signal-orange-dark);
+  color: var(--color-signal-orange-deep);
 }
 
 main {

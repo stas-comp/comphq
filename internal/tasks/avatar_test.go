@@ -47,12 +47,12 @@ func TestAvatarColorClassIsAlwaysOneOfTheDefinedClasses(t *testing.T) {
 }
 
 // TestAvatarColorClassCSSMatchesGoPalette guards against the CSS
-// palette (web/static/tasks/board.css, hand-written since a class
+// palette (web/static/theme/theme.css, hand-written since a class
 // selector can't be templated at request time — SPEC's CSP has no
 // 'unsafe-inline' for style-src) drifting from AvatarColorClass's own
 // notion of how many entries exist and what hue each one is.
 func TestAvatarColorClassCSSMatchesGoPalette(t *testing.T) {
-	data, err := os.ReadFile(filepath.Join("..", "..", "web", "static", "tasks", "board.css"))
+	data, err := os.ReadFile(filepath.Join("..", "..", "web", "static", "theme", "theme.css"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -61,7 +61,7 @@ func TestAvatarColorClassCSSMatchesGoPalette(t *testing.T) {
 	rule := regexp.MustCompile(`\.task-avatar-(\d+)\s*\{\s*background-color:\s*hsl\((\d+),\s*(\d+)%,\s*(\d+)%\);`)
 	matches := rule.FindAllStringSubmatch(css, -1)
 	if len(matches) != avatarColorCount {
-		t.Fatalf("board.css has %d .task-avatar-N rules, want %d (avatarColorCount)", len(matches), avatarColorCount)
+		t.Fatalf("theme.css has %d .task-avatar-N rules, want %d (avatarColorCount)", len(matches), avatarColorCount)
 	}
 
 	seen := make(map[int]bool)
@@ -84,7 +84,7 @@ func TestAvatarColorClassCSSMatchesGoPalette(t *testing.T) {
 	}
 	for i := 0; i < avatarColorCount; i++ {
 		if !seen[i] {
-			t.Errorf("board.css is missing a .task-avatar-%d rule", i)
+			t.Errorf("theme.css is missing a .task-avatar-%d rule", i)
 		}
 	}
 }

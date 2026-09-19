@@ -73,7 +73,7 @@
 }
 
 .briefing-card-title {
-  font-family: var(--font-heading);
+  font-family: var(--font-display);
   font-size: var(--font-size-h3);
   font-weight: 700;
   color: var(--color-ink-text);
@@ -108,24 +108,4 @@
   font-size: var(--font-size-h3);
   color: var(--color-text-muted);
   margin: 0;
-}
-
-.stamp-overdue {
-  background: var(--color-danger);
-}
-
-.stamp-today {
-  background: var(--color-ink-navy);
-}
-
-.stamp-date {
-  background: var(--color-paper-muted);
-  color: var(--color-ink-text);
-  border: 1px solid var(--color-border);
-}
-
-.stamp-yours {
-  background: var(--color-white);
-  color: var(--color-ink-navy);
-  border: 2px solid var(--color-ink-navy);
 }
