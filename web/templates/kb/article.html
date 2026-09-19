@@ -1,16 +1,20 @@
 {{define "kb-article.html"}}
-<p><a href="/kb/categories/{{.Category.ID}}">{{.Category.Name}}</a></p>
+<div class="kb-crumbs"><a href="/kb">Knowledge Base</a> › <a href="/kb/categories/{{.Category.ID}}">{{.Category.Name}}</a></div>
+<article class="kb-article">
 <h1 data-b="0"{{if .TitleHighlight}} data-hl="{{.TitleHighlight}}"{{end}}>{{.Article.Title}}</h1>
-{{if eq .Article.Status "archived"}}<p class="message" role="status">This article is archived.</p>{{end}}
-<p>
-<a href="/kb/articles/{{.Article.ID}}/edit">Edit</a>
-· <a href="/kb/articles/{{.Article.ID}}/history">History</a>
+<div class="kb-byline">
+{{if .UpdatedBy}}<span>Updated by <b>{{.UpdatedBy}}</b> · <span class="date">{{.UpdatedAt}}</span></span>{{end}}
+<span class="acts">
+<a href="/kb/articles/{{.Article.ID}}/history">History{{if .HistoryCount}} ({{.HistoryCount}}){{end}}</a>
 {{if eq .Article.Status "archived"}}
-· <form method="post" action="/kb/articles/{{.Article.ID}}/unarchive" class="inline-form"><button class="btn" type="submit">Unarchive</button></form>
+<form method="post" action="/kb/articles/{{.Article.ID}}/unarchive" class="inline-form"><button class="btn" type="submit">Unarchive</button></form>
 {{else}}
-· <form method="post" action="/kb/articles/{{.Article.ID}}/archive" class="inline-form"><button class="btn" type="submit">Archive</button></form>
+<form method="post" action="/kb/articles/{{.Article.ID}}/archive" class="inline-form"><button class="btn" type="submit">Archive</button></form>
 {{end}}
-</p>
+<a class="btn primary" href="/kb/articles/{{.Article.ID}}/edit">Edit</a>
+</span>
+</div>
+{{if eq .Article.Status "archived"}}<p class="message" role="status">This article is archived.</p>{{end}}
 
 {{if .ImageFailures}}
 <p class="message" role="alert">
@@ -20,5 +24,6 @@ Some pictures couldn't be copied, so they're marked in the article below. The re
 {{end}}
 
 <div class="kb-article-body">{{.BodyHTML}}</div>
+</article>
 <script src="/static/kb/highlight.js"></script>
 {{end}}

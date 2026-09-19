@@ -61,6 +61,12 @@ document.addEventListener('DOMContentLoaded', () => {
         panel.appendChild(a)
       }
     }
+    if (results.length > 0) {
+      const foot = document.createElement('div')
+      foot.className = 'search-panel-foot'
+      foot.textContent = window.ComphqMessages.searchFoot(results.length)
+      panel.appendChild(foot)
+    }
     form.appendChild(panel)
   }
 

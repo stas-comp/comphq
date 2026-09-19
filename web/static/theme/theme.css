@@ -58,6 +58,7 @@
 
   /* Supporting values the mockup uses that B9.2 doesn't name. */
   --color-white: #ffffff;
+  --color-danger-ink: #7a1c1c;
   --color-day-out: #f0eee8;
   --color-chip-continues-text: #d5d9e4;
   --color-avatar-b: #4e5b7a;
@@ -789,4 +790,13 @@ body:has(dialog[open]) {
 .area.mine .workload-block,
 .lane.me .workload-block {
   background: var(--color-signal-orange-deep);
+}
+
+/* A matched word in a search snippet or an article (gate 4.42). */
+mark {
+  background: var(--color-signal-orange);
+  color: var(--color-ink-navy);
+  padding: 0 3px;
+  border-radius: 3px;
+  font-weight: 700;
 }

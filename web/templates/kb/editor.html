@@ -15,13 +15,15 @@
 </select>
 
 <label for="article-title">Title</label>
-<input class="field" type="text" id="article-title" name="title" value="{{.Title}}" required>
+<input class="field title-in" type="text" id="article-title" name="title" value="{{.Title}}" required>
 
 <div class="editor-toolbar" role="toolbar" aria-label="Formatting">
 <button class="tb" type="button" id="btn-h2">Large heading</button>
 <button class="tb" type="button" id="btn-h3">Small heading</button>
+<span class="sep" aria-hidden="true"></span>
 <button class="tb" type="button" id="btn-bold">Bold</button>
 <button class="tb" type="button" id="btn-italic">Italic</button>
+<span class="sep" aria-hidden="true"></span>
 <button class="tb" type="button" id="btn-bullet">Bullets</button>
 <button class="tb" type="button" id="btn-ordered">Numbers</button>
 <button class="tb" type="button" id="btn-link">Link</button>
@@ -31,13 +33,13 @@
 <button class="tb" type="button" id="btn-add-col">Add column</button>
 <button class="tb" type="button" id="btn-remove-col">Remove column</button>
 <button class="tb" type="button" id="btn-image">Image</button>
-<button class="btn primary" type="button" id="btn-import-word">Import from Word</button>
+<button class="btn primary word" type="button" id="btn-import-word"><span class="icon icon-import-word" aria-hidden="true"></span>Import from Word</button>
 </div>
-<p id="editor-message" class="message" role="alert" hidden></p>
+<div id="editor-message" class="message" role="alert" hidden></div>
 <label class="visually-hidden" for="article-editor">Content</label>
 <div id="article-editor" class="article-editor"></div>
-<input type="file" id="image-file-input" accept="image/png,image/jpeg,image/gif,image/webp" class="visually-hidden">
-<input type="file" id="docx-file-input" accept=".docx" class="visually-hidden">
+<input type="file" id="image-file-input" accept="image/png,image/jpeg,image/gif,image/webp" class="visually-hidden" aria-label="Choose a picture">
+<input type="file" id="docx-file-input" accept=".docx" class="visually-hidden" aria-label="Choose a Word document">
 <input type="hidden" name="body_html" id="article-body-html">
 
 <div class="editor-actions">

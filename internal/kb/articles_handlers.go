@@ -77,6 +77,11 @@ type articlePageData struct {
 	TitleHighlight string
 	Category       Category
 	ImageFailures  []string
+	// The byline row (gate 4.41): who last changed it and when, and how many
+	// versions History holds.
+	UpdatedBy    string
+	UpdatedAt    string
+	HistoryCount int
 }
 
 func (h *Handlers) renderArticlePage(w http.ResponseWriter, r *http.Request, status int, article Article, imageFailures []string) {
@@ -101,15 +106,21 @@ func (h *Handlers) renderArticlePage(w http.ResponseWriter, r *http.Request, sta
 		}
 	}
 
-	// article.BodyHTML was sanitised on save (SPEC B4); it's the one place
-	// article content bypasses html/template's auto-escaping.
-	h.srv.RenderFrame(w, r, status, "kb-article.html", article.Title, articlePageData{
+	data := articlePageData{
 		Article:        article,
 		BodyHTML:       template.HTML(bodyHTML),
 		TitleHighlight: titleHighlight,
 		Category:       category,
 		ImageFailures:  imageFailures,
-	})
+	}
+	// The byline is only a convenience: no history row, no byline.
+	if versions, err := h.articles.History(article.ID); err == nil && len(versions) > 0 {
+		data.UpdatedBy, data.UpdatedAt, data.HistoryCount = versions[0].EditedByName, versions[0].EditedAt, len(versions)
+	}
+
+	// article.BodyHTML was sanitised on save (SPEC B4); it's the one place
+	// article content bypasses html/template's auto-escaping.
+	h.srv.RenderFrame(w, r, status, "kb-article.html", article.Title, data)
 }
 
 func (h *Handlers) handleViewArticle(w http.ResponseWriter, r *http.Request) {

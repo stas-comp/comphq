@@ -6,22 +6,6 @@
   min-height: 12em;
 }
 
-.ProseMirror p {
-  margin: 0 0 0.75em;
-}
-
-.ProseMirror h2,
-.ProseMirror h3 {
-  margin: 1em 0 0.5em;
-  line-height: 1.25;
-}
-
-.ProseMirror ul,
-.ProseMirror ol {
-  padding-left: 1.5em;
-  margin: 0 0 0.75em;
-}
-
 .ProseMirror a {
   color: var(--color-signal-orange-deep);
   text-decoration: underline;
@@ -43,17 +27,17 @@
    (ComphqMessages), not in this permanent in-place label. */
 .ProseMirror div[data-missing-kind],
 .kb-article-body div[data-missing-kind] {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 3em;
-  margin: 0 0 0.75em;
+  display: grid;
+  gap: 3px;
+  margin: 0;
   border: 2px dashed var(--color-danger);
-  border-radius: var(--radius-sm);
-  padding: var(--space-3);
-  color: var(--color-danger);
-  font-size: var(--font-size-small);
-  text-align: center;
+  border-radius: 8px;
+  background: var(--color-danger-soft);
+  padding: 12px 14px;
+  color: var(--color-danger-ink);
+  font-size: 14px;
+  line-height: 1.45;
+  text-align: left;
 }
 
 .ProseMirror div[data-missing-kind="picture"]::after,
@@ -88,26 +72,17 @@
   content: "Object not shown.";
 }
 
+/* Table looks (ink header row, hairline rows) are kb.css's; the editor only
+   needs cells it can draw a selection over. */
 .ProseMirror table {
-  border-collapse: collapse;
   table-layout: fixed;
-  width: 100%;
-  margin: 0 0 0.75em;
 }
 
 .ProseMirror td,
 .ProseMirror th {
-  border: 1px solid var(--color-border);
-  padding: 0.4em 0.6em;
   vertical-align: top;
   box-sizing: border-box;
   position: relative;
-}
-
-.ProseMirror th {
-  font-weight: 600;
-  text-align: left;
-  background: var(--color-paper-muted);
 }
 
 .ProseMirror .selectedCell:after {

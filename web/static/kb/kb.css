@@ -79,26 +79,83 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
-  max-width: 40rem;
+  max-width: 820px;
   margin: var(--space-4) 0;
 }
 
+/* The editor (gate 4.43): the formatting controls in one bordered bar,
+   Import from Word a primary button with its icon at the right-hand end;
+   the title in large capitals over the document, which is a white sheet. */
 .editor-toolbar {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-1);
-  padding: var(--space-2);
-  background: var(--color-paper-muted);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  align-items: center;
+  gap: 2px;
+  background: var(--color-card);
+  border: 1.5px solid var(--color-border-strong);
+  border-radius: 10px;
+  padding: 6px;
+}
+
+.editor-toolbar .sep {
+  width: 1px;
+  height: 22px;
+  background: var(--color-border-strong);
+  margin: 0 4px;
+}
+
+.editor-toolbar .word {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 7px;
+  padding: 6px 12px;
+}
+
+.editor-toolbar .word .icon {
+  width: 16px;
+  height: 16px;
+}
+
+.article-form .title-in {
+  font: 900 46px/1 var(--font-display);
+  text-transform: uppercase;
+  color: var(--color-ink-navy);
+  border: 0;
+  border-bottom: 2px solid var(--color-border-strong);
+  border-radius: 0;
+  padding: 4px 0 10px;
+  background: transparent;
 }
 
 .article-editor {
+  background: var(--color-card);
   border: 1px solid var(--color-border);
-  border-top: none;
-  border-radius: 0 0 var(--radius-sm) var(--radius-sm);
-  padding: var(--space-2) var(--space-3);
-  background: var(--color-white);
+  border-radius: 10px;
+  padding: 24px 30px 30px;
+  font-size: 17px;
+  line-height: 1.65;
+}
+
+/* The import summary (gate 4.43): a bordered notice with an IMPORTED stamp. */
+.imported {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: start;
+  background: var(--color-card);
+  border: 1.5px solid var(--color-ink-navy);
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--color-ink-text);
+}
+
+.imported ul {
+  margin: 4px 0 0;
+  padding-left: 18px;
 }
 
 .editor-actions {
@@ -116,8 +173,111 @@
   border-bottom: 1px solid var(--color-border);
 }
 
-.kb-article-body {
-  max-width: 40rem;
+/* An article (gates 4.39-4.41), drawn as docs/design/mockup.html draws
+   `.crumbs`, `.article`, `.by` and its table: the title in large condensed
+   capitals, the body in the calm readable face at a generous size on paper
+   (A2 priority 1: a reading area beats decoration), the display face only
+   for the title, headings and table headers. */
+.kb-crumbs {
+  font-size: 14px;
+  color: var(--color-text-muted);
+  margin-bottom: 14px;
+}
+
+.kb-crumbs a {
+  color: var(--color-ink-text);
+}
+
+.kb-article {
+  max-width: 720px;
+  display: grid;
+  gap: 14px;
+  font-size: 17px;
+  line-height: 1.65;
+}
+
+.kb-article h1 {
+  margin: 0;
+}
+
+.kb-byline {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  flex-wrap: wrap;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--color-text-muted);
+}
+
+.kb-byline .acts a:not(.btn) {
+  color: var(--color-ink-text);
+}
+
+.kb-article-body,
+.article-editor .ProseMirror {
+  display: grid;
+  gap: 14px;
+}
+
+.kb-article-body h2,
+.article-editor .ProseMirror h2 {
+  margin: 8px 0 0;
+  font: 800 26px var(--font-display);
+  text-transform: uppercase;
+  color: var(--color-ink-navy);
+  letter-spacing: 0.02em;
+  line-height: normal;
+}
+
+.kb-article-body h3,
+.article-editor .ProseMirror h3 {
+  margin: 4px 0 0;
+  font: 800 20px var(--font-display);
+  text-transform: uppercase;
+  color: var(--color-ink-navy);
+  letter-spacing: 0.02em;
+  line-height: normal;
+}
+
+.kb-article-body p,
+.article-editor .ProseMirror p {
+  margin: 0;
+}
+
+.kb-article-body ul,
+.kb-article-body ol,
+.article-editor .ProseMirror ul,
+.article-editor .ProseMirror ol {
+  margin: 0;
+  padding-left: 24px;
+}
+
+.kb-article-body table,
+.article-editor .ProseMirror table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 15px;
+  background: var(--color-card);
+}
+
+.kb-article-body th,
+.article-editor .ProseMirror th {
+  font: 800 14px var(--font-display);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-align: left;
+  background: var(--color-ink-navy);
+  color: var(--color-white);
+  padding: 8px 12px;
+  border: 0;
+}
+
+.kb-article-body td,
+.article-editor .ProseMirror td {
+  border: 0;
+  border-bottom: 1px solid var(--color-border);
+  padding: 8px 12px;
 }
 
 .inline-form {
@@ -135,17 +295,19 @@
   border-bottom: 1px solid var(--color-border);
 }
 
-/* Live search panel (SPEC gates 1.26, 1.27, 1.32). */
+/* Live search panel (gate 4.42): a bordered panel with a shadow below the
+   box; each result shows its category in small capitals, its title, and the
+   matching words highlighted in accent; the selected one is tinted. */
 .search-panel {
   position: absolute;
   top: 100%;
   left: 0;
   right: 0;
   z-index: 20;
-  margin-top: var(--space-1);
-  background: var(--color-white);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
+  margin-top: 4px;
+  background: var(--color-card);
+  border: 1.5px solid var(--color-ink-navy);
+  border-radius: 10px;
   box-shadow: var(--shadow-raised);
   max-height: 70vh;
   overflow-y: auto;
@@ -153,68 +315,93 @@
 
 .search-panel-empty {
   margin: 0;
-  padding: var(--space-3);
+  padding: 12px 16px;
   color: var(--color-text-muted);
 }
 
 .search-result {
-  display: block;
-  padding: var(--space-2) var(--space-3);
+  display: grid;
+  gap: 3px;
+  padding: 12px 16px;
   color: inherit;
   text-decoration: none;
   border-bottom: 1px solid var(--color-border);
 }
 
-.search-result:last-child {
-  border-bottom: none;
-}
-
 .search-result.active,
 .search-result:hover {
-  background: var(--color-paper-muted);
-}
-
-.search-result-title {
-  font-weight: 600;
+  background: var(--color-accent-wash);
 }
 
 .search-result-category {
+  order: -1;
+  font: 500 11px var(--font-mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
   color: var(--color-text-muted);
-  font-size: var(--font-size-small);
+}
+
+.search-result-title {
+  font-size: 16px;
+  font-weight: 700;
 }
 
 .search-snippet {
-  margin-top: var(--space-1);
-  font-size: var(--font-size-small);
+  margin: 0;
+  font-size: 14px;
+  color: var(--color-ink-text);
+}
+
+.search-panel-foot {
+  padding: 9px 16px;
+  font-size: 13px;
   color: var(--color-text-muted);
+  background: var(--color-paper);
 }
 
-.search-snippet mark {
-  background: var(--color-paper-muted);
-  color: inherit;
-  font-weight: 600;
-}
-
-/* Full results page (same content as the live panel). */
+/* The full results page: the same rows, in one bordered list. */
 .kb-search-results {
   list-style: none;
+  margin: 0;
   padding: 0;
-  max-width: 40rem;
+  max-width: 720px;
+  background: var(--color-card);
+  border: 1.5px solid var(--color-ink-navy);
+  border-radius: 10px;
+  overflow: hidden;
 }
 
-.kb-search-results li {
-  padding: var(--space-3) 0;
-  border-bottom: 1px solid var(--color-border);
+.kb-search-results li.search-result {
+  display: block;
+  padding: 0;
 }
 
-/* Scroll-to-passage highlighting on the article page (SPEC gate 1.28). */
-.kb-highlighted {
-  background: var(--color-paper-muted);
-  border-radius: var(--radius-sm);
-  padding: var(--space-1) var(--space-2);
-  margin: 0 calc(-1 * var(--space-2)) 0.75em;
+.kb-search-results li.search-result:last-child {
+  border-bottom: 0;
+}
+
+.kb-search-results li.search-result > a {
+  display: grid;
+  gap: 3px;
+  padding: 12px 16px;
+  color: inherit;
+  text-decoration: none;
+}
+
+/* Opening a result outlines the paragraph that matched (gate 4.42; the
+   mockup's `.hit`), with a "Clear highlights" link. */
+.kb-highlighted,
+.kb-article-body .kb-highlighted {
+  background: var(--color-accent-soft);
+  border-radius: 6px;
+  padding: 10px 14px;
+  margin: 0 -14px;
+  outline: 2px solid var(--color-signal-orange);
+  outline-offset: 0;
 }
 
 #clear-highlights {
-  margin-bottom: var(--space-3);
+  font-size: 13px;
+  color: var(--color-text-muted);
+  justify-self: start;
 }

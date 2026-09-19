@@ -67,11 +67,7 @@ document.addEventListener('DOMContentLoaded', () => {
       editor.commands.setContent(data.html)
       titleInput.value = data.title
       markDirty()
-      if (data.notes && data.notes.length > 0) {
-        window.ComphqUI.showMessage(window.ComphqMessages.docxImportSummary(data.notes))
-      } else {
-        window.ComphqUI.clearMessage()
-      }
+      window.ComphqUI.showImported(file.name, data.notes)
     } catch (err) {
       window.ComphqUI.showMessage('That file could not be imported.')
     }
@@ -194,5 +190,8 @@ document.addEventListener('DOMContentLoaded', () => {
     window.location.href = '/kb'
   })
 
+  // The editing surface is a text box: it needs a spoken name (the visually
+  // hidden label points at its wrapper, not at the box itself).
+  editor.view.dom.setAttribute('aria-label', 'Article content')
   document.body.setAttribute('data-editor-ready', '')
 })
