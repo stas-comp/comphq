@@ -1,5 +1,7 @@
 /* Layout for the shared frame: dark sidebar, top bar, main content
-   (SPEC A4). Colours, fonts, spacing all come from theme.css tokens. */
+   (SPEC A4, A10, gates 4.13, 4.14). Drawn as docs/design/mockup.html draws
+   `.side`, `.mark`, `.nav`, `.top` and `.you`; colours, fonts and the
+   shared parts come from theme.css. */
 
 .frame {
   display: flex;
@@ -11,44 +13,80 @@
   flex-shrink: 0;
   background: var(--color-ink-navy);
   color: var(--color-sidebar-text);
-  padding: var(--space-6) var(--space-4);
+  display: flex;
+  flex-direction: column;
+  padding: 22px 14px 16px;
+  gap: 4px;
 }
 
+/* The stacked wordmark: a small wide-spaced COMP above a large accent HQ. */
 .wordmark {
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 1.5rem;
+  padding: 0 10px 22px;
+  line-height: 0.82;
+}
+
+.wordmark small {
+  display: block;
+  font: 800 17px var(--font-display);
+  letter-spacing: 0.32em;
   color: var(--color-white);
-  margin-bottom: var(--space-8);
+  text-transform: uppercase;
+}
+
+.wordmark strong {
+  font: 900 64px var(--font-display);
+  color: var(--color-signal-orange);
+  letter-spacing: -0.01em;
+}
+
+.sidebar nav {
+  flex: 1;
+  display: flex;
 }
 
 .sidebar nav ul {
   list-style: none;
   margin: 0;
   padding: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* Settings, the last item, sits at the foot of the sidebar. */
+.sidebar nav li:last-child {
+  margin-top: auto;
 }
 
 .sidebar nav a {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
-  padding: var(--space-2) var(--space-3);
-  border-radius: var(--radius-md);
+  gap: 12px;
+  width: 100%;
+  border-radius: 8px;
+  padding: 11px 12px;
+  font-size: 16px;
+  font-weight: 600;
   color: var(--color-sidebar-text);
   text-decoration: none;
-  font-weight: 600;
-  margin-bottom: var(--space-1);
 }
 
-.sidebar nav a:hover,
-.sidebar nav a:focus-visible {
+.sidebar nav a:hover {
   background: var(--color-ink-navy-light);
   color: var(--color-white);
 }
 
-.sidebar nav a.current {
+.sidebar nav a[aria-current="page"] {
   background: var(--color-signal-orange);
   color: var(--color-ink-navy);
+}
+
+.sidebar .ver {
+  margin: 0;
+  font: 500 11px var(--font-mono);
+  color: var(--color-sidebar-muted);
+  padding: 10px 12px 0;
 }
 
 .main-column {
@@ -74,13 +112,6 @@
 #refresh-notice {
   display: block;
   margin: 0 0 var(--space-3);
-  padding: var(--space-2) var(--space-3);
-  background: var(--color-signal-orange);
-  color: var(--color-ink-navy);
-  border: none;
-  border-radius: var(--radius-sm);
-  font-weight: 600;
-  cursor: pointer;
 }
 
 #refresh-notice[hidden] {
@@ -90,31 +121,33 @@
 .topbar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: var(--space-4);
-  padding: var(--space-3) var(--space-6);
+  gap: 16px;
+  padding: 14px 32px;
   border-bottom: 1px solid var(--color-border);
-  background: var(--color-white);
+  background: var(--color-paper);
 }
 
 .topbar .search {
   position: relative;
 }
 
-.topbar .search input {
-  width: 20rem;
-  max-width: 40vw;
-}
-
-.topbar .who {
+/* "You: name", their circle, and Change. */
+.you {
+  margin-left: auto;
   display: flex;
   align-items: center;
-  gap: var(--space-2);
+  gap: 10px;
+  font-size: 14px;
   white-space: nowrap;
 }
 
-.topbar .who a {
-  color: var(--color-signal-orange-deep);
+.you a {
+  color: var(--color-ink-text);
+  font-weight: 700;
+  text-decoration: underline;
+  text-decoration-color: var(--color-signal-orange);
+  text-decoration-thickness: 3px;
+  text-underline-offset: 3px;
 }
 
 main {
@@ -127,12 +160,11 @@ main {
      (SPEC gate 2.31's "the page itself doesn't [scroll]"). Same fix
      .main-column already has, one level up. */
   min-width: 0;
-  padding: var(--space-8);
-  max-width: 60rem;
+  padding: 28px 32px 36px;
 }
 
 @media (max-width: 1023px) {
-  .topbar .search input {
-    width: 12rem;
+  .topbar .search {
+    width: 16rem;
   }
 }

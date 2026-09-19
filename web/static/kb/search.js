@@ -7,6 +7,16 @@ document.addEventListener('DOMContentLoaded', () => {
   if (!input) return
   const form = input.closest('form')
 
+  // The "/" hint in the box is a real shortcut (SPEC gate 4.14): pressing
+  // it anywhere outside a text field puts the keyboard in the search box.
+  document.addEventListener('keydown', (event) => {
+    if (event.key !== '/' || event.ctrlKey || event.metaKey || event.altKey) return
+    const target = event.target
+    if (target instanceof HTMLElement && (target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName))) return
+    event.preventDefault()
+    input.focus()
+  })
+
   let panel = null
   let debounceTimer = null
   let activeIndex = -1

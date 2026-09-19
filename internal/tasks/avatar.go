@@ -2,8 +2,8 @@ package tasks
 
 import (
 	"net/http"
-	"strings"
 
+	"github.com/stas-comp/comphq/internal/app/format"
 	"github.com/stas-comp/comphq/internal/people"
 )
 
@@ -21,24 +21,10 @@ var avatarClasses = []string{"av", "av b", "av c", "av d"}
 const avatarMeClass = "av me"
 
 // InitialsFor returns up to two uppercase initials from a person's name
-// (SPEC A6: "people's initials in coloured circles").
+// (SPEC A6: "people's initials in coloured circles"), the same ones the top
+// bar's own circle shows.
 func InitialsFor(name string) string {
-	fields := strings.Fields(name)
-	if len(fields) == 0 {
-		return ""
-	}
-	initials := strings.ToUpper(firstRune(fields[0]))
-	if len(fields) > 1 {
-		initials += strings.ToUpper(firstRune(fields[len(fields)-1]))
-	}
-	return initials
-}
-
-func firstRune(s string) string {
-	for _, r := range s {
-		return string(r)
-	}
-	return ""
+	return format.Initials(name)
 }
 
 // AvatarClass returns the CSS classes for a person's initials circle: the

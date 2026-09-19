@@ -19,7 +19,8 @@
 <body data-ready>
 <div class="frame">
 <aside class="sidebar">
-<div class="wordmark">Comp HQ</div>
+<div class="wordmark"><small>Comp</small>
+<strong>HQ</strong></div>
 <nav aria-label="Sections">
 <ul>
 {{range .Nav}}
@@ -30,6 +31,7 @@
 {{end}}
 </ul>
 </nav>
+<p class="ver">Version {{.Version}}</p>
 </aside>
 <div class="main-column">
 {{if .ShowBackupBanner}}
@@ -37,11 +39,14 @@
 {{end}}
 <header class="topbar">
 <form class="search" role="search" action="/kb/search" method="get" autocomplete="off">
-<label for="search-box" class="visually-hidden">Search</label>
-<input class="field" type="search" id="search-box" name="q" placeholder="Search">
+<span class="icon icon-search" aria-hidden="true"></span>
+<label for="search-box" class="visually-hidden">Search articles</label>
+<input class="search-input" type="search" id="search-box" name="q" placeholder="Search articles">
+<kbd aria-hidden="true">/</kbd>
 </form>
-<div class="who">
-<span>You: {{.PersonName}}</span>
+<div class="you">
+<span>You: <strong>{{.PersonName}}</strong></span>
+<span class="av me" aria-hidden="true">{{.PersonInitials}}</span>
 <a href="{{.ChangeHref}}">Change</a>
 </div>
 </header>

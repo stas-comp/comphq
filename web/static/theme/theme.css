@@ -87,7 +87,7 @@
   --space-6: 1.5rem;
   --space-8: 2rem;
 
-  --sidebar-width: 16rem;
+  --sidebar-width: 14rem; /* the mockup 224px */
 }
 
 * {
@@ -601,4 +601,56 @@ select.field[multiple] {
 
 .icon-btn:disabled {
   opacity: 0.4;
+}
+
+/* The search box (gate 4.14): an icon, the text box, and a "/" key hint,
+   in one bordered box that takes the accent ring while it has the keyboard
+   (the mockup's `.search` and `.search.active`). */
+.search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 440px;
+  max-width: 100%;
+  background: var(--color-card);
+  border: 1.5px solid var(--color-border-strong);
+  border-radius: 8px;
+  padding: 9px 12px;
+  font-size: 15px;
+  color: var(--color-text-muted);
+}
+
+.search:focus-within {
+  border-color: var(--color-ink-navy);
+  color: var(--color-ink-text);
+  box-shadow: 0 0 0 3px var(--color-accent-soft);
+}
+
+.search .icon {
+  width: 18px;
+  height: 18px;
+}
+
+.search-input {
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--color-ink-text);
+  outline: none;
+}
+
+.search-input::placeholder {
+  color: var(--color-text-muted);
+  opacity: 1;
+}
+
+.search kbd {
+  margin-left: auto;
+  font: 500 11px var(--font-mono);
+  border: 1px solid var(--color-border-strong);
+  border-radius: 4px;
+  padding: 1px 6px;
+  color: var(--color-text-muted);
 }

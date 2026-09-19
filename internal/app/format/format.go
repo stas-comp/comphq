@@ -78,3 +78,24 @@ func DayFirst(iso string) string {
 	}
 	return t.Format("02/01/2006")
 }
+
+// Initials returns up to two uppercase initials from a person's name, the
+// first letter of the first and last words (SPEC A6: "people's initials in
+// coloured circles"): "Sam Jones" is "SJ", "Sam" is "S".
+func Initials(name string) string {
+	fields := strings.Fields(name)
+	if len(fields) == 0 {
+		return ""
+	}
+	first := func(s string) string {
+		for _, r := range s {
+			return strings.ToUpper(string(r))
+		}
+		return ""
+	}
+	initials := first(fields[0])
+	if len(fields) > 1 {
+		initials += first(fields[len(fields)-1])
+	}
+	return initials
+}

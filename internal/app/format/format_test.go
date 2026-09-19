@@ -81,3 +81,19 @@ func TestDayFirstRendersIsoAndLeavesOtherTextAlone(t *testing.T) {
 		t.Errorf("round trip = %q, want 05/09/2026", got)
 	}
 }
+
+func TestInitials(t *testing.T) {
+	cases := []struct{ name, want string }{
+		{"Sam", "S"},
+		{"Sam Jones", "SJ"},
+		{"sam", "S"},
+		{"  Sam   Jones  ", "SJ"},
+		{"Sam Middle Jones", "SJ"},
+		{"", ""},
+	}
+	for _, c := range cases {
+		if got := Initials(c.name); got != c.want {
+			t.Errorf("Initials(%q) = %q, want %q", c.name, got, c.want)
+		}
+	}
+}

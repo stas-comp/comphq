@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/stas-comp/comphq/internal/app/format"
 	"github.com/stas-comp/comphq/internal/db"
 	"github.com/stas-comp/comphq/internal/people"
 )
@@ -19,6 +20,8 @@ import (
 type frameData struct {
 	Title            string
 	PersonName       string
+	PersonInitials   string
+	Version          string
 	ChangeHref       string
 	Nav              []navItemData
 	BodyContent      template.HTML
@@ -44,9 +47,9 @@ func (s *Server) RenderFrame(w http.ResponseWriter, r *http.Request, status int,
 		return
 	}
 
-	personName := ""
+	personName, personInitials := "", ""
 	if p, ok := people.FromContext(r.Context()); ok {
-		personName = p.Name
+		personName, personInitials = p.Name, format.Initials(p.Name)
 	}
 
 	navItems := make([]navItemData, 0, len(s.registry.NavItems()))
@@ -71,6 +74,8 @@ func (s *Server) RenderFrame(w http.ResponseWriter, r *http.Request, status int,
 	data := frameData{
 		Title:            title,
 		PersonName:       personName,
+		PersonInitials:   personInitials,
+		Version:          s.Version,
 		ChangeHref:       "/who?next=" + url.QueryEscape(r.URL.RequestURI()),
 		Nav:              navItems,
 		BodyContent:      template.HTML(body.String()), //nolint:gosec // body comes from our own sanitised/static templates, not user input

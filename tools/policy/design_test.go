@@ -252,7 +252,10 @@ func TestNoWhiteTextOnAccentAndNoAccentText(t *testing.T) {
 					text = d.value
 				}
 			}
-			if accent.MatchString(text) {
+			// The one exception: the large HQ of the wordmark is accent on ink
+			// navy, the same 6.02:1 pair as ink on accent, and gate 4.13 and
+			// the mockup draw it that way. It is only ever set on navy.
+			if accent.MatchString(text) && !strings.HasSuffix(selector, ".wordmark strong") {
 				t.Errorf("%s %q: text uses --color-signal-orange; use --color-signal-orange-deep", rel, selector)
 			}
 			if accent.MatchString(fill) && white.MatchString(strings.ToLower(text)) {
@@ -326,7 +329,7 @@ func TestEveryControlInEveryTemplateHasAThemeClass(t *testing.T) {
 		"button":   {"btn", "mini", "tb", "link-button", "icon-btn"},
 		"select":   {"field"},
 		"textarea": {"field"},
-		"input":    {"field", "check"},
+		"input":    {"field", "check", "search-input"},
 	}
 
 	checked := 0
