@@ -71,6 +71,21 @@ Status values: `todo` · `in-progress` · `blocked` · `done`.
 | P3-03 | Briefing refresh, speed and checks | done | 5c28485 | https://github.com/stas-comp/comphq/actions/runs/35390099536 (go/browser/speed, all green) | `GET /briefing/version` (tasks_version + calendar_version); Calendar gains `calendar_version`, bumped in the same transaction as every write (`Store.inTx`). E2E `e2e/briefing/refresh.spec.ts` (two contexts: `page.clock.runFor(61_000)` and focus, for a task, an event edit and a new event). `e2e/speed/briefing.speed.spec.ts` (median of 5 <= 1,500 ms with the seeded library, plus axe and size). See D-57. |
 | P3-04 | Final README and full sweep | done | 8764b64 | https://github.com/stas-comp/comphq/actions/runs/35391128930 (full dispatch: go, browser, container, speed, screens, all green) | README gains "Using the Saturday Briefing" (Just mine, show ahead explained) and the Phase 3 hands-on row; the README policy test requires the new heading. `reports/gates-phase-3.md` (13 rows). New populated-Briefing screenshot spec. README sections re-read against the current app: the Briefing is now the first screen, no placeholder wording remains. |
 | P3-05 | Release v1.0.0 and final report (STOP S5) | blocked | 5fff7d3 (tag v1.0.0) | https://github.com/stas-comp/comphq/actions/runs/35395930805 (release.yml incl. `publish`); full dispatch https://github.com/stas-comp/comphq/actions/runs/35394576555 (go, browser, container, speed, screens) | v1.0.0 published, anonymous ghcr manifest 200. `reports/phase-3-report.md`, `reports/gates-phase-3.md` and `reports/phase-3/screens/` written. Waiting for owner checks O3.1, O3.2 (and the still-pending O1.1-O1.4, O2.1-O2.2). Two flaky search tests fixed at their cause on the way (D-58). |
+| P4-01 | Assigned ideas appear in My jobs and Team | todo | | | |
+| P4-02 | Fonts, tokens, and the mockup-comparison harness | todo | | | |
+| P4-03 | Shared parts and styled controls | todo | | | |
+| P4-04 | Icons and the icon-only button rule | todo | | | |
+| P4-05 | The frame | todo | | | |
+| P4-06 | Board: controls, columns and cards | todo | | | |
+| P4-07 | Card actions: remove, give back, assign | todo | | | |
+| P4-08 | The task window: the dialog, and creating a task | todo | | | |
+| P4-09 | The task window: reading, editing and history | todo | | | |
+| P4-10 | My jobs and Team | todo | | | |
+| P4-11 | Calendar | todo | | | |
+| P4-12 | Knowledge Base | todo | | | |
+| P4-13 | Briefing and the name picker | todo | | | |
+| P4-14 | Full sweep: checks, speed, screenshots, README | todo | | | |
+| P4-15 | Release v1.1.0 and Phase 4 report (STOP S9) | todo | | | |
 
 ## Stop log
 
@@ -86,6 +101,7 @@ Status values: `todo` · `in-progress` · `blocked` · `done`.
 
 | Date | Phase / check | Owner's words | Fix task(s) | Status |
 |---|---|---|---|---|
+| 2026-09-19 | Phase 3 / O3.2 (look and feel), given while trying v1.0.0 | Design is lacklustre; wants elegant icons (move up/down, remove, give back) instead of worded buttons, and the whole app moved towards the design mockup, Knowledge Base and Calendar included. Wants to assign people from a circle on the card. Reports a fault: a task created with someone assigned shows on the Board but not in My jobs or Team. Wants to click a card and get a Trello-style window with a fuller description, and later a checklist. | Phase 4 (P4-01–P4-15) for everything but the checklist; v1.2 for the checklist | specified, not yet built |
 | 2026-09-18 | Phase 3 / O3.1–O3.2 | (none yet — report sent at S5) | — | pending |
 | 2026-09-18 | Phase 2 / O2.1–O2.2 (+ O1.3) | (none yet — owner instructed the build agent to mark these pending and start Phase 3 rather than wait) | — | pending |
 | 2026-09-17 | Phase 1 / O1.1–O1.4 | (none yet — owner instructed the build agent to mark these pending and start Phase 2 early rather than wait) | — | pending |

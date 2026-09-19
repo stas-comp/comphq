@@ -1,6 +1,6 @@
 # Comp HQ — Build Plan
 
-**Status:** draft for owner approval · 14 September 2026
+**Status:** Phases 1–3 built and released as v1.0.0. **Phase 4 (v1.1) added 19 September 2026** — draft for owner approval.
 **Contract:** `SPEC.md` Part A (approved 14 Sep 2026). **Technical direction:** `SPEC.md` Part B, as adjusted in §7 of this plan.
 **Name:** the app is **Comp HQ** (owner decision, 14 Sep 2026). All wording a person sees says "Comp HQ". All technical names use `comphq`: repository `stas-comp/comphq`, image `ghcr.io/stas-comp/comphq`, binary `comphq`, cookie `comphq_person`, env vars `COMPHQ_*`, database `comphq.db`, export `comphq-export-YYYY-MM-DD.zip`, TrueNAS app and dataset `comphq`. SPEC.md has already been updated to match. The build folder on this computer stays `C:\Users\Knacker\Desktop\Staff HQ`; don't rename it.
 
@@ -16,6 +16,7 @@
 | **Phase 1** | The frame, name picker, Knowledge Base (editor, pictures, history, search, Import from Word), backups, export, and installing on the NAS | 35–45 | Version **v0.1.0** |
 | **Phase 2** | Tasks (My jobs, Board, Team) and Calendar | 20–25 | Version **v0.2.0** |
 | **Phase 3** | Saturday Briefing | 5–8 | Version **v1.0.0** |
+| **Phase 4** | The new look right through the app (matching your design mockup), the task window you open by clicking a job, assigning people from a card, and the fix for jobs not showing in My jobs and Team | 25–35 | Version **v1.1.0** |
 
 A "session" is one sitting of the build agent. It runs by itself; you don't need to watch.
 
@@ -27,7 +28,8 @@ A "session" is one sitting of the build agent. It runs by itself; you don't need
 4. **End of Phase 1:** install Comp HQ on the NAS, make desktop shortcuts, try it, move your HelpScout articles over, and do the four 👤 Owner checks. You can let Phase 2 start before the HelpScout move is finished.
 5. **End of Phase 2:** try Tasks and Calendar, enter your yearly events and Trello cards, and do the two 👤 Owner checks.
 6. **End of Phase 3:** check the Saturday Briefing, and do a final look around.
-7. **Only if something unexpected happens:** a promise in the spec turns out to be impossible, something would need a paid service, the internet or a login, the build is stuck on the same problem after three honest tries, or GitHub's free monthly testing time runs out. You'll get a plain explanation and a recommended choice.
+7. **End of Phase 4:** open the design mockup next to the app and agree each screen matches; make a task with someone on it and confirm it shows in their My jobs and Team; open a task by clicking it and try editing it; and try the new card icons. The task window is the one screen the mockup doesn't show, so it's the one worth looking at hardest.
+8. **Only if something unexpected happens:** a promise in the spec turns out to be impossible, something would need a paid service, the internet or a login, the build is stuck on the same problem after three honest tries, or GitHub's free monthly testing time runs out. You'll get a plain explanation and a recommended choice.
 
 **At the end of each phase you receive**
 - A checklist of every promise (gate) for that phase and earlier ones, each marked passed by an automatic test.
@@ -1068,6 +1070,230 @@ Starts only after S4 is answered.
 
 ---
 
+## Milestone 4.0 — The reported fault, fixed first
+
+### P4-01 Assigned ideas appear in My jobs and Team
+- **Goal:** fix the fault the owner reported — a task created with people on it shows on the Board and nowhere else. Done before any design work, because it's independent of it and it's the thing that actually bothers them.
+- **Gates:** 4.48, 4.49, 4.50, 4.51.
+- **Depends on:** nothing.
+- **Touches:** `internal/tasks/lanes.go` (`ListForTeamView`, `buildLane`, `LaneForPerson`, `workloadFor`), `web/templates/tasks/myjobs.html`, `web/templates/tasks/team.html`.
+- **Behaviour:**
+  - `ListForTeamView` currently selects `stage IN ('doing','todo')` while `Create` defaults a new task to `idea` (`internal/tasks/store.go`), so an assigned idea falls through every list. Include `idea`, and group it separately rather than mixing it into Working on now or Up next.
+  - My jobs gains a third group, **Ideas I'm on**, below Up next. Team gains an **Ideas** sub-heading in each person's lane.
+  - **Workload counts `todo` and `doing` only.** An idea must not move anybody's blocks — that is the whole reason it's a separate group and not just another row.
+  - `ListUpForGrabs` is untouched: an idea nobody is on still appears there (gate 4.50).
+- **Tests:**
+  - **Write the failing test first** (SPEC B9.8). Unit, in-memory DB: create a task in `idea` with one person on it; assert it appears in that person's My jobs "Ideas I'm on" group and in their Team lane, is absent from Up for grabs, and leaves their workload total unchanged. Watch it fail against today's code before touching `lanes.go`.
+  - Unit: an idea with nobody on it still appears in Up for grabs; taking it still moves it to To do (gate 2.34 unchanged).
+  - E2E `tasks/create-assigned.spec.ts`: create a task from the board choosing a person, in each of the four columns in turn; assert it appears on the Board, in that person's My jobs, and in their Team lane, every time.
+  - Std checks on My jobs and Team.
+- **Done when:** tests are green in CI, and the Phase 2 task suites still pass unchanged.
+- **Decisions:** D-59 (where assigned ideas sit, and that they don't count towards workload).
+
+---
+
+## Milestone 4.1 — Design foundations
+
+Nothing in this milestone changes what the app does. It is the layer every later task draws on, so it comes first and it is proven mechanically rather than by eye.
+
+### P4-02 Fonts, tokens, and the mockup-comparison harness
+- **Goal:** the new palette and type in `theme.css`, and the test harness that makes the mockup the contract for everything after it.
+- **Gates:** 4.01, 4.02, 4.03.
+- **Depends on:** nothing (may run alongside P4-01).
+- **Mockup:** read `docs/design/mockup.html` — the `:root` block and the `.studio[data-accent="orange"]` block are the whole palette; the `--display`, `--body` and `--mono` declarations are the type.
+- **Touches:** `web/static/theme/theme.css` (tokens per SPEC B9.2, exactly), `web/static/theme/fonts/` (add Big Shoulders Display and IBM Plex Mono as subset variable `woff2`; **delete `archivo-variable.woff2`**), `tools/VENDOR.md` or `web/static/vendor/VENDOR.md` (both families' OFL licence text and version), `e2e/design/`.
+- **Behaviour:**
+  - Both new families are SIL OFL, so they ship inside the app. Subset to Latin, `font-display: swap`, same `@font-face` shape as the two already there. **Nothing may reference Archivo when this task is done.**
+  - Apply SPEC B9.2's contrast rule: the bright accent is a fill only, ink navy sits on it, `--color-signal-orange-deep` is the only orange used as text. White on the accent is 2.85:1 and is banned.
+- **The harness (SPEC B9.9 layer 1), built here because every later task needs it:** a Playwright helper that opens `docs/design/mockup.html` and the running app in the same browser, reads `getComputedStyle` for a named pair of elements, and asserts they agree on the properties given. It must work with no internet: `getComputedStyle` reports the *declared* font stack whether or not the font file loaded, so compare the **first family named**, never a resolved file. Never compare whole screenshots — the two hold different content and such a test would fail forever without teaching anyone anything.
+- **Tests:**
+  - Unit/policy: a test parses `theme.css` and asserts the B9.2 table exactly — every token present, every value as written — and that no section stylesheet under `web/static/*/` declares its own colour or font literal.
+  - Policy: no file references Archivo; no `http(s)://` asset URL in templates or CSS (the existing B7 assertion, unweakened).
+  - Harness self-test: the helper correctly reports a match and a deliberate mismatch.
+  - Contrast is left to the axe layer, not asserted by hand.
+- **Done when:** tests are green in CI.
+- **Decisions:** D-60 (**adjusts Part B**) the accent contrast rule, superseding D-09; edit D-09 to say it is superseded rather than deleting it. Also record the font versions and subsetting method.
+
+### P4-03 Shared parts and styled controls
+- **Goal:** every reusable piece of the interface, defined once in `theme.css`, so no screen invents its own.
+- **Gates:** 4.04, 4.05, 4.06, 4.07, 4.08, 4.09, 4.10.
+- **Depends on:** P4-02
+- **Mockup:** the `.btn`, `.mini`, `.seg`, `.stamp`, `.size`, `.av`/`.people`, `.load`, `.card`, `.panel-head`, `.date` and `.search` rules, plus the `.load` builder at the foot of its `<script>` for the workload blocks and their spoken label.
+- **Touches:** `web/static/theme/theme.css`, `web/templates/app/` (shared partials for stamp, avatar, people stack, size chip, workload blocks, segmented switch), `internal/tasks/avatar.go` (confirm the existing colour-per-person rule matches `.av`/`.av.b`/`.av.c`/`.av.d`/`.av.me`).
+- **Behaviour:**
+  - Three button kinds and no others: primary, secondary, small. The person using the app always gets the accent avatar (`.av.me`).
+  - Styled `select`, `input`, `textarea` and the search box, shared by the board and the task window (P4-08).
+  - The date field must show **day-first**. A native `<input type=date>` follows the computer's locale and currently shows `mm/dd/yyyy`, which is wrong for this office. Pick the simplest and most stable fix and record it.
+  - Workload blocks carry the spoken equivalent from gate 4.10 ("Workload: 7 blocks — large, medium, small").
+- **Tests:**
+  - Mockup comparison (P4-02 harness) for each part: font, weight, size, letter-spacing, transform, background, border, radius.
+  - Unit: workload blocks for S/M/L are 1/2/4 and the spoken label reads correctly for a mixed set.
+  - Policy: no `<button>`, `<select>` or `<input>` renders anywhere without a theme class (gate 4.05) — a repository-wide template assertion, so later screens can't regress it.
+  - Std checks on a harness page showing every part at once.
+- **Done when:** tests are green in CI.
+- **Decisions:** D-61 (how the day-first date field is done).
+
+### P4-04 Icons and the icon-only button rule
+- **Goal:** one line-art icon set, and the rule that keeps icon-only buttons usable.
+- **Gates:** 4.11, 4.12.
+- **Depends on:** P4-03
+- **Mockup:** the inline `<svg>` elements in `.nav`, `.search`, `.bar .word` and `.card .mv` — 24 × 24, stroke width 2, round caps and joins, `fill:none`, `stroke:currentColor`.
+- **Touches:** `web/static/theme/icons/` (add `arrow-up`, `arrow-down`, `trash`, `give-back`, `plus`, `search`, `check`, `chevron`, `close`; redraw the five section icons to match if they differ), `web/templates/app/` (an icon-button partial), `web/static/theme/theme.css` (`.icon-btn`).
+- **Behaviour:**
+  - An icon takes its button's colour (`currentColor`), so one file serves a dark sidebar and a white card.
+  - **Icon-only buttons exist for exactly four things:** move up, move down, remove, give back (SPEC A2, as amended at v1.1). Every one carries both a `title` and an `aria-label` saying the same thing and naming the task: "Move *Print exam papers* up".
+- **Tests:**
+  - Policy: every icon-only button in every template has both `title` and `aria-label`, and they match; no icon-only button exists outside the four permitted actions.
+  - Mockup comparison: stroke width, size and colour inheritance.
+  - Axe on a page using them.
+- **Done when:** tests are green in CI.
+
+### P4-05 The frame
+- **Goal:** the sidebar and top bar as drawn, seen on every screen.
+- **Gates:** 4.13, 4.14.
+- **Depends on:** P4-04
+- **Mockup:** `.side`, `.mark`, `.nav`, `.top`, `.search`, `.you` — note `.mark` is a small wide-spaced word above a large accent word, and `.nav[aria-current="page"]` is an accent block with **ink** text, not white.
+- **Touches:** `internal/app` (layout template), `web/static/app/frame.css`.
+- **Behaviour:** the wordmark is **COMP** above **HQ** (the mockup says "Staff"; the app is Comp HQ — SPEC A1). The top bar keeps "You: *name* · Change" and gains that person's avatar.
+- **Tests:** mockup comparison on the sidebar, the wordmark, the current-section block and the top bar; existing frame E2E (gates 1.07–1.11) still green; std checks.
+- **Done when:** tests are green in CI.
+
+---
+
+## Milestone 4.2 — Tasks
+
+### P4-06 Board: controls, columns and cards
+- **Goal:** the Board as drawn, with the add-a-task form gone from the page.
+- **Gates:** 4.15, 4.16, 4.17, 4.21.
+- **Depends on:** P4-05
+- **Mockup:** `<section data-screen="board">` with `.tools`, `.board`, `.col`, `.col.todo`, `.col-head`, `.card`, `.card .rank`, `.card.done`.
+- **Touches:** `web/templates/tasks/board.html`, `web/static/tasks/board.css`.
+- **Behaviour:**
+  - The board's controls become one row: the My jobs/Board/Team switch, the Everyone/My tasks/Person filter, the word filter, and a primary **+ Add task** at the right. **The inline add-a-task form is removed** — until P4-08 lands, + Add task is a plain link to a new-task page, which is also the permanent no-JavaScript path (gate 4.28).
+  - Card order is fixed by gate 4.16: rank (To do only), title, due date, people, size chip, icon buttons.
+- **Tests:** mockup comparison on a column, the To do column's tint, a card and a done card; E2E that no add-task form exists on the board and that + Add task reaches a working page; Phase 2 board suites still green; std checks.
+- **Done when:** tests are green in CI.
+
+### P4-07 Card actions: remove, give back, assign
+- **Goal:** the three card controls the owner asked for, over endpoints that already exist.
+- **Gates:** 4.18, 4.19, 4.20.
+- **Depends on:** P4-06
+- **Touches:** `web/templates/tasks/board.html`, `web/static/tasks/board.js`, `web/static/theme/theme.css`.
+- **Behaviour (SPEC B9.6 — no new endpoints, no new storage):**
+  - **Remove** posts to the existing `/tasks/{id}/remove`; it goes to Removed tasks and can be brought back (A3).
+  - **Give back** is the existing assign endpoint with `from_person` = self and no `to_person` (`internal/tasks/assign.go`), exactly as My jobs already does it. It takes **only that person** off; anyone else stays on, and the job returns to Up for grabs only if nobody is left. The icon shows only to a person who is on that job.
+  - **Assigning** from the people circles opens a short menu of current people; each choice posts to the same endpoint, which already leaves other assignees untouched and already writes the Activity row.
+  - Each must work as a plain form submit if its script doesn't run.
+- **Tests:**
+  - E2E: remove from a card, then find it in Removed tasks and restore it; give back with two people on a job, asserting the other stays and the job does **not** return to Up for grabs; give back as the last person, asserting it does; assign and unassign from the circles and assert the Activity row.
+  - E2E: the same three actions with JavaScript disabled.
+  - Axe with the assign menu open; std checks.
+- **Done when:** tests are green in CI.
+
+### P4-08 The task window: the dialog, and creating a task
+- **Goal:** one dialog, built once, that later serves reading and editing too.
+- **Gates:** 4.22, 4.25, 4.26, 4.28.
+- **Depends on:** P4-07
+- **Mockup:** not drawn — the window was agreed after the mockup (SPEC B9.1). Build it from the mockup's own parts (`.card`, `.btn`, `.mini`, `.size`, `.av`, styled controls) so it looks as though it had always been there. **This is the one screen with no picture to check against; owner check O4.3 covers it.**
+- **Touches:** `web/templates/tasks/window.html` (new partial), `web/static/tasks/window.js`, `web/static/theme/theme.css`, `web/templates/tasks/board.html`.
+- **Behaviour (SPEC B9.7):**
+  - Use the platform's own `<dialog>` element rather than building one. It gives Escape, the keyboard staying inside (gate 4.26), the backdrop and the return of focus without hand-written code — the simpler and more stable choice (A2 priority 2).
+  - **+ Add task** opens it empty: title, description, size, starting column, due date, people, ending in a primary **Add task** and a Cancel. `handleCreateTask` already accepts every one of those fields (`internal/tasks/handlers.go`), including `notes` and `size`, which the board form never offered — so nothing server-side changes.
+  - Closing with unsaved changes asks first. Closing returns the keyboard to whatever opened the window.
+  - **If the window can't open, nothing is lost:** + Add task stays an ordinary link to the new-task page (gate 4.28). This is not optional.
+- **Tests:**
+  - E2E: open from + Add task; create a job with a description and a size and assert both stored; close by Escape, by the close icon and by the backdrop; type something then close and assert it asks; assert focus returns.
+  - E2E: Tab cycles inside the window only and never reaches the board behind.
+  - E2E **with JavaScript disabled**: + Add task reaches a page where a task can still be created, with the same fields.
+  - Axe with the window open; std checks.
+- **Done when:** tests are green in CI.
+- **Decisions:** D-62 (the `<dialog>` approach and how the no-JavaScript path is kept honest).
+
+### P4-09 The task window: reading, editing and history
+- **Goal:** clicking a task opens it to read, with Edit and its history.
+- **Gates:** 4.23, 4.24, 4.27, 4.29.
+- **Depends on:** P4-08
+- **Touches:** `web/templates/tasks/window.html`, `web/static/tasks/window.js`, `internal/tasks/details_handlers.go` (a fragment response for the window; the page response is unchanged).
+- **Behaviour:**
+  - Clicking a card opens the same window **to read**: description laid out as text, not sitting in a box. A primary **Edit** turns it into P4-08's form, filled in. `POST /tasks/{id}` already edits the whole set in one transaction and already records the right activity row per kind of change (P2-04).
+  - History sits at the foot behind an expander, closed on opening, from the existing `ListActivity`.
+  - **The task page stays exactly as it is** (gate 4.27): Calendar links point at it and a refreshed window must land somewhere real. v1.2 keeps it too.
+  - Saving updates the board without reloading the whole page.
+- **Tests:**
+  - E2E: open a card, read it, press Edit, change the due date and people, save, and assert the board updated and the right history row appeared — the same row editing from the page produces.
+  - E2E: `/tasks/{id}` still answers directly; a Calendar link still lands on it; refreshing that page still works.
+  - E2E with JavaScript disabled: a card's title still reaches that page.
+  - Axe with the window open and the history expanded; std checks.
+- **Done when:** tests are green in CI.
+
+### P4-10 My jobs and Team
+- **Goal:** both screens as drawn, including P4-01's new Ideas group.
+- **Gates:** 4.30, 4.31, 4.32.
+- **Depends on:** P4-09
+- **Mockup:** `<section data-screen="tasks">` (`.myjobs`, `.area.mine`, `.area.grabs`, `.area-head`, `.drop`, `.sub`) and `<section data-screen="team">` (`.team`, `.lane`, `.lane.unassigned`, `.lane.me`, `.lane-head`).
+- **Touches:** `web/templates/tasks/myjobs.html`, `web/templates/tasks/team.html`, `web/static/tasks/myjobs.css`, `web/static/tasks/team.css`.
+- **Behaviour:** Up for grabs and the Unassigned lane are **dashed outlines with no fill**, so they read as holding areas rather than someone's list — currently Unassigned looks exactly like a person. Take it, Give back, Start and Done ✓ keep their words. A card on either screen opens the P4-09 window. Style P4-01's **Ideas I'm on** group and the Team **Ideas** heading to match.
+- **Tests:** mockup comparison on both areas, both lane kinds and a lane head; E2E that a card opens the window; Phase 2 suites for 2.24–2.38 still green; std checks.
+- **Done when:** tests are green in CI.
+
+---
+
+## Milestone 4.3 — The other sections
+
+### P4-11 Calendar
+- **Goal:** the month grid as drawn, and the Saturday that's actually visible.
+- **Gates:** 4.33, 4.34, 4.35, 4.36, 4.37, 4.38.
+- **Depends on:** P4-05 (independent of the Tasks milestone)
+- **Mockup:** `<section data-screen="calendar">` with `.cal-grid`, `.dow`, `.dow.sat`, `.day`, `.day.sat`, `.day.out`, `.day.today .num`, `.chip.ev`, `.chip.ev.cont`, `.chip.task`, `.chip.task.late`, `.legend`.
+- **Touches:** `web/templates/calendar/`, `web/static/calendar/calendar.css`.
+- **Behaviour:** gate 4.34 fixes a real readability fault — today an out-of-month day and a Saturday are near-identical beige, and Saturday is the point of this screen. Ordinary, Saturday and out-of-month must be three clearly different shades. Today's number sits in a filled navy chip.
+- **Tests:** mockup comparison on each of the three day kinds, the Saturday heading, today's chip and both chip kinds; **an explicit assertion that the three day backgrounds are three distinct values** (gate 4.34); Phase 2 calendar suites still green; std checks.
+- **Done when:** tests are green in CI.
+
+### P4-12 Knowledge Base
+- **Goal:** article, search results and editor as drawn.
+- **Gates:** 4.39, 4.40, 4.41, 4.42, 4.43.
+- **Depends on:** P4-05
+- **Mockup:** `<section data-screen="kb">` (`.article`, `.article h1`, `.article h2`, `.article table`/`th`, `.by`, `.results`, `.hit`, `mark`) and `<section data-screen="editor">` (`.bar`, `.tb`, `.word`, `.imported`, `.title-in`, `.article.doc`, `.missing`).
+- **Touches:** `web/templates/kb/`, `web/static/kb/kb.css`, `web/static/kb/editor.css`.
+- **Behaviour:** reading areas stay calm — the body keeps the readable face at a generous size on paper (A2 priority 1 beats priority 4 inside an article). The display face is for the title, headings and table headers only.
+- **Tests:** mockup comparison on the title, headings, table header, byline row, the results panel and a highlighted hit; Phase 1 KB suites still green; std checks and axe on the results panel.
+- **Done when:** tests are green in CI.
+
+### P4-13 Briefing and the name picker
+- **Goal:** the two remaining screens.
+- **Gates:** 4.44, 4.45, 4.46, 4.47.
+- **Depends on:** P4-05
+- **Mockup:** `<section data-screen="briefing">` (`.brief-head`, `.brief-grid`, `.panel-head`, `.item`, `.item .note`, `.item.late`) and `#picker` (`.picker`, `.picker .mark`, `.names`).
+- **Touches:** `web/templates/briefing/`, `web/static/briefing/briefing.css`, `web/templates/people/`, `web/static/people/who.css`.
+- **Tests:** mockup comparison on the date heading, a panel head, an ordinary item, an overdue item and a note strip, and on the picker's grid and hover state; Phase 3 briefing suites and Phase 1 picker suites still green; std checks.
+- **Done when:** tests are green in CI.
+
+---
+
+## Milestone 4.4 — Finish
+
+### P4-14 Full sweep: checks, speed, screenshots, README
+- **Goal:** prove nothing regressed, and give the owner what they need to check it.
+- **Gates:** 4.52, 4.53, 4.54.
+- **Depends on:** P4-10, P4-11, P4-12, P4-13
+- **Touches:** `e2e/a11y/`, `e2e/speed/`, `e2e/screens/`, `reports/screens/`, `README.md`.
+- **Behaviour:**
+  - Every Phase 1–3 gate re-run unchanged, at the same thresholds. A weakened, skipped or deleted Phase 1–3 test fails the phase (§2.5 and SPEC B8 rule 5).
+  - Refresh **every** screenshot in `reports/screens/`, adding one of the task window open, so the owner can hold them beside the mockup for O4.1.
+  - README: the new card icons and what each does, and the task window.
+- **Tests:** the full suite at every layer, including speed with the test library (gate 4.53) and the accessibility and window-size checks at 1024 × 700 and full HD (gate 4.52).
+- **Done when:** every gate 1.01–4.54 passes in one full CI run.
+
+### P4-15 Release v1.1.0 and Phase 4 report — **STOP S9**
+- **Goal:** publish v1.1.0 and report.
+- **Gates:** O4.1, O4.2, O4.3, O4.4 (owner); final confirmation of all gates.
+- **Depends on:** P4-14
+- **Steps:** follow the release procedure in §5.2 with version `1.1.0` (upgrade and rollback against `v1.0.0`), then send **S9**. In the report, tell the owner plainly that the task window is the one screen the mockup doesn't show, and ask them to look at it hardest (O4.3).
+- **Done when:** the release exists, the report is written, S9 is sent, and the owner has confirmed O4.1–O4.4. v1.2 (checklists) is specified after that.
+
+---
+
 ## 5. Stop points, releases and owner feedback
 
 ### 5.1 Stop points, in order, with the message to send
@@ -1097,7 +1323,7 @@ Send each message as plain text in the chat. Log it in `PROGRESS.md` → Stop lo
 **N1 — Optional Word samples (P1-10, no waiting)**
 > Optional, whenever you like: if you put 1–3 of your real Word documents (ones with pictures and tables, nothing private) in the **samples\word** folder inside the Staff HQ folder on your Desktop, I'll test Import from Word on them too. I'm carrying on either way.
 
-**S3 — End of Phase 1 (P1-39)**, **S4 — End of Phase 2 (P2-20)**, **S5 — End of Phase 3 (P3-05)**
+**S3 — End of Phase 1 (P1-39)**, **S4 — End of Phase 2 (P2-20)**, **S5 — End of Phase 3 (P3-05)**, **S9 — End of Phase 4 (P4-15)**
 Send the summary part of `reports/phase-N-report.md` (§5.2 step 7):
 > **Phase *N* is finished: version *X.Y.Z* is ready.**
 > - **What's new:** *two plain sentences*.
@@ -1270,6 +1496,21 @@ Unless noted, E2E paths are under `e2e/`, and "std checks" means `e2e/a11y/pages
 | O1.1–O1.4 | P1-39 (S3) | Owner reply, logged in `PROGRESS.md` |
 | O2.1–O2.2 | P2-20 (S4) | Owner reply, logged in `PROGRESS.md` |
 | O3.1–O3.2 | P3-05 (S5) | Owner reply, logged in `PROGRESS.md` |
+| 4.01–4.03 | P4-02 | `theme.css` token test; policy test (no Archivo, no external asset URL); `design/` mockup-comparison harness self-test |
+| 4.04–4.10 | P4-03 | `design/parts.spec.ts` (mockup comparison per part); workload unit tests; template policy test for unstyled controls |
+| 4.11–4.12 | P4-04 | `design/icons.spec.ts`; template policy test for `title` + `aria-label` |
+| 4.13–4.14 | P4-05 | `design/frame.spec.ts`; existing `frame/` suites |
+| 4.15–4.17, 4.21 | P4-06 | `design/board.spec.ts`; `tasks/board.spec.ts` |
+| 4.18–4.20 | P4-07 | `tasks/card-actions.spec.ts`, including a no-JavaScript run |
+| 4.22, 4.25, 4.26, 4.28 | P4-08 | `tasks/window-create.spec.ts`, including a no-JavaScript run |
+| 4.23, 4.24, 4.27, 4.29 | P4-09 | `tasks/window-read-edit.spec.ts` |
+| 4.30–4.32 | P4-10 | `design/myjobs-team.spec.ts`; existing `tasks/` suites |
+| 4.33–4.38 | P4-11 | `design/calendar.spec.ts` (including the three-distinct-day-shades assertion for 4.34) |
+| 4.39–4.43 | P4-12 | `design/kb.spec.ts`; existing `kb/` suites |
+| 4.44–4.47 | P4-13 | `design/briefing.spec.ts`, `design/picker.spec.ts` |
+| 4.48–4.51 | P4-01 | `internal/tasks` unit tests (written failing-first); `tasks/create-assigned.spec.ts` |
+| 4.52–4.54 | P4-14 | Full suite at every layer; std checks; `speed/` with the test library |
+| O4.1–O4.4 | P4-15 (S9) | Owner reply, logged in `PROGRESS.md` |
 
 ---
 
@@ -1298,6 +1539,10 @@ The named task writes each entry. Entries marked **(adjusts Part B)** change SPE
 | D-17 | P1-09 | Test-mode-only routes under `/__test/` (editor harness, route list, egress probe, backup-age helper) are registered only when `COMPHQ_TEST_MODE=1`. A policy test asserts `deploy/truenas.yaml` never sets it, and an integration test asserts the routes return 404 without it. |
 | D-18 | P1-39 | O1.3 (HelpScout move) may finish during Phase 2, if the owner chooses. |
 | D-19 | P3-01 | Briefing labels ("in N weeks" when a multiple of 7 days, else "in N days") and stamp rules. |
+| D-59 | P4-01 | Where an assigned idea sits (My jobs "Ideas I'm on", a Team **Ideas** heading) and that it never counts towards workload blocks. |
+| D-60 | P4-02 | **(adjusts Part B)** The accent contrast rule of SPEC B9.2, superseding D-09: the bright `#FF6B1A` is a fill only with ink navy on it (6.02:1); `#A94000` is the only orange used as text (5.54:1); white on the accent (2.85:1) is banned. Also the font versions and subsetting method. |
+| D-61 | P4-03 | How the date field is made day-first rather than following the computer's locale. |
+| D-62 | P4-08 | The `<dialog>` approach for the task window, and how the no-JavaScript path is kept honest. |
 
 ---
 
