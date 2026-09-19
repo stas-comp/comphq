@@ -1,0 +1,21 @@
+{{/* A card's people circles, and the short menu of names they open (SPEC
+gate 4.20). A native <details>, so it opens and each choice posts to the
+assign endpoint with no script at all; board.js only keeps the page where
+it is. A name that is on the job takes them off (from_person), one that
+isn't puts them on (to_person); everyone else on the job is untouched. */}}
+{{define "tasks-people-menu"}}
+<details class="people-menu">
+<summary aria-label="People on {{.Title}}">
+{{if .Assignees}}{{template "part-people" .Assignees}}{{else}}<span class="people-menu-empty">Assign</span>{{end}}
+</summary>
+<form method="post" action="/tasks/{{.ID}}/assign" class="people-menu-panel board-action">
+<input type="hidden" name="redirect_to" value="board">
+<p class="people-menu-heading">Who is on this job?</p>
+{{range .PeopleChoices}}
+<button class="mini people-menu-item" type="submit" name="{{if .On}}from_person{{else}}to_person{{end}}" value="{{.ID}}" aria-pressed="{{if .On}}true{{else}}false{{end}}">
+<span class="people-menu-check">{{if .On}}<span class="icon icon-check" aria-hidden="true"></span>{{end}}</span>{{.Name}}
+</button>
+{{end}}
+</form>
+</details>
+{{end}}

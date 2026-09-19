@@ -74,14 +74,21 @@ type cardView struct {
 	Stage     string
 	DueDate   string
 	// DueLabel is the due date as a card shows it ("Wed 23 Sep").
-	DueLabel    string
-	Overdue     bool
-	Done        bool
-	Rank        int // 1-based priority number; only To do cards have one (gate 4.16)
-	Assignees   []assigneeView
-	PrevID      int64
-	NextID      int64
-	OtherStages []stageOption
+	DueLabel  string
+	Overdue   bool
+	Done      bool
+	Rank      int // 1-based priority number; only To do cards have one (gate 4.16)
+	Assignees []assigneeView
+	// OnIt is whether the person using the app is on this job: only they
+	// get the give-back button (gate 4.19). MeID is who that is.
+	OnIt bool
+	MeID int64
+	// PeopleChoices is the assign menu (gate 4.20): every current person,
+	// marked when they're already on the job.
+	PeopleChoices []personChoice
+	PrevID        int64
+	NextID        int64
+	OtherStages   []stageOption
 }
 
 // MoveUp and MoveDown are the card's two icon-only move buttons (gate
@@ -94,7 +101,23 @@ func (c cardView) MoveDown() app.IconButton {
 	return app.NewIconButton(app.IconMoveDown, c.Title, c.NextID == 0)
 }
 
-func newCardView(t Task, meID int64, today time.Time) cardView {
+// Remove and GiveBack are the card's other two icon-only buttons.
+func (c cardView) Remove() app.IconButton {
+	return app.NewIconButton(app.IconRemove, c.Title, false)
+}
+
+func (c cardView) GiveBack() app.IconButton {
+	return app.NewIconButton(app.IconGiveBack, c.Title, false)
+}
+
+// personChoice is one line of a card's assign menu.
+type personChoice struct {
+	ID   int64
+	Name string
+	On   bool
+}
+
+func newCardView(t Task, meID int64, today time.Time, everyone []people.Person) cardView {
 	views := make([]assigneeView, 0, len(t.Assignees))
 	for _, a := range t.Assignees {
 		views = append(views, assigneeView{
@@ -111,6 +134,14 @@ func newCardView(t Task, meID int64, today time.Time) cardView {
 		}
 		otherStages = append(otherStages, stageOption{Stage: stage, Label: stageLabels[stage]})
 	}
+	onJob := make(map[int64]bool, len(t.Assignees))
+	for _, a := range t.Assignees {
+		onJob[a.PersonID] = true
+	}
+	choices := make([]personChoice, 0, len(everyone))
+	for _, p := range everyone {
+		choices = append(choices, personChoice{ID: p.ID, Name: p.Name, On: onJob[p.ID]})
+	}
 	dueLabel := ""
 	if due, err := time.Parse("2006-01-02", t.DueDate); err == nil {
 		dueLabel = format.DateShort(due, today)
@@ -118,7 +149,8 @@ func newCardView(t Task, meID int64, today time.Time) cardView {
 	return cardView{
 		ID: t.ID, Title: t.Title, Size: t.Size, SizeLabel: sizeLabels[t.Size], Stage: t.Stage,
 		DueDate: t.DueDate, DueLabel: dueLabel, Overdue: t.Overdue, Done: t.Stage == StageDone,
-		Assignees: views, OtherStages: otherStages,
+		Assignees: views, OnIt: meID != 0 && onJob[meID], MeID: meID, PeopleChoices: choices,
+		OtherStages: otherStages,
 	}
 }
 
@@ -133,6 +165,8 @@ func redirectTargetFrom(r *http.Request) string {
 		return "/tasks/team"
 	case "myjobs":
 		return "/tasks"
+	case "board":
+		return "/tasks/board"
 	default:
 		return ""
 	}
@@ -191,10 +225,15 @@ func (h *Handlers) renderBoard(w http.ResponseWriter, r *http.Request, status in
 		http.Error(w, "internal error", http.StatusInternalServerError)
 		return
 	}
+	activePeople, err := h.people.List()
+	if err != nil {
+		http.Error(w, "internal error", http.StatusInternalServerError)
+		return
+	}
 
 	byStage := make(map[string][]cardView, len(Stages))
 	for _, t := range tasks {
-		byStage[t.Stage] = append(byStage[t.Stage], newCardView(t, currentPersonID(r), today))
+		byStage[t.Stage] = append(byStage[t.Stage], newCardView(t, currentPersonID(r), today, activePeople))
 	}
 
 	columns := make([]boardColumn, 0, len(Stages))
@@ -212,12 +251,6 @@ func (h *Handlers) renderBoard(w http.ResponseWriter, r *http.Request, status in
 			}
 		}
 		columns = append(columns, boardColumn{Stage: stage, Label: stageLabels[stage], Count: len(cards), Tasks: cards})
-	}
-
-	activePeople, err := h.people.List()
-	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
-		return
 	}
 
 	h.srv.RenderFrame(w, r, status, "tasks-board.html", "Tasks", boardPageData{

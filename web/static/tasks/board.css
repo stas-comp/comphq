@@ -206,3 +206,79 @@
 .task-simple-list .inline-form {
   margin-top: var(--space-2);
 }
+
+/* The people circles and the short menu of names they open (gate 4.20). */
+.people-menu {
+  position: relative;
+  margin-left: auto;
+}
+
+.people-menu > summary {
+  list-style: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  border-radius: 14px;
+  padding: 2px;
+}
+
+.people-menu > summary::-webkit-details-marker {
+  display: none;
+}
+
+.people-menu > summary:hover {
+  background: var(--color-accent-wash);
+}
+
+.people-menu-empty {
+  padding: 3px 9px;
+  border: 1.5px dashed var(--color-border-strong);
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-text-muted);
+}
+
+.people-menu-panel {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  z-index: 10;
+  min-width: 190px;
+  margin-top: 4px;
+  padding: 6px;
+  display: grid;
+  gap: 4px;
+  background: var(--color-card);
+  border: 1.5px solid var(--color-ink-navy);
+  border-radius: 10px;
+  box-shadow: var(--shadow-raised);
+}
+
+.people-menu-heading {
+  margin: 0;
+  padding: 2px 6px 4px;
+  font: 800 13px var(--font-display);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.people-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  text-align: left;
+}
+
+.people-menu-check {
+  display: inline-flex;
+  width: 14px;
+  height: 14px;
+}
+
+.people-menu-check .icon {
+  width: 14px;
+  height: 14px;
+}

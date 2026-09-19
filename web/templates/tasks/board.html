@@ -37,12 +37,10 @@
 {{if .Rank}}<span class="rank">{{.Rank}}</span>{{end}}
 <h3 class="task-card-title"><a href="/tasks/{{.ID}}">{{.Title}}</a></h3>
 </div>
-{{if or .DueLabel .Assignees}}
 <div class="task-card-row">
 {{if .DueLabel}}<span class="date task-card-due{{if .Overdue}} overdue{{end}}">{{.DueLabel}}</span>{{if .Overdue}}<span class="stamp stamp-overdue task-overdue-stamp">OVERDUE</span>{{end}}{{end}}
-{{if .Assignees}}<span class="task-card-assignees">{{template "part-people" .Assignees}}</span>{{end}}
+{{template "tasks-people-menu" .}}
 </div>
-{{end}}
 <div class="task-card-row">
 <span class="task-card-size">{{template "part-size" .SizeLabel}}</span>
 <div class="task-card-actions">
@@ -55,6 +53,16 @@
 <input type="hidden" name="stage" value="{{.Stage}}">
 <input type="hidden" name="after_id" value="{{.NextID}}">
 {{template "part-icon-button" .MoveDown}}
+</form>
+{{if .OnIt}}
+<form method="post" action="/tasks/{{.ID}}/assign" class="inline-form board-action">
+<input type="hidden" name="from_person" value="{{.MeID}}">
+<input type="hidden" name="redirect_to" value="board">
+{{template "part-icon-button" .GiveBack}}
+</form>
+{{end}}
+<form method="post" action="/tasks/{{.ID}}/remove" class="inline-form board-action">
+{{template "part-icon-button" .Remove}}
 </form>
 </div>
 </div>

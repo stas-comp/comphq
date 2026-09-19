@@ -67,3 +67,41 @@ async function handleDrop(item) {
     initSortable()
   }
 }
+
+// Remove, give back and the people menu each post to their own endpoint
+// from a plain form (SPEC gates 4.18-4.20), so they work with no script at
+// all. With script, the board changes in place instead: post the form,
+// then re-fetch the page you are on (keeping any filter) and swap in the
+// fresh board, and keep an open people menu open so several names can be
+// picked in a row.
+document.addEventListener('submit', async (event) => {
+  const form = event.target
+  if (!(form instanceof HTMLFormElement) || !form.classList.contains('board-action')) return
+  if (!form.closest('.task-board')) return
+  event.preventDefault()
+
+  const card = form.closest('.task-card')
+  const reopen = form.closest('details.people-menu') && card ? card.dataset.taskId : null
+
+  try {
+    await fetch(form.action, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams(new FormData(form, event.submitter)).toString(),
+      redirect: 'manual',
+    })
+    const res = await fetch(location.pathname + location.search)
+    const html = await res.text()
+    const newBoard = new DOMParser().parseFromString(html, 'text/html').querySelector('.task-board')
+    const oldBoard = document.querySelector('.task-board')
+    if (!newBoard || !oldBoard) throw new Error('no board in the response')
+    oldBoard.replaceWith(newBoard)
+    initSortable()
+    if (reopen) {
+      const menu = document.querySelector(`.task-card[data-task-id="${reopen}"] details.people-menu`)
+      if (menu) menu.open = true
+    }
+  } catch (err) {
+    form.submit() // the plain form does the same job
+  }
+})
