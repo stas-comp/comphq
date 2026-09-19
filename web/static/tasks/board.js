@@ -68,40 +68,101 @@ async function handleDrop(item) {
   }
 }
 
+
 // Remove, give back and the people menu each post to their own endpoint
 // from a plain form (SPEC gates 4.18-4.20), so they work with no script at
-// all. With script, the board changes in place instead: post the form,
-// then re-fetch the page you are on (keeping any filter) and swap in the
-// fresh board, and keep an open people menu open so several names can be
-// picked in a row.
+// all. With script, the board changes in place instead: post the form, then
+// re-fetch the page you are on (keeping any filter) and swap in the fresh
+// board — and keep the people menu open on its card, so several names can
+// be picked in a row.
+async function swapBoardAfter(form, submitter, menuTaskId) {
+  await fetch(form.action, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams(new FormData(form, submitter)).toString(),
+    redirect: 'manual',
+  })
+  const res = await fetch(location.pathname + location.search)
+  const html = await res.text()
+  const newBoard = new DOMParser().parseFromString(html, 'text/html').querySelector('.task-board')
+  const oldBoard = document.querySelector('.task-board')
+  if (!newBoard || !oldBoard) throw new Error('no board in the response')
+  oldBoard.replaceWith(newBoard)
+  initSortable()
+  if (menuTaskId) {
+    const trigger = document.querySelector(`.task-card[data-task-id="${menuTaskId}"] .people-menu-trigger`)
+    if (trigger) await openPeopleMenu(trigger)
+  }
+}
+
 document.addEventListener('submit', async (event) => {
   const form = event.target
   if (!(form instanceof HTMLFormElement) || !form.classList.contains('board-action')) return
   if (!form.closest('.task-board')) return
   event.preventDefault()
-
   const card = form.closest('.task-card')
-  const reopen = form.closest('details.people-menu') && card ? card.dataset.taskId : null
-
+  const menuTaskId = form.closest('.people-menu') && card ? card.dataset.taskId : null
   try {
-    await fetch(form.action, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams(new FormData(form, event.submitter)).toString(),
-      redirect: 'manual',
-    })
-    const res = await fetch(location.pathname + location.search)
-    const html = await res.text()
-    const newBoard = new DOMParser().parseFromString(html, 'text/html').querySelector('.task-board')
-    const oldBoard = document.querySelector('.task-board')
-    if (!newBoard || !oldBoard) throw new Error('no board in the response')
-    oldBoard.replaceWith(newBoard)
-    initSortable()
-    if (reopen) {
-      const menu = document.querySelector(`.task-card[data-task-id="${reopen}"] details.people-menu`)
-      if (menu) menu.open = true
-    }
+    await swapBoardAfter(form, event.submitter, menuTaskId)
   } catch (err) {
     form.submit() // the plain form does the same job
   }
+})
+
+// The people circles are a link to a page listing everyone. With script the
+// same list is fetched as a fragment and shown as a menu beside the circles;
+// clicking them again, pressing Escape, or clicking elsewhere closes it and
+// puts the keyboard back on the circles.
+function closePeopleMenus(exceptTrigger) {
+  document.querySelectorAll('.task-board .people-menu-panel').forEach((panel) => {
+    const holder = panel.closest('.people-menu')
+    const trigger = holder && holder.querySelector('.people-menu-trigger')
+    if (trigger === exceptTrigger) return
+    panel.remove()
+    if (trigger) trigger.setAttribute('aria-expanded', 'false')
+  })
+}
+
+async function openPeopleMenu(trigger) {
+  closePeopleMenus(trigger)
+  const holder = trigger.closest('.people-menu')
+  if (!holder) return
+  const path = new URL(trigger.getAttribute('href'), location.href).pathname
+  const res = await fetch(path + '?fragment=1')
+  if (!res.ok) throw new Error('could not load the people menu')
+  holder.querySelectorAll('.people-menu-panel').forEach((p) => p.remove())
+  holder.insertAdjacentHTML('beforeend', await res.text())
+  trigger.setAttribute('aria-expanded', 'true')
+  const first = holder.querySelector('.people-menu-item')
+  if (first) first.focus()
+}
+
+document.addEventListener('click', async (event) => {
+  const target = event.target instanceof Element ? event.target : null
+  if (!target) return
+  const trigger = target.closest('.task-board .people-menu-trigger')
+  if (trigger) {
+    if (event.metaKey || event.ctrlKey || event.shiftKey) return // let "open in a new tab" through
+    event.preventDefault()
+    if (trigger.getAttribute('aria-expanded') === 'true') {
+      closePeopleMenus(null)
+    } else {
+      try {
+        await openPeopleMenu(trigger)
+      } catch (err) {
+        window.location.href = trigger.getAttribute('href') // the page does the same job
+      }
+    }
+    return
+  }
+  if (!target.closest('.people-menu-panel')) closePeopleMenus(null)
+})
+
+document.addEventListener('keydown', (event) => {
+  if (event.key !== 'Escape') return
+  const open = document.querySelector('.task-board .people-menu-panel')
+  if (!open) return
+  const trigger = open.closest('.people-menu').querySelector('.people-menu-trigger')
+  closePeopleMenus(null)
+  if (trigger) trigger.focus()
 })

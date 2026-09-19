@@ -1,13 +1,17 @@
 {{/* A card's people circles, and the short menu of names they open (SPEC
-gate 4.20). A native <details>, so it opens and each choice posts to the
-assign endpoint with no script at all; board.js only keeps the page where
-it is. A name that is on the job takes them off (from_person), one that
-isn't puts them on (to_person); everyone else on the job is untouched. */}}
-{{define "tasks-people-menu"}}
-<details class="people-menu">
-<summary aria-label="People on {{.Title}}">
+gate 4.20). The circles are a link to a small page that lists everyone with
+a button each, so assigning works with no script at all; with script
+(board.js) the same list is fetched and shown as a menu on the card, so the
+Board itself stays light however many people there are. A name that is on
+the job takes them off (from_person), one that isn't puts them on
+(to_person); everyone else on the job is untouched. */}}
+{{define "tasks-people-trigger"}}
+<a class="people-menu-trigger" href="/tasks/{{.ID}}/people" aria-label="People on {{.Title}}" aria-haspopup="true" aria-expanded="false">
 {{if .Assignees}}{{template "part-people" .Assignees}}{{else}}<span class="people-menu-empty">Assign</span>{{end}}
-</summary>
+</a>
+{{end}}
+
+{{define "tasks-people-panel"}}
 <form method="post" action="/tasks/{{.ID}}/assign" class="people-menu-panel board-action">
 <input type="hidden" name="redirect_to" value="board">
 <p class="people-menu-heading">Who is on this job?</p>
@@ -17,5 +21,13 @@ isn't puts them on (to_person); everyone else on the job is untouched. */}}
 </button>
 {{end}}
 </form>
-</details>
+{{end}}
+
+{{define "tasks-people.html"}}
+<p><a href="/tasks/board">Back to Board</a></p>
+<h1>People</h1>
+<p>{{.Title}}</p>
+<div class="people-page">
+{{template "tasks-people-panel" .}}
+</div>
 {{end}}

@@ -81,14 +81,11 @@ type cardView struct {
 	Assignees []assigneeView
 	// OnIt is whether the person using the app is on this job: only they
 	// get the give-back button (gate 4.19). MeID is who that is.
-	OnIt bool
-	MeID int64
-	// PeopleChoices is the assign menu (gate 4.20): every current person,
-	// marked when they're already on the job.
-	PeopleChoices []personChoice
-	PrevID        int64
-	NextID        int64
-	OtherStages   []stageOption
+	OnIt        bool
+	MeID        int64
+	PrevID      int64
+	NextID      int64
+	OtherStages []stageOption
 }
 
 // MoveUp and MoveDown are the card's two icon-only move buttons (gate
@@ -110,14 +107,7 @@ func (c cardView) GiveBack() app.IconButton {
 	return app.NewIconButton(app.IconGiveBack, c.Title, false)
 }
 
-// personChoice is one line of a card's assign menu.
-type personChoice struct {
-	ID   int64
-	Name string
-	On   bool
-}
-
-func newCardView(t Task, meID int64, today time.Time, everyone []people.Person) cardView {
+func newCardView(t Task, meID int64, today time.Time) cardView {
 	views := make([]assigneeView, 0, len(t.Assignees))
 	for _, a := range t.Assignees {
 		views = append(views, assigneeView{
@@ -138,10 +128,6 @@ func newCardView(t Task, meID int64, today time.Time, everyone []people.Person) 
 	for _, a := range t.Assignees {
 		onJob[a.PersonID] = true
 	}
-	choices := make([]personChoice, 0, len(everyone))
-	for _, p := range everyone {
-		choices = append(choices, personChoice{ID: p.ID, Name: p.Name, On: onJob[p.ID]})
-	}
 	dueLabel := ""
 	if due, err := time.Parse("2006-01-02", t.DueDate); err == nil {
 		dueLabel = format.DateShort(due, today)
@@ -149,7 +135,7 @@ func newCardView(t Task, meID int64, today time.Time, everyone []people.Person) 
 	return cardView{
 		ID: t.ID, Title: t.Title, Size: t.Size, SizeLabel: sizeLabels[t.Size], Stage: t.Stage,
 		DueDate: t.DueDate, DueLabel: dueLabel, Overdue: t.Overdue, Done: t.Stage == StageDone,
-		Assignees: views, OnIt: meID != 0 && onJob[meID], MeID: meID, PeopleChoices: choices,
+		Assignees: views, OnIt: meID != 0 && onJob[meID], MeID: meID,
 		OtherStages: otherStages,
 	}
 }
@@ -233,7 +219,7 @@ func (h *Handlers) renderBoard(w http.ResponseWriter, r *http.Request, status in
 
 	byStage := make(map[string][]cardView, len(Stages))
 	for _, t := range tasks {
-		byStage[t.Stage] = append(byStage[t.Stage], newCardView(t, currentPersonID(r), today, activePeople))
+		byStage[t.Stage] = append(byStage[t.Stage], newCardView(t, currentPersonID(r), today))
 	}
 
 	columns := make([]boardColumn, 0, len(Stages))

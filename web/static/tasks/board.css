@@ -207,26 +207,24 @@
   margin-top: var(--space-2);
 }
 
-/* The people circles and the short menu of names they open (gate 4.20). */
+/* The people circles and the short menu of names they open (gate 4.20).
+   The circles are a link; board.js fetches the menu and drops it beside
+   them, and without script the link goes to a page with the same list. */
 .people-menu {
   position: relative;
   margin-left: auto;
 }
 
-.people-menu > summary {
-  list-style: none;
-  cursor: pointer;
+.people-menu-trigger {
   display: flex;
   align-items: center;
   border-radius: 14px;
   padding: 2px;
+  color: inherit;
+  text-decoration: none;
 }
 
-.people-menu > summary::-webkit-details-marker {
-  display: none;
-}
-
-.people-menu > summary:hover {
+.people-menu-trigger:hover {
   background: var(--color-accent-wash);
 }
 
@@ -240,12 +238,7 @@
 }
 
 .people-menu-panel {
-  position: absolute;
-  top: 100%;
-  right: 0;
-  z-index: 10;
   min-width: 190px;
-  margin-top: 4px;
   padding: 6px;
   display: grid;
   gap: 4px;
@@ -253,6 +246,19 @@
   border: 1.5px solid var(--color-ink-navy);
   border-radius: 10px;
   box-shadow: var(--shadow-raised);
+}
+
+/* On a card the menu floats over the cards below it. */
+.people-menu > .people-menu-panel {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  z-index: 10;
+  margin-top: 4px;
+}
+
+.people-page .people-menu-panel {
+  max-width: 24rem;
 }
 
 .people-menu-heading {

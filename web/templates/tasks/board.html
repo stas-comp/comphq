@@ -39,7 +39,7 @@
 </div>
 <div class="task-card-row">
 {{if .DueLabel}}<span class="date task-card-due{{if .Overdue}} overdue{{end}}">{{.DueLabel}}</span>{{if .Overdue}}<span class="stamp stamp-overdue task-overdue-stamp">OVERDUE</span>{{end}}{{end}}
-{{template "tasks-people-menu" .}}
+<span class="people-menu">{{template "tasks-people-trigger" .}}</span>
 </div>
 <div class="task-card-row">
 <span class="task-card-size">{{template "part-size" .SizeLabel}}</span>

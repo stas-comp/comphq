@@ -128,15 +128,16 @@ test('gate 4.20: the people circles open a menu; picking puts a person on, picki
   await page.evaluate(() => ((window as unknown as { __kept: number }).__kept = 1));
   const kept = () => page.evaluate(() => (window as unknown as { __kept?: number }).__kept);
 
-  const menu = () => card(page, title).locator('details.people-menu');
-  await menu().locator('summary').click();
-  await expect(menu()).toHaveJSProperty('open', true);
+  const trigger = () => card(page, title).locator('.people-menu-trigger');
+  await trigger().click();
+  await expect(card(page, title).locator('.people-menu-panel')).toBeVisible();
+  await expect(trigger()).toHaveAttribute('aria-expanded', 'true');
   const item = (name: string) => card(page, title).locator('.people-menu-item', { hasText: name });
   await expect(item(me)).toHaveAttribute('aria-pressed', 'false');
 
   await item(me).click();
   await expect(card(page, title).locator('.people > .av')).toHaveCount(1);
-  await expect(menu()).toHaveJSProperty('open', true); // stays open for the next pick
+  await expect(card(page, title).locator('.people-menu-panel')).toBeVisible(); // stays open for the next pick
   await item(other.name).click();
   await expect(card(page, title).locator('.people > .av')).toHaveCount(2); // several people on one job
   await expect(item(me)).toHaveAttribute('aria-pressed', 'true');
@@ -163,7 +164,7 @@ test('gate 4.20: a job nobody is on offers Assign, and the menu passes the acces
   const title = uniqueName('Nobody yet');
   await addTask(page, title, 'todo');
   await expect(card(page, title).locator('.people-menu-empty')).toHaveText('Assign');
-  await card(page, title).locator('details.people-menu > summary').click();
+  await card(page, title).locator('.people-menu-trigger').click();
   await expect(card(page, title).locator('.people-menu-panel')).toBeVisible();
   await axeCheck(page);
   await expectNoSideScroll(page);
@@ -192,9 +193,10 @@ test.describe('with JavaScript switched off', () => {
     await expect(page).toHaveURL(/\/tasks\/board$/);
     await expect(card(page, keepTitle).locator('.av')).toHaveCount(0);
 
-    // Assign: a native <details> opens with no script, and the choice posts.
-    await card(page, keepTitle).locator('details.people-menu > summary').click();
-    await card(page, keepTitle).locator('.people-menu-item', { hasText: me }).click();
+    // Assign: the circles are a link to a page with the same list, and the choice posts.
+    await card(page, keepTitle).locator('.people-menu-trigger').click();
+    await expect(page).toHaveURL(/\/tasks\/\d+\/people$/);
+    await page.locator('.people-menu-item', { hasText: me }).click();
     await expect(page).toHaveURL(/\/tasks\/board$/);
     await expect(card(page, keepTitle).locator('.people > .av')).toHaveCount(1);
 
@@ -204,4 +206,40 @@ test.describe('with JavaScript switched off', () => {
     await page.goto(server.baseURL + '/tasks/removed');
     await expect(card(page, removeTitle)).toHaveCount(1);
   });
+});
+
+test('gate 4.20: Escape closes the people menu and puts the keyboard back on the circles; the Board itself carries no name list', async ({
+  page,
+  server,
+}) => {
+  const me = await signInAsNewPerson(page, server.baseURL, '/tasks/board');
+  await ready(page);
+  const title = uniqueName('Escape menu');
+  await addTask(page, title, 'todo');
+
+  // The Board stays light however many people there are: names are fetched when a menu opens.
+  await expect(page.locator('.task-board .people-menu-item')).toHaveCount(0);
+  await card(page, title).locator('.people-menu-trigger').click();
+  await expect(card(page, title).locator('.people-menu-item', { hasText: me })).toBeVisible();
+  await expect(page.locator('.task-board .people-menu-panel')).toHaveCount(1);
+  await page.keyboard.press('Escape');
+  await expect(page.locator('.task-board .people-menu-panel')).toHaveCount(0);
+  await expect(card(page, title).locator('.people-menu-trigger')).toBeFocused();
+
+  // Clicking elsewhere closes it too.
+  await card(page, title).locator('.people-menu-trigger').click();
+  await expect(page.locator('.task-board .people-menu-panel')).toHaveCount(1);
+  await page.locator('.tools h1').click();
+  await expect(page.locator('.task-board .people-menu-panel')).toHaveCount(0);
+});
+
+test('standard page checks for a job\'s people page', async ({ page, server }) => {
+  await signInAsNewPerson(page, server.baseURL, '/tasks/board');
+  await ready(page);
+  const title = uniqueName('People page');
+  await addTask(page, title, 'todo');
+  await card(page, title).locator('.people-menu-trigger').click();
+  await ready(page);
+  await axeCheck(page);
+  await expectNoSideScroll(page);
 });

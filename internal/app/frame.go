@@ -35,6 +35,21 @@ type navItemData struct {
 	Current bool
 }
 
+// RenderPartial runs one named template on its own — no sidebar, no top bar
+// — for the small pieces of a page a script fetches and drops in place (the
+// Board's people menu, the task window). The same template, framed by
+// RenderFrame, is the page a browser without script goes to instead.
+func (s *Server) RenderPartial(w http.ResponseWriter, status int, name string, data any) {
+	var body bytes.Buffer
+	if err := s.tmpl.ExecuteTemplate(&body, name, data); err != nil {
+		http.Error(w, "internal error", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.WriteHeader(status)
+	w.Write(body.Bytes())
+}
+
 // RenderFrame runs contentTemplate (a page's own named template) and
 // embeds the result in the shared layout: wordmark, nav, top bar with
 // search-box placeholder and "You: name · Change", and the current
