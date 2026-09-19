@@ -1,69 +1,110 @@
+/* The Board (SPEC gates 4.15-4.21), laid out as docs/design/mockup.html
+   draws `.tools`, `.board`, `.col`, `.col-head` and `.card`. Colours, fonts
+   and the shared parts come from theme.css. */
+
+/* The controls row (gate 4.15): the switch, the filters and + Add task
+   share one row (`.tools`, theme.css); the filter form dissolves into it. */
+.task-filter-form {
+  display: contents;
+}
+
+.task-filter-search {
+  width: 220px;
+}
+
+/* Person names can be long; the drop-down doesn't need to be as wide. */
+.task-filter-form select {
+  width: 9rem;
+}
+
 .add-task-form {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   gap: var(--space-2);
-  align-items: center;
-  margin: var(--space-4) 0 var(--space-6);
+  max-width: 40rem;
+  margin: var(--space-4) 0;
 }
 
-.add-task-form input[type="text"] {
-  flex: 1 1 16rem;
-}
-
-.task-filter-form {
+.add-task-actions {
   display: flex;
-  flex-wrap: wrap;
   gap: var(--space-2);
-  align-items: center;
-  margin: 0 0 var(--space-6);
+  margin-top: var(--space-2);
 }
 
 .task-board {
-  display: flex;
-  gap: var(--space-3);
-  align-items: flex-start;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  align-items: start;
+  margin-top: 22px;
 }
 
 .task-column {
-  flex: 1 1 0;
-  min-width: 0;
   background: var(--color-paper-muted);
-  border-radius: var(--radius-md);
-  padding: var(--space-3);
+  border-radius: 10px;
+  padding: 10px;
+  display: grid;
+  gap: 8px;
 }
 
-.task-column h2 {
+/* To do is tinted, and is the column whose order is the priority (4.17). */
+.task-column[data-stage="todo"] {
+  background: var(--color-accent-wash);
+  outline: 2px solid var(--color-accent-soft);
+}
+
+.task-column-head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 2px 4px 4px;
+}
+
+.task-column-head h2 {
+  margin: 0;
   font-size: var(--font-size-h3);
-  margin: 0 0 var(--space-3);
+}
+
+.task-column-count {
+  font: 500 12px var(--font-mono);
+  color: var(--color-text-muted);
 }
 
 .task-column-hint {
-  display: block;
-  font-size: var(--font-size-small);
-  font-weight: 400;
-  color: var(--color-text-muted);
+  margin-left: auto;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-signal-orange-deep);
 }
 
 .task-card-list {
   list-style: none;
   margin: 0;
   padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
+  display: grid;
+  gap: 8px;
+  /* An empty column is still somewhere to drop a card. */
+  min-height: 24px;
 }
 
 .task-card {
-  background: var(--color-white);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  padding: var(--space-2);
-  overflow-wrap: break-word;
+  overflow-wrap: anywhere;
+}
+
+/* A card, in this order (gate 4.16): rank, title, due date, people, size
+   chip, icon buttons. */
+.task-card-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 .task-card-title {
-  margin: 0 0 var(--space-1);
-  font-weight: 600;
+  margin: 0;
+  flex: 1;
+  min-width: 0;
+  font-size: 15px;
 }
 
 .task-card-title a {
@@ -76,30 +117,29 @@
   text-decoration: underline;
 }
 
-.task-card-size {
-  margin: 0 0 var(--space-1);
-  font-size: var(--font-size-small);
+/* A finished card: title struck through in grey (gate 4.21). */
+.task-card.done .task-card-title {
   color: var(--color-text-muted);
+  text-decoration: line-through;
+  text-decoration-color: var(--color-border-strong);
+}
+
+.task-card-due.overdue {
+  color: var(--color-danger);
 }
 
 .task-card-assignees {
-  margin: 0 0 var(--space-1);
-  display: flex;
-  gap: var(--space-1);
-  flex-wrap: wrap;
-}
-
-.task-card-due {
-  margin: 0;
-  font-size: var(--font-size-small);
-  color: var(--color-text-muted);
+  margin-left: auto;
 }
 
 .task-card-actions {
   display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-1);
-  margin-top: var(--space-2);
+  gap: 4px;
+  margin-left: auto;
+}
+
+.task-card-actions .inline-form {
+  display: flex;
 }
 
 .task-move-to-form {
@@ -112,25 +152,21 @@
   flex: 1 1 6rem;
   min-width: 0;
   max-width: 100%;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  font-size: 13px;
 }
 
-.task-overdue-stamp {
-  display: inline-block;
-  font-weight: 700;
-  color: var(--color-danger);
-  border: 2px solid var(--color-danger);
-  border-radius: var(--radius-sm);
-  padding: 0 var(--space-1);
-  font-size: var(--font-size-small);
+.task-board-links {
+  margin: 0;
+  padding: 4px;
+  font-size: 13px;
+  color: var(--color-text-muted);
 }
 
 @media (max-width: 1023px) {
   .task-board {
-    flex-wrap: wrap;
-  }
-
-  .task-column {
-    flex: 1 1 45%;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 

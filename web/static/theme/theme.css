@@ -654,3 +654,31 @@ select.field[multiple] {
   padding: 1px 6px;
   color: var(--color-text-muted);
 }
+
+/* The row at the head of a screen: its title, the view switch, filters, and
+   the primary action pushed to the right (the mockup's `.tools`). */
+.tools {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.tools h1 {
+  margin: 0 12px 0 0;
+}
+
+.tools .tools-add {
+  margin-left: auto;
+}
+
+/* A job's priority number, in large accent figures (gate 4.16). */
+.rank {
+  font: 900 20px/1 var(--font-display);
+  color: var(--color-signal-orange-deep);
+  margin-right: 2px;
+}
+
+.tools .seg {
+  margin: 0;
+}

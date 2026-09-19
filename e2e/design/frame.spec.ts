@@ -109,10 +109,10 @@ test('gate 4.14: pressing / anywhere puts the keyboard in the search box, but no
   await expect(page.locator('#search-box')).toBeFocused();
   await expect(page.locator('#search-box')).toHaveValue(''); // the key opens the box; it isn't typed into it
 
-  await page.locator('#new-task-title').focus();
+  await page.locator('#filter-q').focus();
   await page.keyboard.type('a/b');
-  await expect(page.locator('#new-task-title')).toHaveValue('a/b');
-  await expect(page.locator('#new-task-title')).toBeFocused();
+  await expect(page.locator('#filter-q')).toHaveValue('a/b');
+  await expect(page.locator('#filter-q')).toBeFocused();
 });
 
 test('gate 4.14: "You: name", their circle and Change sit on the right, drawn as the mockup draws them', async ({ page, mockup }) => {

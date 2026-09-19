@@ -1,66 +1,63 @@
 {{define "tasks-board.html"}}
+<div class="tools">
 <h1>Tasks</h1>
 {{template "tasks-view-switch" .}}
-<p class="task-board-links"><a href="/tasks/finished">Finished tasks</a> · <a href="/tasks/removed">Removed tasks</a></p>
-{{if .Message}}<p class="message" role="alert">{{.Message}}</p>{{end}}
-
-<form method="post" action="/tasks" class="add-task-form">
-<label class="visually-hidden" for="new-task-title">New task title</label>
-<input class="field" type="text" id="new-task-title" name="title" placeholder="New task" required>
-<label class="visually-hidden" for="new-task-stage">Starting column</label>
-<select class="field" id="new-task-stage" name="stage">
-{{range .Columns}}<option value="{{.Stage}}">{{.Label}}</option>{{end}}
-</select>
-<label class="visually-hidden" for="new-task-due-date">Due date</label>
-<input class="field field-date" type="text" inputmode="numeric" autocomplete="off" placeholder="dd/mm/yyyy" id="new-task-due-date" name="due_date">
-<label class="visually-hidden" for="new-task-people">People</label>
-<select class="field" id="new-task-people" name="person_id" multiple size="1">
-{{range .People}}<option value="{{.ID}}">{{.Name}}</option>{{end}}
-</select>
-<button class="btn primary" type="submit">Add task</button>
-</form>
-
 <form method="get" action="/tasks/board" class="task-filter-form">
-<label for="filter-mine">
-<input class="check" type="checkbox" id="filter-mine" name="mine" value="1"{{if .FilterMine}} checked{{end}}>
-My tasks
-</label>
-<label class="visually-hidden" for="filter-person">Person</label>
+<label class="visually-hidden" for="filter-person">Show</label>
 <select class="field" id="filter-person" name="person">
 <option value="">Everyone</option>
+<option value="mine"{{if .FilterMine}} selected{{end}}>My tasks</option>
 {{$personID := .FilterPersonID}}
 {{range .People}}<option value="{{.ID}}"{{if eq .ID $personID}} selected{{end}}>{{.Name}}</option>{{end}}
 </select>
-<label class="visually-hidden" for="filter-q">Search titles</label>
-<input class="field" type="search" id="filter-q" name="q" placeholder="Search titles" value="{{.FilterQuery}}">
+<span class="search task-filter-search">
+<span class="icon icon-search" aria-hidden="true"></span>
+<label class="visually-hidden" for="filter-q">Filter by word</label>
+<input class="search-input" type="search" id="filter-q" name="q" placeholder="Filter by word" value="{{.FilterQuery}}">
+</span>
 <button class="btn" type="submit">Filter</button>
 {{if .FilterActive}}<a href="/tasks/board">Clear filter</a>{{end}}
 </form>
+<a class="btn primary tools-add" id="add-task-link" href="/tasks/new">+ Add task</a>
+</div>
+{{if .Message}}<p class="message" role="alert">{{.Message}}</p>{{end}}
 
 <div class="task-board" data-refresh-version-url="/tasks/version" data-refresh-fragment-selector=".task-board">
 {{range .Columns}}
 <div class="task-column" data-stage="{{.Stage}}">
-<h2>{{.Label}}{{if eq .Stage "todo"}}<span class="task-column-hint">Top = most important</span>{{end}}</h2>
+<div class="task-column-head">
+<h2>{{.Label}}</h2>
+<span class="task-column-count">{{.Count}}</span>
+{{if eq .Stage "todo"}}<span class="task-column-hint">Top = most important</span>{{end}}
+</div>
 <ul class="task-card-list">
 {{range .Tasks}}
-<li class="task-card" data-task-id="{{.ID}}">
-<p class="task-card-title"><a href="/tasks/{{.ID}}">{{.Title}}</a></p>
-<p class="task-card-size">{{template "part-size" .SizeLabel}}</p>
-{{if .Assignees}}
-<p class="task-card-assignees">{{template "part-people" .Assignees}}</p>
+<li class="card task-card{{if .Done}} done{{end}}" data-task-id="{{.ID}}">
+<div class="task-card-row">
+{{if .Rank}}<span class="rank">{{.Rank}}</span>{{end}}
+<h3 class="task-card-title"><a href="/tasks/{{.ID}}">{{.Title}}</a></h3>
+</div>
+{{if or .DueLabel .Assignees}}
+<div class="task-card-row">
+{{if .DueLabel}}<span class="date task-card-due{{if .Overdue}} overdue{{end}}">{{.DueLabel}}</span>{{if .Overdue}}<span class="stamp stamp-overdue task-overdue-stamp">OVERDUE</span>{{end}}{{end}}
+{{if .Assignees}}<span class="task-card-assignees">{{template "part-people" .Assignees}}</span>{{end}}
+</div>
 {{end}}
-{{if .DueDate}}<p class="task-card-due">{{.DueDate}}{{if .Overdue}} <span class="task-overdue-stamp">OVERDUE</span>{{end}}</p>{{end}}
+<div class="task-card-row">
+<span class="task-card-size">{{template "part-size" .SizeLabel}}</span>
 <div class="task-card-actions">
 <form method="post" action="/tasks/{{.ID}}/move" class="inline-form">
 <input type="hidden" name="stage" value="{{.Stage}}">
 <input type="hidden" name="before_id" value="{{.PrevID}}">
-<button class="mini" type="submit" aria-label="Move {{.Title}} up"{{if not .PrevID}} disabled{{end}}>Move up</button>
+{{template "part-icon-button" .MoveUp}}
 </form>
 <form method="post" action="/tasks/{{.ID}}/move" class="inline-form">
 <input type="hidden" name="stage" value="{{.Stage}}">
 <input type="hidden" name="after_id" value="{{.NextID}}">
-<button class="mini" type="submit" aria-label="Move {{.Title}} down"{{if not .NextID}} disabled{{end}}>Move down</button>
+{{template "part-icon-button" .MoveDown}}
 </form>
+</div>
+</div>
 <form method="post" action="/tasks/{{.ID}}/move" class="task-move-to-form">
 <label class="visually-hidden" for="move-to-{{.ID}}">Move {{.Title}} to</label>
 <select class="field" id="move-to-{{.ID}}" name="stage">
@@ -69,10 +66,10 @@ My tasks
 <input type="hidden" name="to_bottom" value="1">
 <button class="mini" type="submit">Move to…</button>
 </form>
-</div>
 </li>
 {{end}}
 </ul>
+{{if eq .Stage "done"}}<p class="task-board-links"><a href="/tasks/finished">Finished tasks</a> · <a href="/tasks/removed">Removed tasks</a></p>{{end}}
 </div>
 {{end}}
 </div>

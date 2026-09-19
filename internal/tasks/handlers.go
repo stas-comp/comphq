@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/stas-comp/comphq/internal/app"
 	"github.com/stas-comp/comphq/internal/app/format"
@@ -25,6 +26,7 @@ var stageLabels = map[string]string{
 type boardColumn struct {
 	Stage string
 	Label string
+	Count int
 	Tasks []cardView
 }
 
@@ -65,20 +67,34 @@ type stageOption struct {
 // the column, so that button is disabled) — the handler computes these
 // once per render from the already-loaded, already-ordered board.
 type cardView struct {
-	ID          int64
-	Title       string
-	Size        string
-	SizeLabel   string
-	Stage       string
-	DueDate     string
+	ID        int64
+	Title     string
+	Size      string
+	SizeLabel string
+	Stage     string
+	DueDate   string
+	// DueLabel is the due date as a card shows it ("Wed 23 Sep").
+	DueLabel    string
 	Overdue     bool
+	Done        bool
+	Rank        int // 1-based priority number; only To do cards have one (gate 4.16)
 	Assignees   []assigneeView
 	PrevID      int64
 	NextID      int64
 	OtherStages []stageOption
 }
 
-func newCardView(t Task, meID int64) cardView {
+// MoveUp and MoveDown are the card's two icon-only move buttons (gate
+// 4.11): disabled at the top and bottom of their column.
+func (c cardView) MoveUp() app.IconButton {
+	return app.NewIconButton(app.IconMoveUp, c.Title, c.PrevID == 0)
+}
+
+func (c cardView) MoveDown() app.IconButton {
+	return app.NewIconButton(app.IconMoveDown, c.Title, c.NextID == 0)
+}
+
+func newCardView(t Task, meID int64, today time.Time) cardView {
 	views := make([]assigneeView, 0, len(t.Assignees))
 	for _, a := range t.Assignees {
 		views = append(views, assigneeView{
@@ -95,10 +111,14 @@ func newCardView(t Task, meID int64) cardView {
 		}
 		otherStages = append(otherStages, stageOption{Stage: stage, Label: stageLabels[stage]})
 	}
+	dueLabel := ""
+	if due, err := time.Parse("2006-01-02", t.DueDate); err == nil {
+		dueLabel = format.DateShort(due, today)
+	}
 	return cardView{
 		ID: t.ID, Title: t.Title, Size: t.Size, SizeLabel: sizeLabels[t.Size], Stage: t.Stage,
-		DueDate: t.DueDate, Overdue: t.Overdue, Assignees: views,
-		OtherStages: otherStages,
+		DueDate: t.DueDate, DueLabel: dueLabel, Overdue: t.Overdue, Done: t.Stage == StageDone,
+		Assignees: views, OtherStages: otherStages,
 	}
 }
 
@@ -135,13 +155,18 @@ func (h *Handlers) handleVersion(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]any{"version": version})
 }
 
-// boardFilterFromRequest reads ?mine=1, ?person= and ?q= (SPEC gate
-// 2.07's filter state living in the URL). "My tasks" takes priority
-// over a chosen person if somehow both are present — they express the
-// same kind of filter, and the store only ever filters by one id.
+// boardFilterFromRequest reads ?person=, ?mine=1 and ?q= (SPEC gate
+// 2.07's filter state living in the URL). The Everyone / My tasks / Person
+// filter is one drop-down whose value is "" (everyone), "mine" or a
+// person's id (gate 4.15); the older ?mine=1 still works. "My tasks"
+// takes priority over a chosen person if somehow both are present — they
+// express the same kind of filter, and the store only ever filters by
+// one id.
 func boardFilterFromRequest(r *http.Request) (mine bool, personID int64, query string) {
 	mine = r.URL.Query().Get("mine") == "1"
-	if v := r.URL.Query().Get("person"); v != "" {
+	if v := r.URL.Query().Get("person"); v == "mine" {
+		mine = true
+	} else if v != "" {
 		personID, _ = strconv.ParseInt(v, 10, 64)
 	}
 	query = r.URL.Query().Get("q")
@@ -169,7 +194,7 @@ func (h *Handlers) renderBoard(w http.ResponseWriter, r *http.Request, status in
 
 	byStage := make(map[string][]cardView, len(Stages))
 	for _, t := range tasks {
-		byStage[t.Stage] = append(byStage[t.Stage], newCardView(t, currentPersonID(r)))
+		byStage[t.Stage] = append(byStage[t.Stage], newCardView(t, currentPersonID(r), today))
 	}
 
 	columns := make([]boardColumn, 0, len(Stages))
@@ -182,8 +207,11 @@ func (h *Handlers) renderBoard(w http.ResponseWriter, r *http.Request, status in
 			if i < len(cards)-1 {
 				cards[i].NextID = cards[i+1].ID
 			}
+			if stage == StageTodo {
+				cards[i].Rank = i + 1
+			}
 		}
-		columns = append(columns, boardColumn{Stage: stage, Label: stageLabels[stage], Tasks: cards})
+		columns = append(columns, boardColumn{Stage: stage, Label: stageLabels[stage], Count: len(cards), Tasks: cards})
 	}
 
 	activePeople, err := h.people.List()
@@ -251,9 +279,9 @@ func (h *Handlers) handleCreateTask(w http.ResponseWriter, r *http.Request) {
 	case nil:
 		http.Redirect(w, r, "/tasks/board", http.StatusFound)
 	case ErrEmptyTitle:
-		h.renderBoard(w, r, http.StatusOK, "Please type a title.")
+		h.renderNewTask(w, r, http.StatusOK, "Please type a title.", input, personIDs)
 	case ErrInvalidDate:
-		h.renderBoard(w, r, http.StatusOK, invalidDateMessage)
+		h.renderNewTask(w, r, http.StatusOK, invalidDateMessage, input, personIDs)
 	case ErrInvalidSize, ErrInvalidStage:
 		http.Error(w, err.Error(), http.StatusBadRequest)
 	default:

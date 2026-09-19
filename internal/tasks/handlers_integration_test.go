@@ -155,7 +155,7 @@ func TestCreateTaskHTTPWithStageDueDateAndPeople(t *testing.T) {
 	if !strings.Contains(body, "Team task") {
 		t.Errorf("board missing the new task; got:\n%s", body)
 	}
-	if !strings.Contains(body, "2020-01-01") {
+	if !strings.Contains(body, "Wed 1 Jan 2020") { // the card's short date (D-61b)
 		t.Errorf("board missing the due date; got:\n%s", body)
 	}
 	if !strings.Contains(body, "OVERDUE") {

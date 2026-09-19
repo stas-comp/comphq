@@ -97,3 +97,13 @@ func TestInitials(t *testing.T) {
 		}
 	}
 }
+
+func TestDateShortDropsTheYearOnlyForThisYear(t *testing.T) {
+	today := time.Date(2026, time.September, 19, 0, 0, 0, 0, time.UTC)
+	if got, want := DateShort(time.Date(2026, time.September, 23, 0, 0, 0, 0, time.UTC), today), "Wed 23 Sep"; got != want {
+		t.Errorf("this year = %q, want %q", got, want)
+	}
+	if got, want := DateShort(time.Date(2027, time.January, 5, 0, 0, 0, 0, time.UTC), today), "Tue 5 Jan 2027"; got != want {
+		t.Errorf("another year = %q, want %q", got, want)
+	}
+}

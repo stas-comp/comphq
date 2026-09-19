@@ -3,6 +3,7 @@ import { axeCheck } from '../helpers/axe';
 import { expectNoSideScroll } from '../helpers/no-side-scroll';
 import { signInAsNewPerson } from '../helpers/people';
 import { ready } from '../helpers/ready';
+import { openNewTask } from '../helpers/tasks';
 
 type Page = import('@playwright/test').Page;
 
@@ -17,6 +18,7 @@ async function addTask(
 ): Promise<void> {
   await page.goto(baseURL + '/tasks/board');
   await ready(page);
+  await openNewTask(page);
   await page.fill('#new-task-title', task.title);
   await page.selectOption('#new-task-stage', task.stage ?? 'todo');
   if (task.due) await page.fill('#new-task-due-date', task.due);

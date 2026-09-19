@@ -3,10 +3,12 @@ import { test as testToday } from '../helpers/fixtures-today';
 import { signInAsNewPerson } from '../helpers/people';
 import { ready } from '../helpers/ready';
 import { uniqueName } from '../helpers/unique-name';
+import { openNewTask } from '../helpers/tasks';
 
 type Page = import('@playwright/test').Page;
 
 async function addTask(page: Page, title: string, stage: string, personName?: string): Promise<void> {
+  await openNewTask(page);
   await page.fill('#new-task-title', title);
   await page.selectOption('#new-task-stage', stage);
   if (personName) {
@@ -137,6 +139,7 @@ testToday('@fresh gate 2.28: drag assigns from Unassigned to a person, and from 
   await addTask(page, task1, 'todo');
 
   const task2 = uniqueName('Shared reassign');
+  await openNewTask(page);
   await page.fill('#new-task-title', task2);
   await page.selectOption('#new-task-stage', 'todo');
   await page.selectOption('#new-task-people', [{ label: nameA }, { label: nameC }]);

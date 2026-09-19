@@ -4,10 +4,12 @@ import { expectNoSideScroll } from '../helpers/no-side-scroll';
 import { signInAsNewPerson } from '../helpers/people';
 import { ready } from '../helpers/ready';
 import { uniqueName } from '../helpers/unique-name';
+import { openNewTask } from '../helpers/tasks';
 
 type Page = import('@playwright/test').Page;
 
 async function addTask(page: Page, title: string, stage: string, personName?: string, size?: string): Promise<void> {
+  await openNewTask(page);
   await page.fill('#new-task-title', title);
   await page.selectOption('#new-task-stage', stage);
   if (personName) {
@@ -58,6 +60,7 @@ test('Team view: lane order, grouping, numbering, and workload blocks', async ({
   await addTask(page, upNext2, 'todo', nameA, 'S');
 
   const sharedTitle = uniqueName('Shared job');
+  await openNewTask(page);
   await page.fill('#new-task-title', sharedTitle);
   await page.selectOption('#new-task-stage', 'todo');
   await page.selectOption('#new-task-people', [{ label: nameA }, { label: nameB }]);

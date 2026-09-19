@@ -1,6 +1,7 @@
 import { test } from '../helpers/fixtures-today';
 import { signInAsNewPerson } from '../helpers/people';
 import { ready } from '../helpers/ready';
+import { openNewTask } from '../helpers/tasks';
 
 test.use({ viewport: { width: 1366, height: 768 }, today: '2026-09-19' });
 
@@ -19,6 +20,7 @@ test('@fresh screenshot: briefing-populated', async ({ page, server }) => {
   ]) {
     await page.goto(server.baseURL + '/tasks/board');
     await ready(page);
+    await openNewTask(page);
     await page.fill('#new-task-title', task.title);
     await page.selectOption('#new-task-stage', 'todo');
     await page.fill('#new-task-due-date', task.due);

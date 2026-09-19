@@ -3,10 +3,12 @@ import { axeCheck } from '../helpers/axe';
 import { signInAsNewPerson } from '../helpers/people';
 import { ready } from '../helpers/ready';
 import { uniqueName } from '../helpers/unique-name';
+import { openNewTask } from '../helpers/tasks';
 
 type Page = import('@playwright/test').Page;
 
 async function addTask(page: Page, title: string, stage: string, personName?: string): Promise<void> {
+  await openNewTask(page);
   await page.fill('#new-task-title', title);
   await page.selectOption('#new-task-stage', stage);
   if (personName) {
@@ -174,6 +176,7 @@ test('gate 2.37: Give back returns a job to Up for grabs, but not while someone 
   const solo = uniqueName('Give back solo');
   await addTask(page, solo, 'todo', me);
   const shared = uniqueName('Give back shared');
+  await openNewTask(page);
   await page.fill('#new-task-title', shared);
   await page.selectOption('#new-task-stage', 'todo');
   await page.selectOption('#new-task-people', [{ label: me }, { label: other }]);

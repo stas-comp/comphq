@@ -99,3 +99,13 @@ func Initials(name string) string {
 	}
 	return initials
 }
+
+// DateShort renders t as "Wed 23 Sep" for a card, adding the year only when
+// it isn't today's year ("Wed 23 Sep 2027"): a card is too narrow for the
+// full A3 form, and a date in the current year needs no year.
+func DateShort(t, today time.Time) string {
+	if t.Year() == today.Year() {
+		return t.Format("Mon 2 Jan")
+	}
+	return t.Format("Mon 2 Jan 2006")
+}

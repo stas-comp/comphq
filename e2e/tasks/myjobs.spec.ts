@@ -5,11 +5,13 @@ import { expectNoSideScroll } from '../helpers/no-side-scroll';
 import { signInAsNewPerson } from '../helpers/people';
 import { ready } from '../helpers/ready';
 import { uniqueName } from '../helpers/unique-name';
+import { openNewTask } from '../helpers/tasks';
 
 type Page = import('@playwright/test').Page;
 type Locator = import('@playwright/test').Locator;
 
 async function addTask(page: Page, title: string, stage: string, personName?: string): Promise<void> {
+  await openNewTask(page);
   await page.fill('#new-task-title', title);
   await page.selectOption('#new-task-stage', stage);
   if (personName) {
@@ -133,6 +135,7 @@ test('gate 2.33: My jobs shows the person\'s own lane and Up for grabs, and noth
   await addTask(page, mine, 'doing', me);
 
   const shared = uniqueName('Shared todo');
+  await openNewTask(page);
   await page.fill('#new-task-title', shared);
   await page.selectOption('#new-task-stage', 'todo');
   await page.selectOption('#new-task-people', [{ label: me }, { label: other }]);

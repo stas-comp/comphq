@@ -2,10 +2,12 @@ import { expect, test } from '../helpers/fixtures';
 import { signInAsNewPerson } from '../helpers/people';
 import { ready } from '../helpers/ready';
 import { uniqueName } from '../helpers/unique-name';
+import { openNewTask } from '../helpers/tasks';
 
 type Page = import('@playwright/test').Page;
 
 async function addTask(page: Page, title: string, personName?: string): Promise<void> {
+  await openNewTask(page);
   await page.fill('#new-task-title', title);
   if (personName) {
     await page.selectOption('#new-task-people', { label: personName });
@@ -46,7 +48,7 @@ test('gate 2.07: My tasks, a chosen person, and a word each narrow the board', a
   expect(all).toEqual(expect.arrayContaining([titleA, titleB, titleUnassigned]));
 
   // "My tasks".
-  await page.check('#filter-mine');
+  await page.selectOption('#filter-person', 'mine'); // gate 4.15: Everyone / My tasks / a person, in one drop-down
   await page.click('.task-filter-form button[type="submit"]');
   await ready(page);
   let titles = await cardTitles(page);

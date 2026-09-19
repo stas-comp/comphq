@@ -2,6 +2,7 @@ import { expect, test } from '../helpers/fixtures';
 import { signInAsNewPerson } from '../helpers/people';
 import { ready } from '../helpers/ready';
 import { uniqueName } from '../helpers/unique-name';
+import { openNewTask } from '../helpers/tasks';
 
 // SPEC gate 2.11: a removed person no longer appears when assigning,
 // but still shows on their old tasks, marked "(removed)" — on the
@@ -24,6 +25,7 @@ test('gate 2.11: a removed person no longer appears when assigning, but still sh
   await ready(page);
 
   const title = uniqueName('Assigned to B');
+  await openNewTask(page);
   await page.fill('#new-task-title', title);
   await page.selectOption('#new-task-people', { label: nameB });
   await page.click('.add-task-form button[type="submit"]');

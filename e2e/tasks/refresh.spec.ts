@@ -2,10 +2,12 @@ import { expect, test } from '../helpers/fixtures';
 import { signInAsNewPerson } from '../helpers/people';
 import { ready } from '../helpers/ready';
 import { uniqueName } from '../helpers/unique-name';
+import { openNewTask } from '../helpers/tasks';
 
 type Page = import('@playwright/test').Page;
 
 async function addTask(page: Page, title: string): Promise<void> {
+  await openNewTask(page);
   await page.fill('#new-task-title', title);
   await page.click('.add-task-form button[type="submit"]');
   await ready(page);

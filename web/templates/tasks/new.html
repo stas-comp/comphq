@@ -1,0 +1,38 @@
+{{define "tasks-new.html"}}
+<p><a href="/tasks/board">Back to Board</a></p>
+<h1>Add task</h1>
+{{if .Message}}<p class="message" role="alert">{{.Message}}</p>{{end}}
+
+<form method="post" action="/tasks" class="add-task-form">
+<label for="new-task-title">Title</label>
+<input class="field" type="text" id="new-task-title" name="title" value="{{.Title}}" required>
+
+<label for="new-task-notes">Description</label>
+<textarea class="field" id="new-task-notes" name="notes">{{.Notes}}</textarea>
+
+<label for="new-task-size">Size</label>
+{{$size := .Size}}
+<select class="field" id="new-task-size" name="size">
+{{range .Sizes}}<option value="{{.Value}}"{{if eq .Value $size}} selected{{end}}>{{.Label}}</option>{{end}}
+</select>
+
+<label for="new-task-stage">Starting column</label>
+{{$stage := .Stage}}
+<select class="field" id="new-task-stage" name="stage">
+{{range .Stages}}<option value="{{.Stage}}"{{if eq .Stage $stage}} selected{{end}}>{{.Label}}</option>{{end}}
+</select>
+
+<label for="new-task-due-date">Due date</label>
+<input class="field field-date" type="text" inputmode="numeric" autocomplete="off" placeholder="dd/mm/yyyy" id="new-task-due-date" name="due_date" value="{{.DueDate}}">
+
+<label for="new-task-people">People</label>
+<select class="field" id="new-task-people" name="person_id" multiple size="5">
+{{range .People}}<option value="{{.ID}}"{{if .Selected}} selected{{end}}>{{.Name}}</option>{{end}}
+</select>
+
+<div class="add-task-actions">
+<button class="btn primary" type="submit">Add task</button>
+<a class="btn" href="/tasks/board">Cancel</a>
+</div>
+</form>
+{{end}}

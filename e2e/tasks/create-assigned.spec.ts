@@ -4,12 +4,14 @@ import { expectNoSideScroll } from '../helpers/no-side-scroll';
 import { signInAsNewPerson } from '../helpers/people';
 import { ready } from '../helpers/ready';
 import { uniqueName } from '../helpers/unique-name';
+import { openNewTask } from '../helpers/tasks';
 
 type Page = import('@playwright/test').Page;
 
 // The one place this file knows how a task is created from the Board, so
 // it changes in one line when the add-a-task form becomes the task window.
 async function createTaskWithPerson(page: Page, title: string, stage: string, personName: string): Promise<void> {
+  await openNewTask(page);
   await page.fill('#new-task-title', title);
   await page.selectOption('#new-task-stage', stage);
   await page.selectOption('#new-task-people', { label: personName });
@@ -80,6 +82,7 @@ test('gate 4.50: an unassigned idea is in Up for grabs, and taking it moves it t
   await signInAsNewPerson(page, server.baseURL, '/tasks/board');
   await ready(page);
   const title = uniqueName('Loose idea');
+  await openNewTask(page);
   await page.fill('#new-task-title', title);
   await page.selectOption('#new-task-stage', 'idea');
   await page.click('.add-task-form button[type="submit"]');

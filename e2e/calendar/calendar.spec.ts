@@ -5,6 +5,7 @@ import { expectNoSideScroll } from '../helpers/no-side-scroll';
 import { signInAsNewPerson } from '../helpers/people';
 import { ready } from '../helpers/ready';
 import { uniqueName } from '../helpers/unique-name';
+import { openNewTask } from '../helpers/tasks';
 
 type Page = import('@playwright/test').Page;
 
@@ -323,6 +324,7 @@ test('standard page checks for Removed events', async ({ page, server }) => {
 });
 
 async function addTask(page: Page, title: string, stage: string, dueDate: string): Promise<void> {
+  await openNewTask(page);
   await page.fill('#new-task-title', title);
   await page.selectOption('#new-task-stage', stage);
   await page.fill('#new-task-due-date', dueDate);

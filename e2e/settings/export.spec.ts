@@ -8,6 +8,7 @@ import { loadFixtureFile, pasteFile } from '../helpers/paste';
 import { signInAsNewPerson } from '../helpers/people';
 import { ready } from '../helpers/ready';
 import { uniqueName } from '../helpers/unique-name';
+import { openNewTask } from '../helpers/tasks';
 
 type Page = import('@playwright/test').Page;
 
@@ -111,6 +112,7 @@ test('exported zip includes tasks.csv and events.csv with clear headers and read
   await signInAsNewPerson(page, server.baseURL, '/tasks/board');
 
   const taskTitle = uniqueName('Export task');
+  await openNewTask(page);
   await page.fill('#new-task-title', taskTitle);
   await page.selectOption('#new-task-stage', 'todo');
   await page.fill('#new-task-due-date', '2026-09-19');

@@ -1,6 +1,7 @@
 import { expect, test } from '../helpers/fixtures-today';
 import { signInAsNewPerson } from '../helpers/people';
 import { ready } from '../helpers/ready';
+import { openNewTask } from '../helpers/tasks';
 
 type Page = import('@playwright/test').Page;
 
@@ -9,6 +10,7 @@ test.use({ today: '2026-09-19' });
 async function addTask(page: Page, baseURL: string, title: string, due: string): Promise<void> {
   await page.goto(baseURL + '/tasks/board');
   await ready(page);
+  await openNewTask(page);
   await page.fill('#new-task-title', title);
   await page.selectOption('#new-task-stage', 'todo');
   await page.fill('#new-task-due-date', due);

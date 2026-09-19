@@ -25,6 +25,7 @@ func Section(srv *app.Server) app.Section {
 		RegisterRoutes: func(mux *http.ServeMux) {
 			mux.HandleFunc("GET /tasks", h.handleMyJobs)
 			mux.HandleFunc("GET /tasks/board", h.handleBoard)
+			mux.HandleFunc("GET /tasks/new", h.handleNewTaskForm)
 			mux.HandleFunc("POST /tasks", h.handleCreateTask)
 			mux.HandleFunc("GET /tasks/version", h.handleVersion)
 			mux.HandleFunc("GET /tasks/team", h.handleTeam)

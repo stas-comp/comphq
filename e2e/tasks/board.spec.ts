@@ -3,10 +3,12 @@ import { test as testToday } from '../helpers/fixtures-today';
 import { signInAsNewPerson } from '../helpers/people';
 import { ready } from '../helpers/ready';
 import { uniqueName } from '../helpers/unique-name';
+import { openNewTask } from '../helpers/tasks';
 
 type Page = import('@playwright/test').Page;
 
 async function addTask(page: Page, title: string, stage = 'idea'): Promise<void> {
+  await openNewTask(page);
   await page.fill('#new-task-title', title);
   await page.selectOption('#new-task-stage', stage);
   await page.click('.add-task-form button[type="submit"]');
@@ -134,7 +136,8 @@ test('gate 2.01: Board shows Ideas, To do, In progress, Done in order', async ({
   expect(headings.length).toBe(4);
   expect(headings[0]).toContain('Ideas');
   expect(headings[1]).toContain('To do');
-  expect(headings[1]).toContain('Top = most important');
+  // Gate 4.17: the hint sits beside the To do heading, not inside it.
+  await expect(page.locator('.task-column[data-stage="todo"] .task-column-head')).toContainText('Top = most important');
   expect(headings[2]).toContain('In progress');
   expect(headings[3]).toContain('Done');
 });
@@ -146,6 +149,7 @@ test('gate 2.02: a title-only task is visible in a second context after reload',
   await ready(page);
 
   const title = uniqueName('Fix the printer');
+  await openNewTask(page);
   await page.fill('#new-task-title', title);
   await page.click('.add-task-form button[type="submit"]');
   await ready(page);
@@ -169,6 +173,7 @@ test('gate 2.02: a task can be added directly into a chosen column', async ({ pa
   await ready(page);
 
   const title = uniqueName('Plan the offsite');
+  await openNewTask(page);
   await page.fill('#new-task-title', title);
   await page.selectOption('#new-task-stage', 'doing');
   await page.click('.add-task-form button[type="submit"]');
@@ -185,6 +190,7 @@ test('gate 2.03: a card shows its assigned people and due date', async ({ page, 
   await ready(page);
 
   const title = uniqueName('Team task');
+  await openNewTask(page);
   await page.fill('#new-task-title', title);
   await page.fill('#new-task-due-date', '2099-01-01');
   await page.selectOption('#new-task-people', { label: you });
@@ -195,7 +201,7 @@ test('gate 2.03: a card shows its assigned people and due date', async ({ page, 
   await expect(card).toHaveCount(1);
   await expect(card.locator('.av')).toHaveCount(1);
   await expect(card.locator('.av')).toHaveAttribute('title', you);
-  await expect(card).toContainText('2099-01-01');
+  await expect(card).toContainText('Thu 1 Jan 2099'); // gate 4.16: the mockup's short date, with the year because it isn't this year
   await expect(card.locator('.task-overdue-stamp')).toHaveCount(0);
 });
 
@@ -208,6 +214,7 @@ testToday('@fresh gate 2.03: an unfinished task past its due date shows OVERDUE'
   await ready(page);
 
   const overdueTitle = uniqueName('Overdue task');
+  await openNewTask(page);
   await page.fill('#new-task-title', overdueTitle);
   await page.fill('#new-task-due-date', '2026-09-01');
   await page.click('.add-task-form button[type="submit"]');
@@ -217,6 +224,7 @@ testToday('@fresh gate 2.03: an unfinished task past its due date shows OVERDUE'
   await expect(overdueCard.locator('.task-overdue-stamp')).toHaveText('OVERDUE');
 
   const futureTitle = uniqueName('Future task');
+  await openNewTask(page);
   await page.fill('#new-task-title', futureTitle);
   await page.fill('#new-task-due-date', '2026-12-01');
   await page.click('.add-task-form button[type="submit"]');
@@ -224,6 +232,7 @@ testToday('@fresh gate 2.03: an unfinished task past its due date shows OVERDUE'
   await expect(page.locator('.task-card', { hasText: futureTitle }).locator('.task-overdue-stamp')).toHaveCount(0);
 
   const doneTitle = uniqueName('Done but past due');
+  await openNewTask(page);
   await page.fill('#new-task-title', doneTitle);
   await page.fill('#new-task-due-date', '2026-09-01');
   await page.selectOption('#new-task-stage', 'done');
@@ -250,7 +259,7 @@ test('gate 2.04: Move up and Move down reorder cards, visible in a second contex
 
   // Move C up one slot: swaps with B -> [A, C, B].
   const cardC = page.locator('.task-card', { hasText: c });
-  await cardC.locator('.inline-form', { hasText: 'Move up' }).locator('button').click();
+  await cardC.getByRole('button', { name: `Move ${c} up` }).click(); // an icon-only button, named for the task (gate 4.11)
   await ready(page);
   expect(relativeOrder(await columnOrder(page, stage), [a, b, c])).toEqual([a, c, b]);
 
@@ -294,7 +303,7 @@ test('gate 2.04: a task can be moved with keyboard only', async ({ page, server 
   await addTask(page, b, stage);
   expect(relativeOrder(await columnOrder(page, stage), [a, b])).toEqual([a, b]);
 
-  const moveUpButton = page.locator('.task-card', { hasText: b }).locator('.inline-form', { hasText: 'Move up' }).locator('button');
+  const moveUpButton = page.locator('.task-card', { hasText: b }).getByRole('button', { name: `Move ${b} up` });
   await moveUpButton.focus();
   await page.keyboard.press('Enter');
   await ready(page);

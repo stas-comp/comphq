@@ -2,6 +2,7 @@ import { expect, test } from '../helpers/fixtures';
 import { signInAsNewPerson } from '../helpers/people';
 import { ready } from '../helpers/ready';
 import { uniqueName } from '../helpers/unique-name';
+import { openNewTask } from '../helpers/tasks';
 
 // SPEC gate 4.05: the date field shows and accepts UK order (day first),
 // wherever a date is typed. D-61.
@@ -10,6 +11,7 @@ test('a task due date typed day first is saved and shown day first', async ({ pa
   await signInAsNewPerson(page, server.baseURL, '/tasks/board');
   await ready(page);
   const title = uniqueName('Dated job');
+  await openNewTask(page);
   await page.fill('#new-task-title', title);
   await page.fill('#new-task-due-date', '5/11/2026');
   await page.click('.add-task-form button[type="submit"]');
@@ -37,6 +39,7 @@ test('a task due date that is not a real day is refused with a plain message and
   await ready(page);
   for (const bad of ['31/02/2026', '09/25/2026', 'next week']) {
     const title = uniqueName('Bad date job');
+    await openNewTask(page);
     await page.fill('#new-task-title', title);
     await page.fill('#new-task-due-date', bad);
     await page.click('.add-task-form button[type="submit"]');

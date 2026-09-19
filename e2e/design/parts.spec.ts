@@ -4,6 +4,7 @@ import { axeCheck } from '../helpers/axe';
 import { expectNoSideScroll } from '../helpers/no-side-scroll';
 import { signInAsNewPerson } from '../helpers/people';
 import { ready } from '../helpers/ready';
+import { openNewTask } from '../helpers/tasks';
 
 // Shared parts (PLAN P4-03, gates 4.04-4.10): every reusable part, on one
 // page (/__test/parts, drawn by the real partials), agrees with
@@ -118,6 +119,7 @@ test('gate 4.06: My jobs / Board / Team and Month / List use the shared segmente
 test('gate 4.08: the person using the app is the accent circle on the board, and others are not', async ({ page, server }) => {
   const me = await signInAsNewPerson(page, server.baseURL, '/tasks/board');
   await ready(page);
+  await openNewTask(page);
   await page.fill('#new-task-title', 'Circle check ' + Date.now());
   await page.selectOption('#new-task-people', { label: me });
   await page.click('.add-task-form button[type="submit"]');
