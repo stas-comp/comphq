@@ -65,6 +65,17 @@
 </li>
 {{end}}
 </ul>
+
+{{if $lane.PersonID}}
+<h3>Ideas</h3>
+<ul class="team-task-list team-ideas-list">
+{{range .Ideas}}
+<li class="team-task" data-task-id="{{.ID}}">
+<a href="/tasks/{{.ID}}">{{.Title}}</a> <span class="team-task-size">{{.SizeLabel}}</span>
+</li>
+{{end}}
+</ul>
+{{end}}
 </div>
 {{end}}
 </div>

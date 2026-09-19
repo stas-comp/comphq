@@ -65,6 +65,22 @@
 </li>
 {{end}}
 </ul>
+
+<h3>Ideas I'm on</h3>
+<ul class="team-task-list myjobs-ideas-list">
+{{range .Lane.Ideas}}
+<li class="team-task" data-task-id="{{.ID}}">
+<a href="/tasks/{{.ID}}">{{.Title}}</a> <span class="team-task-size">{{.SizeLabel}}</span>
+<div class="team-task-actions">
+<form method="post" action="/tasks/{{.ID}}/assign" class="inline-form">
+<input type="hidden" name="from_person" value="{{$lane.PersonID}}">
+<input type="hidden" name="redirect_to" value="myjobs">
+<button type="submit">Give back</button>
+</form>
+</div>
+</li>
+{{end}}
+</ul>
 </div>
 
 <div class="myjobs-grabs">
