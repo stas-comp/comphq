@@ -476,6 +476,11 @@ type chipView struct {
 	Title     string
 	TimeLabel string // "" for all-day, or for a task (SPEC B4: tasks have no time)
 	Href      string
+	// Continues is true on every day of a multi-day event after its first,
+	// drawn in a lighter navy (gate 4.36); Late is true for a task whose due
+	// date has passed, drawn in red.
+	Continues bool
+	Late      bool
 }
 
 func eventChip(o CalendarOccurrence) chipView {
@@ -487,8 +492,8 @@ func eventChip(o CalendarOccurrence) chipView {
 	}
 }
 
-func taskChip(t DueTask) chipView {
-	return chipView{Kind: "task", Title: t.Title, Href: fmt.Sprintf("/tasks/%d", t.ID)}
+func taskChip(t DueTask, today string) chipView {
+	return chipView{Kind: "task", Title: t.Title, Href: fmt.Sprintf("/tasks/%d", t.ID), Late: t.DueDate < today}
 }
 
 type dayCell struct {
@@ -550,8 +555,9 @@ func (h *Handlers) handleMonth(w http.ResponseWriter, r *http.Request) {
 		if err1 != nil || err2 != nil {
 			continue
 		}
-		chip := eventChip(occ)
 		for d := start; !d.After(end); d = d.AddDate(0, 0, 1) {
+			chip := eventChip(occ)
+			chip.Continues = d.After(start)
 			byDate[d.Format(dateLayout)] = append(byDate[d.Format(dateLayout)], chip)
 		}
 	}
@@ -564,8 +570,9 @@ func (h *Handlers) handleMonth(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "internal error", http.StatusInternalServerError)
 			return
 		}
+		todayStr := today.Format(dateLayout)
 		for _, t := range due {
-			byDate[t.DueDate] = append(byDate[t.DueDate], taskChip(t))
+			byDate[t.DueDate] = append(byDate[t.DueDate], taskChip(t, todayStr))
 		}
 	}
 

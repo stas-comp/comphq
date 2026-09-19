@@ -29,7 +29,7 @@ testToday.describe('gate 2.12: month view', () => {
     await signInAsNewPerson(page, server.baseURL, '/calendar');
     await ready(page);
 
-    await expect(page.locator('h2')).toHaveText('September 2026');
+    await expect(page.locator('h1')).toHaveText('September 2026');
     await expect(page.locator('.calendar-day-today')).toHaveAttribute('data-date', '2026-09-16');
 
     // Every Saturday in the visible grid is highlighted, and no other
@@ -43,17 +43,17 @@ testToday.describe('gate 2.12: month view', () => {
 
     await page.click('text=Previous');
     await ready(page);
-    await expect(page.locator('h2')).toHaveText('August 2026');
+    await expect(page.locator('h1')).toHaveText('August 2026');
 
     await page.click('text=Next');
     await ready(page);
     await page.click('text=Next');
     await ready(page);
-    await expect(page.locator('h2')).toHaveText('October 2026');
+    await expect(page.locator('h1')).toHaveText('October 2026');
 
     await page.click('text=Today');
     await ready(page);
-    await expect(page.locator('h2')).toHaveText('September 2026');
+    await expect(page.locator('h1')).toHaveText('September 2026');
   });
 
   testToday('@fresh clicking a day starts a new event on that date', async ({ page, server }) => {

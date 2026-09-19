@@ -58,6 +58,8 @@
 
   /* Supporting values the mockup uses that B9.2 doesn't name. */
   --color-white: #ffffff;
+  --color-day-out: #f0eee8;
+  --color-chip-continues-text: #d5d9e4;
   --color-avatar-b: #4e5b7a;
   --color-avatar-c: #6b5a4e;
   --color-avatar-d: #3f6660;

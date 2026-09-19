@@ -1,15 +1,12 @@
 {{define "calendar-month.html"}}
-<h1>Calendar</h1>
+<div class="tools">
+<h1>{{.MonthLabel}}</h1>
+<a class="btn" href="/calendar?month={{.PrevMonth}}">‹ Previous</a>
+<a class="btn" href="/calendar?month={{.TodayMonth}}">Today</a>
+<a class="btn" href="/calendar?month={{.NextMonth}}">Next ›</a>
 {{template "calendar-view-switch" .}}
-
-<div class="calendar-month-nav">
-<a href="/calendar?month={{.PrevMonth}}">Previous</a>
-<a href="/calendar?month={{.TodayMonth}}">Today</a>
-<a href="/calendar?month={{.NextMonth}}">Next</a>
-<h2>{{.MonthLabel}}</h2>
+<a class="btn primary tools-add" href="/calendar/new">+ Add event</a>
 </div>
-
-<p><a href="/calendar/new">Add event</a> · <a href="/calendar/removed">Removed events</a></p>
 
 <table class="calendar-grid">
 <thead>
@@ -22,7 +19,7 @@
 <td class="calendar-day{{if not .InMonth}} calendar-day-outside{{end}}{{if .IsToday}} calendar-day-today{{end}}{{if .IsSaturday}} calendar-day-saturday{{end}}" data-date="{{.Date}}">
 <a class="calendar-day-number" href="/calendar/new?date={{.Date}}">{{.Day}}{{if .IsToday}}<span class="visually-hidden"> (today)</span>{{end}}</a>
 {{range .Chips}}
-<a class="calendar-chip calendar-chip-{{.Kind}}" data-kind="{{.Kind}}" href="{{.Href}}">{{if .TimeLabel}}{{.TimeLabel}} {{end}}{{.Title}}</a>
+<a class="calendar-chip calendar-chip-{{.Kind}}{{if .Continues}} calendar-chip-continues{{end}}{{if .Late}} calendar-chip-late{{end}}" data-kind="{{.Kind}}" href="{{.Href}}">{{if .TimeLabel}}{{.TimeLabel}} {{end}}{{.Title}}</a>
 {{end}}
 </td>
 {{end}}
@@ -30,4 +27,11 @@
 {{end}}
 </tbody>
 </table>
+
+<div class="legend calendar-legend">
+<span class="calendar-chip calendar-chip-event">Event</span>
+<span class="calendar-chip calendar-chip-task">Task due</span>
+<span>Saturdays are highlighted — that's office day.</span>
+<a href="/calendar/removed">Removed events</a>
+</div>
 {{end}}

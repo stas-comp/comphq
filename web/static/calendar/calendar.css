@@ -1,69 +1,76 @@
+/* The month grid (gates 4.33-4.38), laid out as docs/design/mockup.html
+   draws `.cal-grid`, `.dow`, `.day` and `.chip`. It stays a table, so a
+   screen reader still announces the day headings and the date of each cell. */
 .calendar-view-switch {
   width: fit-content;
-  margin: 0 0 var(--space-4);
-}
-
-.calendar-month-nav {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  margin: 0 0 var(--space-4);
-}
-
-.calendar-month-nav h2 {
   margin: 0;
-  font-size: var(--font-size-h3);
 }
 
 .calendar-grid {
   width: 100%;
-  border-collapse: collapse;
+  margin-top: 22px;
   table-layout: fixed;
+  border-collapse: separate;
+  border-spacing: 0;
+  border-top: 3px solid var(--color-ink-navy);
+  border-left: 1px solid var(--color-border);
 }
 
 .calendar-grid th {
   text-align: left;
-  font-size: var(--font-size-small);
-  color: var(--color-text-muted);
-  padding: var(--space-1) var(--space-2);
+  font: 800 15px var(--font-display);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 8px 10px;
+  border-right: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-ink-navy);
+  background: var(--color-paper);
 }
 
-.calendar-saturday-heading {
-  color: var(--color-ink-text);
-  font-weight: 700;
+/* Saturday is office day: its heading is a solid accent block with ink
+   text (4.33), and its column is tinted with the accent wash. */
+.calendar-grid th.calendar-saturday-heading {
+  background: var(--color-signal-orange);
+  color: var(--color-ink-navy);
 }
 
 .calendar-day {
-  border: 1px solid var(--color-border);
+  height: 108px;
   vertical-align: top;
-  padding: var(--space-1) var(--space-2);
-  height: 6rem;
+  border-right: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-card);
+  padding: 6px 6px 8px;
   overflow: hidden;
 }
 
-.calendar-day-outside {
-  background: var(--color-paper-muted);
-}
-
-.calendar-day-outside .calendar-day-number {
-  color: var(--color-text-muted);
-}
-
 .calendar-day-saturday {
-  background: var(--color-paper-muted);
+  background: var(--color-accent-wash);
 }
 
-.calendar-day-today {
-  background: var(--color-paper);
-  box-shadow: inset 0 0 0 2px var(--color-signal-orange);
+/* Days outside the month are a third, quieter shade (4.34): ordinary,
+   Saturday and outside-the-month can never be confused. Their number keeps
+   the muted text colour: the mockup's paler grey is 2.2:1 on this shade and
+   gate 4.03 requires 4.5:1 (D-63). */
+.calendar-day-outside {
+  background: var(--color-day-out);
 }
 
 .calendar-day-number {
   display: inline-block;
-  margin: 0 0 var(--space-1);
-  font-weight: 700;
-  color: inherit;
+  margin: 0 0 4px;
+  padding: 1px 5px;
+  font: 500 13px var(--font-mono);
+  color: var(--color-text-muted);
   text-decoration: none;
+}
+
+/* Today's number sits in a filled ink chip (4.35). */
+.calendar-day-today .calendar-day-number {
+  background: var(--color-ink-navy);
+  color: var(--color-white);
+  border-radius: 4px;
 }
 
 .calendar-day-number:hover,
@@ -71,17 +78,17 @@
   text-decoration: underline;
 }
 
-/* A chip is either a solid, accent-coloured event or an outlined task
-   deadline with a tick-box icon (SPEC A7: "so the two are never
-   confused") — shared layout here, each kind's own look below. */
+/* A chip is a solid ink event or an outlined task deadline with a small
+   empty square, red when overdue (4.36); the later days of a multi-day
+   event are a lighter navy. */
 .calendar-chip {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  margin: 0 0 var(--space-1);
-  padding: 1px var(--space-1);
-  border-radius: var(--radius-sm);
-  font-size: var(--font-size-small);
+  display: block;
+  margin: 0 0 4px;
+  padding: 3px 6px;
+  border-radius: 4px;
+  font-size: 12.5px;
+  font-weight: 700;
+  line-height: 1.25;
   text-decoration: none;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -93,30 +100,58 @@
   color: var(--color-white);
 }
 
+.calendar-chip-event.calendar-chip-continues {
+  background: var(--color-ink-navy-3);
+  color: var(--color-chip-continues-text);
+  font-weight: 600;
+}
+
 .calendar-chip-event:hover,
 .calendar-chip-event:focus-visible {
   background: var(--color-signal-orange-deep);
+  color: var(--color-white);
 }
 
 .calendar-chip-task {
-  background: transparent;
-  border: 1px solid var(--color-ink-navy);
-  color: var(--color-ink-text);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--color-card);
+  border: 1.5px solid var(--color-ink-navy);
+  color: var(--color-ink-navy);
 }
 
 .calendar-chip-task::before {
   content: "";
-  display: inline-block;
-  width: 0.6rem;
-  height: 0.6rem;
-  flex-shrink: 0;
-  border: 1px solid currentColor;
+  width: 9px;
+  height: 9px;
+  flex: none;
+  border: 1.5px solid var(--color-ink-navy);
   border-radius: 2px;
+}
+
+.calendar-chip-task.calendar-chip-late {
+  border-color: var(--color-danger);
+  color: var(--color-danger);
+}
+
+.calendar-chip-task.calendar-chip-late::before {
+  border-color: var(--color-danger);
 }
 
 .calendar-chip-task:hover,
 .calendar-chip-task:focus-visible {
   background: var(--color-paper-muted);
+}
+
+/* The legend under the grid (4.37). */
+.calendar-legend .calendar-chip {
+  display: inline-flex;
+  margin: 0;
+}
+
+.calendar-list-links {
+  margin: 22px 0 var(--space-4);
 }
 
 .calendar-list {

@@ -1,8 +1,10 @@
 {{define "calendar-list.html"}}
+<div class="tools">
 <h1>Calendar</h1>
 {{template "calendar-view-switch" .}}
-
-<p><a href="/calendar/new">Add event</a> · <a href="/calendar/removed">Removed events</a></p>
+<a class="btn primary tools-add" href="/calendar/new">+ Add event</a>
+</div>
+<p class="calendar-list-links"><a href="/calendar/removed">Removed events</a></p>
 
 {{if .Rows}}
 <ul class="calendar-list">
