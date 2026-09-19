@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import net from 'node:net';
 import os from 'node:os';
 import path from 'node:path';
+import { retireTestPeople } from './people';
 
 export type Server = { baseURL: string; dataDir: string; stubImageHost: string };
 
@@ -40,7 +41,17 @@ export async function waitForHealthy(baseURL: string, timeoutMs = 15_000): Promi
 
 // Each worker gets its own server: its own temp /data folder and a free
 // port, so workers never share state (SPEC §2.6).
-export const test = base.extend<{}, { server: Server }>({
+export const test = base.extend<{ retirePeople: void }, { server: Server }>({
+  // After every test, hand back the people it signed in as (see people.ts).
+  retirePeople: [
+    // eslint-disable-next-line no-empty-pattern
+    async ({}, use) => {
+      await use();
+      await retireTestPeople();
+    },
+    { auto: true },
+  ],
+
   // eslint-disable-next-line no-empty-pattern
   server: [async ({}, use, workerInfo) => {
     const baseURLFromEnv = process.env.BASE_URL;
