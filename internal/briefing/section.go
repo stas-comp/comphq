@@ -49,7 +49,7 @@ func Section(srv *app.Server, tasks TaskSource, events EventSource) app.Section 
 		Nav: &app.NavItem{
 			Label:         "Briefing",
 			Path:          "/briefing",
-			Icon:          "/static/theme/icons/briefing.svg",
+			Icon:          "briefing",
 			AlsoCurrentAt: []string{"/"},
 		},
 		RegisterRoutes: func(mux *http.ServeMux) {

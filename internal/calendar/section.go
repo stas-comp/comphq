@@ -38,7 +38,7 @@ func Section(srv *app.Server, dueTasks DueTasksSource) app.Section {
 	h := &Handlers{srv: srv, store: &Store{DB: srv.DB}, dueTasks: dueTasks}
 	return app.Section{
 		MigrationName: "calendar",
-		Nav:           &app.NavItem{Label: "Calendar", Path: "/calendar", Icon: "/static/theme/icons/calendar.svg"},
+		Nav:           &app.NavItem{Label: "Calendar", Path: "/calendar", Icon: "calendar"},
 		RegisterRoutes: func(mux *http.ServeMux) {
 			mux.HandleFunc("GET /calendar", h.handleMonth)
 			mux.HandleFunc("GET /calendar/list", h.handleList)

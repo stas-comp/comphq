@@ -542,3 +542,63 @@ select.field[multiple] {
   font: 500 13px var(--font-mono);
   color: var(--color-text-muted);
 }
+
+/* ---- Icons (gate 4.12, SPEC B9.4): one line-art set in
+   web/static/theme/icons/, every file 24 x 24 with a 2px round stroke.
+   An icon is drawn through a mask, so it takes the colour of the button or
+   link that holds it (`currentColor`) and one file serves a dark sidebar
+   and a white card. ---- */
+.icon {
+  display: inline-block;
+  flex: none;
+  width: 20px;
+  height: 20px;
+  background-color: currentColor;
+  mask: var(--icon) center / contain no-repeat;
+}
+
+.icon-briefing { --icon: url("/static/theme/icons/briefing.svg"); }
+.icon-kb { --icon: url("/static/theme/icons/kb.svg"); }
+.icon-tasks { --icon: url("/static/theme/icons/tasks.svg"); }
+.icon-calendar { --icon: url("/static/theme/icons/calendar.svg"); }
+.icon-settings { --icon: url("/static/theme/icons/settings.svg"); }
+.icon-arrow-up { --icon: url("/static/theme/icons/arrow-up.svg"); }
+.icon-arrow-down { --icon: url("/static/theme/icons/arrow-down.svg"); }
+.icon-trash { --icon: url("/static/theme/icons/trash.svg"); }
+.icon-give-back { --icon: url("/static/theme/icons/give-back.svg"); }
+.icon-plus { --icon: url("/static/theme/icons/plus.svg"); }
+.icon-search { --icon: url("/static/theme/icons/search.svg"); }
+.icon-check { --icon: url("/static/theme/icons/check.svg"); }
+.icon-chevron { --icon: url("/static/theme/icons/chevron.svg"); }
+.icon-close { --icon: url("/static/theme/icons/close.svg"); }
+.icon-import-word { --icon: url("/static/theme/icons/import-word.svg"); }
+
+/* An icon-only button (gate 4.11): a 24px box like the mockup's card
+   movers. There are exactly four — move up, move down, remove, give back —
+   each with a title and an aria-label that say the same thing, naming the
+   task (internal/app.IconButton, the part-icon-button partial). */
+.icon-btn {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  background: transparent;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 5px;
+  color: var(--color-text-muted);
+}
+
+.icon-btn .icon {
+  width: 14px;
+  height: 14px;
+}
+
+.icon-btn:hover:not(:disabled) {
+  background: var(--color-accent-wash);
+  color: var(--color-ink-navy);
+}
+
+.icon-btn:disabled {
+  opacity: 0.4;
+}

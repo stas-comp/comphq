@@ -43,6 +43,12 @@
 
 <div id="parts-workload">{{template "part-workload" .Lane}}</div>
 
+<div id="parts-icon-buttons">{{range .IconButtons}}{{template "part-icon-button" .}} {{end}}</div>
+
+<p id="parts-icons">{{range .Icons}}<span class="icon icon-{{.}}" data-icon="{{.}}" aria-hidden="true"></span> {{end}}</p>
+
+<p><button id="parts-icon-in-primary" class="btn primary" type="button"><span class="icon icon-plus" aria-hidden="true"></span> Add task</button></p>
+
 <div id="parts-card" class="card"><h3>Update Christmas card address list</h3><p>A card</p></div>
 
 <div id="parts-panel-head" class="panel-head"><h2>Must be done today</h2><span class="count">4 tasks</span></div>

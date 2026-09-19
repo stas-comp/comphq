@@ -21,7 +21,7 @@ func Section(srv *app.Server) app.Section {
 	}
 	return app.Section{
 		MigrationName: "tasks",
-		Nav:           &app.NavItem{Label: "Tasks", Path: "/tasks", Icon: "/static/theme/icons/tasks.svg"},
+		Nav:           &app.NavItem{Label: "Tasks", Path: "/tasks", Icon: "tasks"},
 		RegisterRoutes: func(mux *http.ServeMux) {
 			mux.HandleFunc("GET /tasks", h.handleMyJobs)
 			mux.HandleFunc("GET /tasks/board", h.handleBoard)

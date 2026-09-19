@@ -149,7 +149,7 @@ func TestThemeTokensMatchSpecTable(t *testing.T) {
 func TestThemeFontFilesExist(t *testing.T) {
 	root := repoRoot(t)
 	css := readCSS(t, themeCSSPath(t))
-	urls := regexp.MustCompile(`url\("(/static/[^"]+)"\)`).FindAllStringSubmatch(css, -1)
+	urls := regexp.MustCompile(`url\("(/static/[^"]+\.woff2)"\)`).FindAllStringSubmatch(css, -1)
 	if len(urls) != 3 {
 		t.Errorf("theme.css loads %d font files, want 3 (Big Shoulders Display, Atkinson Hyperlegible Next, IBM Plex Mono)", len(urls))
 	}
@@ -323,7 +323,7 @@ func TestEveryControlInEveryTemplateHasAThemeClass(t *testing.T) {
 		themeClasses[m[1]] = true
 	}
 	allowed := map[string][]string{
-		"button":   {"btn", "mini", "tb", "link-button"},
+		"button":   {"btn", "mini", "tb", "link-button", "icon-btn"},
 		"select":   {"field"},
 		"textarea": {"field"},
 		"input":    {"field", "check"},
@@ -383,4 +383,98 @@ func slicesContains(list []string, want string) bool {
 		}
 	}
 	return false
+}
+
+// expectedIcons is SPEC B9.4's set: the nine new icons, the five section
+// icons, and the Word import icon the Knowledge Base editor's button uses.
+var expectedIcons = []string{
+	"arrow-up", "arrow-down", "trash", "give-back", "plus", "search", "check", "chevron", "close",
+	"briefing", "kb", "tasks", "calendar", "settings", "import-word",
+}
+
+// SPEC gate 4.12, B9.4: every icon is one drawing on a 24 x 24 grid with a
+// 2px round stroke, no fill, and the colour of whatever holds it. None is
+// fetched from the internet, and each has a class in theme.css.
+func TestIconsAreOneSetOfLineDrawings(t *testing.T) {
+	root := repoRoot(t)
+	dir := filepath.Join(root, "web", "static", "theme", "icons")
+	css := readCSS(t, themeCSSPath(t))
+
+	for _, name := range expectedIcons {
+		data, err := os.ReadFile(filepath.Join(dir, name+".svg"))
+		if err != nil {
+			t.Errorf("icon %s is missing: %v", name, err)
+			continue
+		}
+		svg := string(data)
+		for _, want := range []string{`viewBox="0 0 24 24"`, `fill="none"`, `stroke="currentColor"`, `stroke-width="2"`, `stroke-linecap="round"`, `stroke-linejoin="round"`} {
+			if !strings.Contains(svg, want) {
+				t.Errorf("icons/%s.svg lacks %s", name, want)
+			}
+		}
+		if regexp.MustCompile(`(?:fill|stroke)="#`).MatchString(svg) {
+			t.Errorf("icons/%s.svg hard-codes a colour; icons take the colour of their button", name)
+		}
+		if !strings.Contains(css, ".icon-"+name+" ") || !strings.Contains(css, "/static/theme/icons/"+name+".svg") {
+			t.Errorf("theme.css has no .icon-%s class pointing at %s.svg", name, name)
+		}
+	}
+
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, e := range entries {
+		if strings.HasSuffix(e.Name(), ".svg") && !slicesContains(expectedIcons, strings.TrimSuffix(e.Name(), ".svg")) {
+			t.Errorf("icons/%s isn't in the icon set; add it to B9.4's list (and this test) on purpose", e.Name())
+		}
+	}
+}
+
+var (
+	buttonElemRe = regexp.MustCompile(`(?s)<button\b([^>]*)>(.*?)</button>`)
+	tagRe        = regexp.MustCompile(`(?s)<[^>]*>`)
+)
+
+// SPEC gate 4.11: icon-only buttons exist for exactly four things, and each
+// has both a title and an aria-label that say the same thing. There is one
+// place to write one (the part-icon-button partial); a button anywhere else
+// with nothing readable in it is an unnamed icon button and fails.
+func TestIconOnlyButtonsAreTheFourPermittedAndFullyNamed(t *testing.T) {
+	root := repoRoot(t)
+	titleRe := regexp.MustCompile(`\stitle="([^"]*)"`)
+	ariaRe := regexp.MustCompile(`\saria-label="([^"]*)"`)
+
+	err := filepath.WalkDir(filepath.Join(root, "web", "templates"), func(path string, d fs.DirEntry, err error) error {
+		if err != nil || d.IsDir() || !strings.HasSuffix(path, ".html") {
+			return err
+		}
+		data, err := os.ReadFile(path)
+		if err != nil {
+			return err
+		}
+		rel, _ := filepath.Rel(root, path)
+		rel = filepath.ToSlash(rel)
+		for _, m := range buttonElemRe.FindAllStringSubmatch(string(data), -1) {
+			attrs, inner := m[1], m[2]
+			// A template action ({{.Name}}) counts as words: it prints some.
+			text := strings.TrimSpace(tagRe.ReplaceAllString(inner, ""))
+			isIconBtn := strings.Contains(attrs, "icon-btn")
+			if text != "" && !isIconBtn {
+				continue // an ordinary button with words
+			}
+			if rel != "web/templates/app/parts.html" {
+				t.Errorf("%s: <button%s> has no words; icon-only buttons are written only in the part-icon-button partial (gate 4.11)", rel, attrs)
+				continue
+			}
+			title, aria := titleRe.FindStringSubmatch(attrs), ariaRe.FindStringSubmatch(attrs)
+			if title == nil || aria == nil || title[1] != aria[1] || strings.TrimSpace(title[1]) == "" {
+				t.Errorf("%s: the icon-only button needs a title and an aria-label that are the same non-empty text; got %q / %q", rel, title, aria)
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
 }

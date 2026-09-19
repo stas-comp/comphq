@@ -24,7 +24,7 @@
 <ul>
 {{range .Nav}}
 <li><a href="{{.Path}}"{{if .Current}} aria-current="page" class="current"{{end}}>
-<img src="{{.Icon}}" alt="" width="20" height="20">
+<span class="icon icon-{{.Icon}}" aria-hidden="true"></span>
 <span>{{.Label}}</span>
 </a></li>
 {{end}}

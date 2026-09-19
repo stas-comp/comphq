@@ -26,7 +26,7 @@ func Section(srv *app.Server) app.Section {
 	}
 	return app.Section{
 		MigrationName: "kb", // migrations/kb/0001_search.sql (P1-08), 0002_categories.sql (P1-17), 0003_article_versions.sql (P1-19), 0004_images.sql (P1-21)
-		Nav:           &app.NavItem{Label: "Knowledge Base", Path: "/kb", Icon: "/static/theme/icons/kb.svg"},
+		Nav:           &app.NavItem{Label: "Knowledge Base", Path: "/kb", Icon: "kb"},
 		RegisterRoutes: func(mux *http.ServeMux) {
 			mux.HandleFunc("GET /kb", h.handleHome)
 			mux.HandleFunc("GET /kb/categories", h.handleCategories)

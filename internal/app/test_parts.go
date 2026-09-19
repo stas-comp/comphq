@@ -28,11 +28,11 @@ type testPartsLane struct {
 }
 
 type testPartsData struct {
-	People   []testPartsPerson
-	Lane     testPartsLane
-	Sizes    []string
-	MeClass  string
-	Selected string
+	People      []testPartsPerson
+	Lane        testPartsLane
+	Sizes       []string
+	IconButtons []IconButton
+	Icons       []string
 }
 
 func (s *Server) handleTestParts(w http.ResponseWriter, r *http.Request) {
@@ -50,5 +50,13 @@ func (s *Server) handleTestParts(w http.ResponseWriter, r *http.Request) {
 			WorkloadLabel: "Workload: 7 blocks — large, medium, small",
 		},
 		Sizes: []string{"Small", "Medium", "Large"},
+		IconButtons: []IconButton{
+			NewIconButton(IconMoveUp, "Print exam papers", false),
+			NewIconButton(IconMoveDown, "Print exam papers", false),
+			NewIconButton(IconRemove, "Print exam papers", false),
+			NewIconButton(IconGiveBack, "Print exam papers", false),
+			NewIconButton(IconMoveUp, "Top card", true),
+		},
+		Icons: []string{"briefing", "kb", "tasks", "calendar", "settings", "arrow-up", "arrow-down", "trash", "give-back", "plus", "search", "check", "chevron", "close", "import-word"},
 	})
 }

@@ -51,11 +51,6 @@
   color: var(--color-ink-navy);
 }
 
-.sidebar nav a img {
-  filter: brightness(0) invert(1);
-  opacity: 0.9;
-}
-
 .main-column {
   flex: 1;
   min-width: 0;

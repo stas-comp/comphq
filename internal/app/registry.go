@@ -6,7 +6,10 @@ import "net/http"
 type NavItem struct {
 	Label string
 	Path  string
-	Icon  string // static path to an SVG, e.g. "/static/theme/icons/kb.svg"
+	// Icon is the name of a line icon in web/static/theme/icons/, without
+	// its extension: "kb" draws kb.svg (SPEC B9.4). theme.css has one
+	// `.icon-<name>` class per icon.
+	Icon string
 	// AlsoCurrentAt lists other exact paths that mark this item current
 	// too (the Briefing is also the home page, "/").
 	AlsoCurrentAt []string

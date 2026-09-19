@@ -40,7 +40,7 @@ func Section(srv *app.Server, tasksCSV, eventsCSV CSVSource) app.Section {
 		images:   imagesStore,
 	}
 	return app.Section{
-		Nav: &app.NavItem{Label: "Settings", Path: "/settings", Icon: "/static/theme/icons/settings.svg"},
+		Nav: &app.NavItem{Label: "Settings", Path: "/settings", Icon: "settings"},
 		RegisterRoutes: func(mux *http.ServeMux) {
 			mux.HandleFunc("GET /settings", h.handleIndex)
 			mux.HandleFunc("GET /settings/people", h.handlePeople)
