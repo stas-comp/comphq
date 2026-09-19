@@ -208,7 +208,7 @@ test('gate 2.29: reordering a lane\'s Up next changes only the moved task\'s pos
 
   await page.goto(server.baseURL + '/tasks/team');
   await ready(page);
-  await laneLocator(page, nameA).locator('.team-task', { hasText: a2 }).locator('button', { hasText: 'Move up' }).click();
+  await laneLocator(page, nameA).locator('.team-task', { hasText: a2 }).getByRole('button', { name: `Move ${a2} up` }).click(); // icon-only, named for the job (gate 4.11)
   await ready(page);
   await expect(page).toHaveURL(/\/tasks\/team$/);
 

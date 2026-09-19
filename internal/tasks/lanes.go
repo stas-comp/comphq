@@ -5,7 +5,10 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+	"time"
 
+	"github.com/stas-comp/comphq/internal/app"
+	"github.com/stas-comp/comphq/internal/app/format"
 	"github.com/stas-comp/comphq/internal/people"
 )
 
@@ -69,6 +72,22 @@ type LaneTask struct {
 	Number    int
 	PrevID    int64
 	NextID    int64
+	// DueDate is the ISO due date ("" for none); DueLabel is the same as a
+	// card shows it ("Wed 23 Sep"), filled in by Lane.Decorate. AlsoOn names
+	// the other people on the job, for "Also on it: Sam" (gate 4.31).
+	DueDate  string
+	DueLabel string
+	AlsoOn   string
+}
+
+// MoveUp and MoveDown are the two icon-only move buttons of an Up next
+// card (gate 4.11), disabled at the top and bottom of the lane's own order.
+func (t LaneTask) MoveUp() app.IconButton {
+	return app.NewIconButton(app.IconMoveUp, t.Title, t.PrevID == 0)
+}
+
+func (t LaneTask) MoveDown() app.IconButton {
+	return app.NewIconButton(app.IconMoveDown, t.Title, t.NextID == 0)
 }
 
 // WorkloadGroup is one task's share of a lane's workload, kept apart
@@ -91,6 +110,12 @@ type Lane struct {
 	WorkingOnNow []LaneTask
 	UpNext       []LaneTask
 	Ideas        []LaneTask
+	// Initials and AvatarClass draw the person's circle in the lane head;
+	// IsMe marks the lane of the person using the app (gate 4.31). All three
+	// are filled in by Decorate.
+	Initials     string
+	AvatarClass  string
+	IsMe         bool
 	Workload     []WorkloadGroup
 	WorkloadLine string
 	// WorkloadLabel is the blocks' spoken equivalent (SPEC gate 4.10):
@@ -126,6 +151,37 @@ func BuildLanes(tasksList []Task, peopleList []people.Person) []Lane {
 	return lanes
 }
 
+// JobCount is how many jobs the lane holds (Working on now and Up next),
+// for the Unassigned lane's "3 jobs waiting for someone".
+func (l Lane) JobCount() int {
+	return len(l.WorkingOnNow) + len(l.UpNext)
+}
+
+// Decorate fills in what a lane needs to be drawn and BuildLanes, being a
+// pure grouping, doesn't know: the person's circle, whether this lane is the
+// person using the app (meID), and every card's short due date.
+func (l *Lane) Decorate(meID int64, today time.Time) {
+	if l.PersonID != 0 {
+		l.Initials = format.Initials(l.PersonName)
+		l.AvatarClass = AvatarClass(l.PersonID, meID)
+		l.IsMe = meID != 0 && l.PersonID == meID
+	}
+	for _, group := range [][]LaneTask{l.WorkingOnNow, l.UpNext, l.Ideas} {
+		for i := range group {
+			group[i].DueLabel = shortDueLabel(group[i].DueDate, today)
+		}
+	}
+}
+
+// shortDueLabel renders an ISO due date the way a card shows it, or "".
+func shortDueLabel(iso string, today time.Time) string {
+	due, err := time.Parse("2006-01-02", iso)
+	if err != nil {
+		return ""
+	}
+	return format.DateShort(due, today)
+}
+
 func buildLane(personID int64, name string, tasksList []Task, everyone []people.Person, showWorkload bool) Lane {
 	lane := Lane{PersonID: personID, PersonName: name}
 	for _, p := range everyone {
@@ -145,13 +201,15 @@ func buildLane(personID int64, name string, tasksList []Task, everyone []people.
 	for _, t := range laneTasks {
 		switch t.Stage {
 		case StageDoing:
-			lane.WorkingOnNow = append(lane.WorkingOnNow, LaneTask{ID: t.ID, Title: t.Title, SizeLabel: sizeLabels[t.Size]})
+			lane.WorkingOnNow = append(lane.WorkingOnNow, laneTask(t, personID))
 		case StageTodo:
 			number++
-			lane.UpNext = append(lane.UpNext, LaneTask{ID: t.ID, Title: t.Title, SizeLabel: sizeLabels[t.Size], Number: number})
+			lt := laneTask(t, personID)
+			lt.Number = number
+			lane.UpNext = append(lane.UpNext, lt)
 		case StageIdea:
 			if personID != 0 {
-				lane.Ideas = append(lane.Ideas, LaneTask{ID: t.ID, Title: t.Title, SizeLabel: sizeLabels[t.Size]})
+				lane.Ideas = append(lane.Ideas, laneTask(t, personID))
 			}
 		}
 	}
@@ -169,6 +227,18 @@ func buildLane(personID int64, name string, tasksList []Task, everyone []people.
 		lane.WorkloadLabel = WorkloadLabel(lane.Workload)
 	}
 	return lane
+}
+
+// laneTask is one job as a lane's card shows it; AlsoOn is everyone on it but
+// the lane's own person.
+func laneTask(t Task, personID int64) LaneTask {
+	var others []string
+	for _, a := range t.Assignees {
+		if a.PersonID != personID {
+			others = append(others, a.Name)
+		}
+	}
+	return LaneTask{ID: t.ID, Title: t.Title, SizeLabel: sizeLabels[t.Size], DueDate: t.DueDate, AlsoOn: strings.Join(others, ", ")}
 }
 
 // belongsToLane reports whether a task shows in personID's lane (0 for

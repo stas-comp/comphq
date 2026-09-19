@@ -15,6 +15,7 @@ function initMyJobsSortable() {
     Sortable.create(upNext, {
       group: 'myjobs-take',
       animation: 150,
+      draggable: '.team-task', // not the "Drop a job here" box at the foot
       filter: 'button',
       preventOnFilter: false,
       onStart: () => { document.body.dataset.refreshBusy = '1' },
@@ -38,8 +39,13 @@ function initMyJobsSortable() {
 // DOM neighbours become the drop position (SPEC gate 2.34); no sibling
 // means the drop didn't imply any particular position.
 function computeDropParams(item) {
-  const next = item.nextElementSibling
-  const prev = item.previousElementSibling
+  // The neighbours that count are real jobs; the "Drop a job here" box has no id.
+  const jobSibling = (el, dir) => {
+    while (el && !el.dataset.taskId) el = el[dir]
+    return el
+  }
+  const next = jobSibling(item.nextElementSibling, 'nextElementSibling')
+  const prev = jobSibling(item.previousElementSibling, 'previousElementSibling')
   if (next) return { before_id: next.dataset.taskId }
   if (prev) return { after_id: prev.dataset.taskId }
   return {}

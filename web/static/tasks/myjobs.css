@@ -1,34 +1,70 @@
+/* My jobs (gates 4.30, 4.32), laid out as docs/design/mockup.html draws
+   `.myjobs`, `.area`, `.area.mine`, `.area.grabs` and `.area-head`. */
 .myjobs-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  gap: 22px;
+  align-items: start;
+  margin-top: 22px;
+}
+
+.area {
+  border-radius: 12px;
+  padding: 14px;
+  display: grid;
+  gap: 9px;
+}
+
+/* Your own list is tinted (4.30)... */
+.area.mine {
+  background: var(--color-accent-wash);
+  outline: 2px solid var(--color-accent-soft);
+}
+
+/* ...and Up for grabs is a dashed outline with no fill, so it reads as a
+   holding area rather than someone's list. */
+.area.grabs {
+  border: 2px dashed var(--color-border-strong);
+}
+
+.area .card {
+  cursor: grab;
+}
+
+.area-head {
+  display: grid;
+  gap: 8px;
+  padding: 0 4px 12px;
+  border-bottom: 1.5px solid var(--color-border-strong);
+}
+
+.area-head .who {
   display: flex;
-  gap: var(--space-4);
-  align-items: flex-start;
-  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
 }
 
-.myjobs-mine,
-.myjobs-grabs {
-  flex: 1 1 320px;
-  min-width: 280px;
-  background: var(--color-paper-muted);
-  border-radius: var(--radius-md);
-  padding: var(--space-3);
+.area-head .who .stamp {
+  margin-left: auto;
 }
 
-.myjobs-mine h2,
-.myjobs-grabs h2 {
-  font-size: var(--font-size-h3);
-  margin: 0 0 var(--space-2);
+.area-head h2 {
+  margin: 0;
+  letter-spacing: 0.01em;
 }
 
-.myjobs-mine h3 {
-  font-size: var(--font-size-small);
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
+.area-head p {
+  margin: 0;
+  font-size: 14px;
   color: var(--color-text-muted);
-  margin: var(--space-3) 0 var(--space-1);
 }
 
 .myjobs-grabs-list .inline-form {
-  display: inline;
-  margin-left: var(--space-1);
+  display: flex;
+}
+
+@media (max-width: 1023px) {
+  .myjobs-columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }

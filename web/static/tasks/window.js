@@ -71,6 +71,20 @@
     show('editing', await fetchFragment('/tasks/' + id + '?fragment=1&mode=edit'), 'Edit task')
   }
 
+  // Refreshes the piece of the page the screen marks as refreshable (the
+  // Board, My jobs or Team), so a saved change shows without a reload.
+  async function refreshPage() {
+    const marker = document.querySelector('[data-refresh-fragment-selector]')
+    if (!marker) throw new Error('nothing to refresh')
+    const selector = marker.dataset.refreshFragmentSelector
+    const res = await fetch(location.pathname + location.search)
+    const fresh = new DOMParser().parseFromString(await res.text(), 'text/html').querySelector(selector)
+    const old = document.querySelector(selector)
+    if (!fresh || !old) throw new Error('nothing to refresh')
+    old.replaceWith(fresh)
+    document.dispatchEvent(new CustomEvent('refresh:applied')) // the screen's own drag setup listens
+  }
+
   const plainClick = (event) => event.button === 0 && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey
 
   // + Add task, and a card's title: a plain click opens the window; anything
@@ -83,7 +97,7 @@
       openNewTask(add)
       return
     }
-    const title = event.target.closest('.task-board .task-card-title a')
+    const title = event.target.closest('.task-card-title a')
     if (title) {
       const match = /^\/tasks\/(\d+)$/.exec(new URL(title.href).pathname)
       if (match) {
@@ -171,7 +185,7 @@
       try {
         if (state === 'editing' && id) await readTask(id)
         else dialog.close()
-        await replaceBoardFromPage()
+        await refreshPage()
       } catch (err) {
         window.location.reload() // saved; just show the fresh page
       }

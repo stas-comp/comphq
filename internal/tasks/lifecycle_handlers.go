@@ -3,6 +3,7 @@ package tasks
 import (
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/stas-comp/comphq/internal/app"
 	"github.com/stas-comp/comphq/internal/people"
@@ -16,10 +17,14 @@ type simpleCardView struct {
 	Title     string
 	SizeLabel string
 	DueDate   string
+	// DueLabel is the due date as a card shows it ("Wed 23 Sep"); IsIdea
+	// marks an idea, which taking moves to To do (gate 2.35).
+	DueLabel  string
+	IsIdea    bool
 	Assignees []assigneeView
 }
 
-func newSimpleCardView(t Task, meID int64) simpleCardView {
+func newSimpleCardView(t Task, meID int64, today time.Time) simpleCardView {
 	views := make([]assigneeView, 0, len(t.Assignees))
 	for _, a := range t.Assignees {
 		views = append(views, assigneeView{
@@ -29,7 +34,10 @@ func newSimpleCardView(t Task, meID int64) simpleCardView {
 			Removed:    a.Removed,
 		})
 	}
-	return simpleCardView{ID: t.ID, Title: t.Title, SizeLabel: sizeLabels[t.Size], DueDate: t.DueDate, Assignees: views}
+	return simpleCardView{
+		ID: t.ID, Title: t.Title, SizeLabel: sizeLabels[t.Size], DueDate: t.DueDate, DueLabel: shortDueLabel(t.DueDate, today),
+		IsIdea: t.Stage == StageIdea, Assignees: views,
+	}
 }
 
 type finishedPageData struct {
@@ -47,7 +55,7 @@ func (h *Handlers) handleFinished(w http.ResponseWriter, r *http.Request) {
 	}
 	views := make([]simpleCardView, 0, len(tasks))
 	for _, t := range tasks {
-		views = append(views, newSimpleCardView(t, currentPersonID(r)))
+		views = append(views, newSimpleCardView(t, currentPersonID(r), app.Today(h.srv.TestMode)))
 	}
 	h.srv.RenderFrame(w, r, http.StatusOK, "tasks-finished.html", "Finished tasks", finishedPageData{Tasks: views})
 }
@@ -91,7 +99,7 @@ func (h *Handlers) handleRemoved(w http.ResponseWriter, r *http.Request) {
 	}
 	views := make([]simpleCardView, 0, len(tasks))
 	for _, t := range tasks {
-		views = append(views, newSimpleCardView(t, currentPersonID(r)))
+		views = append(views, newSimpleCardView(t, currentPersonID(r), app.Today(h.srv.TestMode)))
 	}
 	h.srv.RenderFrame(w, r, http.StatusOK, "tasks-removed.html", "Removed tasks", removedPageData{Tasks: views})
 }

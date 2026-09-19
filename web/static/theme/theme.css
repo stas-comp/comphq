@@ -731,3 +731,60 @@ select.field[multiple] {
 body:has(dialog[open]) {
   overflow: hidden;
 }
+
+/* Parts of the Tasks screens shared by My jobs and Team (docs/design/
+   mockup.html): the small-capitals group label, the "Also on it" line, a
+   card's button group, the drop target, the legend, the how-to line. */
+.sub {
+  font: 800 13px var(--font-display);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  padding: 4px 4px 0;
+  margin: 0;
+}
+
+.also {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.acts {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin-left: auto;
+}
+
+.drop {
+  border: 2px dashed var(--color-signal-orange-deep);
+  border-radius: 8px;
+  padding: 12px;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-signal-orange-deep);
+  background: var(--color-card);
+  list-style: none;
+}
+
+.legend {
+  display: flex;
+  gap: 18px;
+  align-items: center;
+  font-size: 13px;
+  color: var(--color-text-muted);
+  margin: 22px 0 0;
+}
+
+.tools .how {
+  font-size: 14px;
+  color: var(--color-text-muted);
+}
+
+/* Your own workload is drawn in the deep accent (the mockup's `.area.mine`
+   and `.lane.me` blocks). */
+.area.mine .workload-block,
+.lane.me .workload-block {
+  background: var(--color-signal-orange-deep);
+}

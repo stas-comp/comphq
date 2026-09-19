@@ -24,12 +24,12 @@ type newTaskPageData struct {
 	InWindow bool
 	Title    string
 	Notes    string
-	Size    string
-	Stage   string
-	DueDate string // as typed, day first
-	Sizes   []sizeOption
-	Stages  []stageOption
-	People  []personOption
+	Size     string
+	Stage    string
+	DueDate  string // as typed, day first
+	Sizes    []sizeOption
+	Stages   []stageOption
+	People   []personOption
 }
 
 // handleNewTaskForm serves GET /tasks/new: an empty form, In Ideas, Medium.

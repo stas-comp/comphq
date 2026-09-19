@@ -1,44 +1,67 @@
+{{/* A job's title and date, shared by every job card on My jobs and Team; both
+a LaneTask and a simple card have ID, Title and DueLabel. A title is a link
+to the task's own page, which the task window opens over this screen. */}}
+{{define "tasks-job-title"}}<h3 class="task-card-title"><a href="/tasks/{{.ID}}">{{.Title}}</a></h3>{{end}}
+{{define "tasks-job-date"}}<span class="date">{{if .DueLabel}}{{.DueLabel}}{{else}}No date{{end}}</span>{{end}}
+
 {{define "tasks-myjobs.html"}}
+<div class="tools">
 <h1>Tasks</h1>
 {{template "tasks-view-switch" .}}
+<span class="how">Finished your jobs? Drag one from Up for grabs into your list, or press Take it.</span>
+<a class="btn primary tools-add" id="add-task-link" href="/tasks/new">+ Add task</a>
+</div>
 <p class="task-board-links"><a href="/tasks/finished">Finished tasks</a> · <a href="/tasks/removed">Removed tasks</a></p>
 
 {{$lane := .Lane}}
 <div class="myjobs-page" data-refresh-version-url="/tasks/version" data-refresh-fragment-selector=".myjobs-page">
 {{if .Message}}<p class="message" role="alert">{{.Message}}</p>{{end}}
 <div class="myjobs-columns">
-<div class="myjobs-mine">
-<h2>My jobs</h2>
+<div class="myjobs-mine area mine">
+<div class="area-head">
+<div class="who"><span class="{{.AvatarClass}}" aria-hidden="true">{{.Initials}}</span><h2>My jobs</h2><span class="stamp stamp-yours">{{.PersonName}}</span></div>
 {{template "part-workload" .Lane}}
+</div>
 
-<h3>Working on now</h3>
+<h3 class="sub">Working on now</h3>
 <ul class="team-task-list myjobs-working-list">
 {{range .Lane.WorkingOnNow}}
-<li class="team-task" data-task-id="{{.ID}}">
-<a href="/tasks/{{.ID}}">{{.Title}}</a> {{template "part-size" .SizeLabel}}
-<div class="team-task-actions">
-<form method="post" action="/tasks/{{.ID}}/move" class="inline-form">
-<input type="hidden" name="stage" value="done">
-<input type="hidden" name="to_bottom" value="1">
-<input type="hidden" name="redirect_to" value="myjobs">
-<button class="mini go" type="submit">Done</button>
-</form>
+<li class="card team-task" data-task-id="{{.ID}}">
+<div class="task-card-row">{{template "tasks-job-title" .}}</div>
+<div class="task-card-row">
+{{template "part-size" .SizeLabel}}{{template "tasks-job-date" .}}
+<span class="acts">
 <form method="post" action="/tasks/{{.ID}}/assign" class="inline-form">
 <input type="hidden" name="from_person" value="{{$lane.PersonID}}">
 <input type="hidden" name="redirect_to" value="myjobs">
 <button class="mini quiet" type="submit">Give back</button>
 </form>
+<form method="post" action="/tasks/{{.ID}}/move" class="inline-form">
+<input type="hidden" name="stage" value="done">
+<input type="hidden" name="to_bottom" value="1">
+<input type="hidden" name="redirect_to" value="myjobs">
+<button class="mini go" type="submit">Done ✓</button>
+</form>
+</span>
 </div>
+{{if .AlsoOn}}<span class="also">Also on it: {{.AlsoOn}}</span>{{end}}
 </li>
 {{end}}
 </ul>
 
-<h3>Up next</h3>
+<h3 class="sub">Up next</h3>
 <ul class="team-task-list myjobs-upnext-list">
 {{range .Lane.UpNext}}
-<li class="team-task" data-task-id="{{.ID}}">
-{{.Number}}. <a href="/tasks/{{.ID}}">{{.Title}}</a> {{template "part-size" .SizeLabel}}
-<div class="team-task-actions">
+<li class="card team-task" data-task-id="{{.ID}}">
+<div class="task-card-row"><span class="rank">{{.Number}}</span>{{template "tasks-job-title" .}}</div>
+<div class="task-card-row">
+{{template "part-size" .SizeLabel}}{{template "tasks-job-date" .}}
+<span class="acts">
+<form method="post" action="/tasks/{{.ID}}/assign" class="inline-form">
+<input type="hidden" name="from_person" value="{{$lane.PersonID}}">
+<input type="hidden" name="redirect_to" value="myjobs">
+<button class="mini quiet" type="submit">Give back</button>
+</form>
 <form method="post" action="/tasks/{{.ID}}/move" class="inline-form">
 <input type="hidden" name="stage" value="doing">
 <input type="hidden" name="to_bottom" value="1">
@@ -49,50 +72,61 @@
 <input type="hidden" name="stage" value="done">
 <input type="hidden" name="to_bottom" value="1">
 <input type="hidden" name="redirect_to" value="myjobs">
-<button class="mini go" type="submit">Done</button>
+<button class="mini go" type="submit">Done ✓</button>
 </form>
-<form method="post" action="/tasks/{{.ID}}/assign" class="inline-form">
-<input type="hidden" name="from_person" value="{{$lane.PersonID}}">
-<input type="hidden" name="redirect_to" value="myjobs">
-<button class="mini quiet" type="submit">Give back</button>
-</form>
+</span>
 </div>
+{{if .AlsoOn}}<span class="also">Also on it: {{.AlsoOn}}</span>{{end}}
 </li>
 {{end}}
+<li class="drop">Drop a job here to take it</li>
 </ul>
 
-<h3>Ideas I'm on</h3>
+<h3 class="sub">Ideas I'm on</h3>
 <ul class="team-task-list myjobs-ideas-list">
 {{range .Lane.Ideas}}
-<li class="team-task" data-task-id="{{.ID}}">
-<a href="/tasks/{{.ID}}">{{.Title}}</a> {{template "part-size" .SizeLabel}}
-<div class="team-task-actions">
+<li class="card team-task" data-task-id="{{.ID}}">
+<div class="task-card-row">{{template "tasks-job-title" .}}</div>
+<div class="task-card-row">
+{{template "part-size" .SizeLabel}}{{template "tasks-job-date" .}}
+<span class="acts">
 <form method="post" action="/tasks/{{.ID}}/assign" class="inline-form">
 <input type="hidden" name="from_person" value="{{$lane.PersonID}}">
 <input type="hidden" name="redirect_to" value="myjobs">
 <button class="mini quiet" type="submit">Give back</button>
 </form>
+</span>
 </div>
+{{if .AlsoOn}}<span class="also">Also on it: {{.AlsoOn}}</span>{{end}}
 </li>
 {{end}}
 </ul>
 </div>
 
-<div class="myjobs-grabs">
-<h2>Up for grabs</h2>
+<div class="myjobs-grabs area grabs">
+<div class="area-head"><h2>Up for grabs</h2><p>Nobody has taken these yet. Most important first.</p></div>
 <ul class="team-task-list myjobs-grabs-list">
 {{range .UpForGrabs}}
-<li class="team-task" data-task-id="{{.ID}}">
-<a href="/tasks/{{.ID}}">{{.Title}}</a> {{template "part-size" .SizeLabel}}
+<li class="card team-task" data-task-id="{{.ID}}">
+<div class="task-card-row">{{template "tasks-job-title" .}}</div>
+<div class="task-card-row">
+{{template "part-size" .SizeLabel}}{{template "tasks-job-date" .}}
+<span class="acts">
 <form method="post" action="/tasks/{{.ID}}/take" class="inline-form">
 <button class="mini go" type="submit">Take it</button>
 </form>
+</span>
+</div>
+{{if .IsIdea}}<span class="also">An idea: taking it moves it to To do.</span>{{end}}
 </li>
 {{end}}
 </ul>
 </div>
 </div>
 </div>
+<p class="legend">Workload blocks: small job = 1 block, medium = 2, large = 4.</p>
+{{template "tasks-window" .}}
 <script src="/static/vendor/sortable/Sortable-1.15.7.min.js"></script>
 <script src="/static/tasks/myjobs.js"></script>
+<script src="/static/tasks/window.js"></script>
 {{end}}

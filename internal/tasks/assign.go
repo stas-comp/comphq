@@ -76,4 +76,3 @@ func (s *Store) Assign(ctx context.Context, taskID int64, fromPersonID, toPerson
 	}
 	return tx.Commit()
 }
-

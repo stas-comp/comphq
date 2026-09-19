@@ -92,9 +92,10 @@ test('Team view: lane order, grouping, numbering, and workload blocks', async ({
   const upNextItems = (
     await laneA.locator('h3', { hasText: 'Up next' }).locator('xpath=following-sibling::ul[1]/li').allTextContents()
   ).map((t) => t.trim());
-  expect(upNextItems.some((t) => t.startsWith('1.') && t.includes(upNext1))).toBe(true);
-  expect(upNextItems.some((t) => t.startsWith('2.') && t.includes(upNext2))).toBe(true);
-  expect(upNextItems.some((t) => t.startsWith('3.') && t.includes(sharedTitle))).toBe(true);
+  // The priority number is a large figure before the title (gate 4.16), not "1." text.
+  expect(upNextItems.some((t) => t.startsWith('1') && t.includes(upNext1))).toBe(true);
+  expect(upNextItems.some((t) => t.startsWith('2') && t.includes(upNext2))).toBe(true);
+  expect(upNextItems.some((t) => t.startsWith('3') && t.includes(sharedTitle))).toBe(true);
 
   // Workload: one L (4) + one M, default size, from the shared job (2)
   // + two S (1 each) = 8 blocks, "1 large · 1 medium · 2 small".

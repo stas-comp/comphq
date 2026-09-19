@@ -262,8 +262,8 @@ func TestListActivityRendersAssignedUnassignedAndDueDateMessages(t *testing.T) {
 		texts[i] = a.Text
 	}
 	want := map[string]bool{
-		"Sam created this":                   true,
-		"Sam assigned Alex":                  true,
+		"Sam created this":                            true,
+		"Sam assigned Alex":                           true,
 		"Sam changed the due date to Sun 20 Sep 2026": true,
 	}
 	if len(texts) != len(want) {

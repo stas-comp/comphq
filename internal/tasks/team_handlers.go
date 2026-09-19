@@ -11,6 +11,8 @@ import (
 type teamPageData struct {
 	CurrentView string
 	Lanes       []Lane
+	// WindowClose is the task window's close icon (gate 4.25).
+	WindowClose app.IconButton
 }
 
 // handleTeam serves the Team view (SPEC gates 2.24, 2.25, 2.27, 2.30):
@@ -29,9 +31,15 @@ func (h *Handlers) handleTeam(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	lanes := BuildLanes(tasks, activePeople)
+	me, today := currentPersonID(r), app.Today(h.srv.TestMode)
+	for i := range lanes {
+		lanes[i].Decorate(me, today)
+	}
 	h.srv.RenderFrame(w, r, http.StatusOK, "tasks-team.html", "Team", teamPageData{
 		CurrentView: "team",
-		Lanes:       BuildLanes(tasks, activePeople),
+		Lanes:       lanes,
+		WindowClose: app.NewIconButton(app.IconClose, "", false),
 	})
 }
 

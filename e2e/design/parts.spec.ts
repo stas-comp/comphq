@@ -120,11 +120,13 @@ test('gate 4.08: the person using the app is the accent circle on the board, and
   const me = await signInAsNewPerson(page, server.baseURL, '/tasks/board');
   await ready(page);
   await openNewTask(page);
-  await page.fill('#new-task-title', 'Circle check ' + Date.now());
+  const title = 'Circle check ' + Date.now();
+  await page.fill('#new-task-title', title);
   await page.selectOption('#new-task-people', { label: me });
   await page.click('.add-task-form button[type="submit"]');
   await ready(page);
-  const circle = page.locator('.task-card .av', { hasText: /\S/ }).first();
+  // This card's own circle (the shared board also holds other tests' cards).
+  const circle = page.locator('.task-card', { hasText: title }).locator('.av').first();
   await expect(circle).toHaveClass(/\bme\b/);
   await expect(circle).toHaveCSS('background-color', 'rgb(255, 107, 26)');
   await expect(circle).toHaveCSS('color', 'rgb(20, 27, 45)');
