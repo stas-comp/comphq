@@ -19,26 +19,6 @@
   gap: 4px;
 }
 
-/* The stacked wordmark: a small wide-spaced COMP above a large accent HQ. */
-.wordmark {
-  padding: 0 10px 22px;
-  line-height: 0.82;
-}
-
-.wordmark small {
-  display: block;
-  font: 800 17px var(--font-display);
-  letter-spacing: 0.32em;
-  color: var(--color-white);
-  text-transform: uppercase;
-}
-
-.wordmark strong {
-  font: 900 64px var(--font-display);
-  color: var(--color-signal-orange);
-  letter-spacing: -0.01em;
-}
-
 .sidebar nav {
   flex: 1;
   display: flex;

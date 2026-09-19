@@ -1,55 +1,84 @@
-/* The picker is deliberately outside the sidebar/topbar frame (SPEC A4:
-   "a full screen"), but still uses the shared theme tokens. */
-
+/* The name picker (SPEC A4, gate 4.47): deliberately outside the sidebar and
+   top bar frame, a full ink-navy screen with the large wordmark, the
+   question in condensed capitals, and the names as a grid of large buttons
+   that turn accent when pointed at. Drawn as docs/design/mockup.html draws
+   `#picker`, `.picker-inner` and `.names`. */
 body {
   margin: 0;
   background: var(--color-ink-navy);
   color: var(--color-white);
-  display: flex;
+}
+
+.picker {
   min-height: 100vh;
-  align-items: center;
-  justify-content: center;
+  background: var(--color-ink-navy);
+  color: var(--color-white);
+  display: grid;
+  place-items: center;
+  padding: 40px;
 }
 
-main {
-  max-width: 40rem;
-  padding: var(--space-8);
+.picker-inner {
+  display: grid;
+  gap: 26px;
+  justify-items: center;
   text-align: center;
+  max-width: 760px;
+  width: 100%;
 }
 
-h1 {
-  font-family: var(--font-display);
+.picker .wordmark small {
+  font-size: 24px;
+}
+
+.picker .wordmark strong {
+  font-size: 96px;
+}
+
+.picker h1 {
+  margin: 0;
+  font: 900 52px var(--font-display);
+  text-transform: uppercase;
+  letter-spacing: 0.01em;
   color: var(--color-white);
 }
 
 .people-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-3);
-  justify-content: center;
-  margin: var(--space-6) 0;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  width: 100%;
+}
+
+.people-grid form {
+  display: contents;
 }
 
 .person-button {
-  font-family: var(--font-body);
-  font-size: 1.1rem;
+  width: 100%;
+  background: var(--color-ink-navy-light);
+  border: 2px solid var(--color-ink-navy-3);
+  color: var(--color-white);
+  border-radius: 10px;
+  padding: 18px 10px;
+  font-size: 20px;
   font-weight: 700;
-  padding: var(--space-4) var(--space-6);
-  border-radius: var(--radius-md);
-  border: none;
-  background: var(--color-paper);
-  color: var(--color-ink-navy);
-  cursor: pointer;
 }
 
 .person-button:hover,
 .person-button:focus-visible {
   background: var(--color-signal-orange);
+  border-color: var(--color-signal-orange);
   color: var(--color-ink-navy);
+}
+
+.picker-more {
+  margin: 0;
 }
 
 .link-button {
   color: var(--color-sidebar-text);
+  font-size: 15px;
 }
 
 .link-button:hover,
@@ -62,15 +91,20 @@ h1 {
   color: var(--color-white);
   background: var(--color-signal-orange-deep);
   display: inline-block;
+  margin: 0;
   padding: var(--space-2) var(--space-4);
   border-radius: var(--radius-md);
 }
 
 #add-name-form {
-  margin-top: var(--space-4);
   display: flex;
   gap: var(--space-2);
   justify-content: center;
   align-items: center;
 }
 
+@media (max-width: 640px) {
+  .people-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

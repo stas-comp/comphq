@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/stas-comp/comphq/internal/app"
+	"github.com/stas-comp/comphq/internal/app/format"
 	"github.com/stas-comp/comphq/internal/people"
 )
 
@@ -62,10 +63,19 @@ func Section(srv *app.Server, tasks TaskSource, events EventSource) app.Section 
 
 type pageData struct {
 	Briefing Briefing
-	Headline string
-	MustDo   string // section title
-	Path     string // this page's own path, for the Just mine switch
-	Mine     bool
+	// The page's date heading (gate 4.44) is one h1 whose text is the SPEC
+	// gate 3.02 headline ("Saturday 19 September — today's briefing"): the
+	// day, the date in the deeper accent, and a small tag drawn above them.
+	// TagFirst is true when the tag reads first ("Briefing for …").
+	HeadlineDay  string
+	HeadlineDate string
+	HeadlineTag  string
+	TagFirst     bool
+	MustDo       string // section title
+	FridayLabel  string // "Fri 25 Sep", the end of This week
+	Path         string // this page's own path, for the Just mine switch
+	Mine         bool
+	MeID         int64
 }
 
 func (h *Handlers) handleBriefing(w http.ResponseWriter, r *http.Request) {
@@ -101,13 +111,31 @@ func (h *Handlers) handleBriefing(w http.ResponseWriter, r *http.Request) {
 		b = b.JustMine()
 	}
 
-	data := pageData{Briefing: b, Path: r.URL.Path, Mine: mine}
-	day := saturday.Format("Monday 2 January")
+	// Every person on a card is drawn as their coloured circle, the same
+	// colour as on every other screen (gates 4.08, 4.46).
+	for i := range b.MustDo {
+		for j := range b.MustDo[i].People {
+			p := &b.MustDo[i].People[j]
+			p.Initials = format.Initials(p.Name)
+			p.ColorClass = people.AvatarClass(p.ID, person.ID)
+		}
+	}
+
+	data := pageData{
+		Briefing:     b,
+		Path:         r.URL.Path,
+		Mine:         mine,
+		MeID:         person.ID,
+		HeadlineDay:  saturday.Format("Monday"),
+		HeadlineDate: saturday.Format("2 January"),
+		FridayLabel:  friday.Format("Mon 2 Jan"),
+	}
 	if b.IsToday {
-		data.Headline = day + " — today's briefing"
+		data.HeadlineTag = "today's briefing"
 		data.MustDo = "Must be done today"
 	} else {
-		data.Headline = "Briefing for " + day
+		data.HeadlineTag = "Briefing for"
+		data.TagFirst = true
 		data.MustDo = "Must be done this Saturday"
 	}
 	h.srv.RenderFrame(w, r, http.StatusOK, "briefing.html", "Briefing", data)

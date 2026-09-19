@@ -116,7 +116,7 @@ test.describe('on a Saturday (19 Sep 2026)', () => {
     await expect(mustDo.locator('.briefing-card-title')).toHaveText(['Old job', 'Wednesday job', 'Friday job']);
     await expect(card(page, 'Must be done today', 'Old job').locator('.stamp').first()).toHaveText('OVERDUE');
     await expect(card(page, 'Must be done today', 'Wednesday job').locator('.stamp').first()).toHaveText('WED 23 SEP');
-    await expect(card(page, 'Must be done today', 'Wednesday job').locator('.briefing-people')).toHaveText(me);
+    await expect(card(page, 'Must be done today', 'Wednesday job').locator('.briefing-people .av')).toHaveAttribute('title', me); // people are circles named by their title (gates 4.08, 4.46)
 
     // 3.05: YOURS on the task assigned to me, and Just mine shows only it.
     await expect(card(page, 'Must be done today', 'Wednesday job').locator('.stamp-yours')).toHaveText('YOURS');
@@ -124,7 +124,7 @@ test.describe('on a Saturday (19 Sep 2026)', () => {
     await page.click('text=Just mine');
     await ready(page);
     await expect(section(page, 'Must be done today').locator('.briefing-card-title')).toHaveText(['Wednesday job']);
-    await page.click('text=Everything');
+    await page.click('text=Everyone');
     await ready(page);
     await expect(section(page, 'Must be done today').locator('.briefing-card')).toHaveCount(3);
 

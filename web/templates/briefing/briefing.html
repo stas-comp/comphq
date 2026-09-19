@@ -1,26 +1,30 @@
 {{define "briefing.html"}}
 <div class="briefing-page" data-refresh-version-url="/briefing/version" data-refresh-fragment-selector=".briefing-page">
-<h1 class="briefing-headline">{{.Headline}}</h1>
-
-<p class="briefing-filter">
-<a href="{{.Path}}"{{if not .Mine}} aria-current="true"{{end}}>Everything</a>
+<div class="brief-head">
+<h1 class="briefing-headline">{{if .TagFirst}}<span class="brief-tag">{{.HeadlineTag}}</span> {{end}}<span class="brief-title">{{.HeadlineDay}} <span class="brief-date">{{.HeadlineDate}}</span></span>{{if not .TagFirst}} <span class="brief-tag"><span class="visually-hidden">— </span>{{.HeadlineTag}}</span>{{end}}</h1>
+<nav class="seg briefing-filter" aria-label="Whose jobs">
+<a href="{{.Path}}"{{if not .Mine}} aria-current="true"{{end}}>Everyone</a>
 <a href="{{.Path}}?mine=1"{{if .Mine}} aria-current="true"{{end}}>Just mine</a>
-</p>
+</nav>
+</div>
 {{if .Mine}}<p class="briefing-filter-note">Showing only the jobs that are yours. Events are for everyone, so they stay.</p>{{end}}
 
-<section class="briefing-section" aria-labelledby="briefing-mustdo">
-<h2 id="briefing-mustdo">{{.MustDo}}</h2>
+<div class="brief-grid">
+<section class="panel briefing-section" aria-labelledby="briefing-mustdo">
+<div class="panel-head"><h2 id="briefing-mustdo">{{.MustDo}}</h2>{{$n := len .Briefing.MustDo}}<span class="count">{{$n}} {{if eq $n 1}}task{{else}}tasks{{end}} · due before next Saturday</span></div>
 {{if .Briefing.MustDo}}
 <ul class="briefing-list">
 {{range .Briefing.MustDo}}
-<li class="briefing-card briefing-task{{if .Overdue}} is-overdue{{end}}{{if .Yours}} is-yours{{end}}">
-<p class="briefing-stamps">
+<li class="item briefing-card briefing-task{{if .Overdue}} late is-overdue{{end}}{{if .Yours}} is-yours{{end}}">
+<div class="item-main">
+<h3><a class="briefing-card-title" href="/tasks/{{.ID}}">{{.Title}}</a></h3>
+<div class="meta"><span class="date briefing-when">{{.DueLabel}}</span>{{if .People}}<span class="briefing-people">{{template "part-people" .People}}</span>{{end}}</div>
+</div>
+<p class="stamps briefing-stamps">
 <span class="stamp stamp-{{.StampKind}}">{{.Stamp}}</span>
 {{if .Yours}}<span class="stamp stamp-yours">YOURS</span>{{end}}
 </p>
-<a class="briefing-card-title" href="/tasks/{{.ID}}">{{.Title}}</a>
-{{if .Notes}}<p class="briefing-notes">{{.Notes}}</p>{{end}}
-{{if .People}}<p class="briefing-people">{{range $i, $p := .People}}{{if $i}}, {{end}}{{$p.Name}}{{if $p.Removed}} (removed){{end}}{{end}}</p>{{end}}
+{{if .Notes}}<p class="note briefing-notes">{{.Notes}}</p>{{end}}
 </li>
 {{end}}
 </ul>
@@ -29,8 +33,9 @@
 {{end}}
 </section>
 
-<section class="briefing-section" aria-labelledby="briefing-week">
-<h2 id="briefing-week">This week</h2>
+<div class="brief-side">
+<section class="panel briefing-section" aria-labelledby="briefing-week">
+<div class="panel-head"><h2 id="briefing-week">This week</h2><span class="count">to {{.FridayLabel}}</span></div>
 {{if .Briefing.ThisWeek}}
 <ul class="briefing-list">
 {{range .Briefing.ThisWeek}}{{template "briefing-event-card" .}}{{end}}
@@ -40,8 +45,8 @@
 {{end}}
 </section>
 
-<section class="briefing-section" aria-labelledby="briefing-coming">
-<h2 id="briefing-coming">Coming up</h2>
+<section class="panel briefing-section" aria-labelledby="briefing-coming">
+<div class="panel-head"><h2 id="briefing-coming">Coming up</h2><span class="count">shown ahead of time</span></div>
 {{if .Briefing.ComingUp}}
 <ul class="briefing-list">
 {{range .Briefing.ComingUp}}{{template "briefing-event-card" .}}{{end}}
@@ -51,13 +56,17 @@
 {{end}}
 </section>
 </div>
+</div>
+</div>
 {{end}}
 
 {{define "briefing-event-card"}}
-<li class="briefing-card briefing-event">
-<p class="briefing-stamps"><span class="stamp stamp-{{.StampKind}}">{{.Stamp}}</span></p>
-<a class="briefing-card-title" href="/calendar/events/{{.EventID}}?occurrence={{.OriginalDate}}">{{.Title}}</a>
-<p class="briefing-when">{{.DateLabel}}{{if .TimeLabel}} · {{.TimeLabel}}{{end}}{{if .UntilLabel}} · {{.UntilLabel}}{{end}}</p>
-{{if .Notes}}<p class="briefing-notes">{{.Notes}}</p>{{end}}
+<li class="item briefing-card briefing-event">
+<div class="item-main">
+<h3><a class="briefing-card-title" href="/calendar/events/{{.EventID}}?occurrence={{.OriginalDate}}">{{.Title}}</a></h3>
+<div class="meta"><span class="date briefing-when">{{.DateLabel}}{{if .TimeLabel}} · {{.TimeLabel}}{{end}}{{if .UntilLabel}} · {{.UntilLabel}}{{end}}</span></div>
+</div>
+<p class="stamps briefing-stamps"><span class="stamp stamp-{{.StampKind}}">{{.Stamp}}</span></p>
+{{if .Notes}}<p class="note briefing-notes">{{.Notes}}</p>{{end}}
 </li>
 {{end}}

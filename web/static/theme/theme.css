@@ -59,6 +59,7 @@
   /* Supporting values the mockup uses that B9.2 doesn't name. */
   --color-white: #ffffff;
   --color-danger-ink: #7a1c1c;
+  --color-danger-outline: #edb9b4;
   --color-day-out: #f0eee8;
   --color-chip-continues-text: #d5d9e4;
   --color-avatar-b: #4e5b7a;
@@ -799,4 +800,24 @@ mark {
   padding: 0 3px;
   border-radius: 3px;
   font-weight: 700;
+}
+
+/* The stacked wordmark: a small wide-spaced COMP above a large accent HQ. */
+.wordmark {
+  padding: 0 10px 22px;
+  line-height: 0.82;
+}
+
+.wordmark small {
+  display: block;
+  font: 800 17px var(--font-display);
+  letter-spacing: 0.32em;
+  color: var(--color-white);
+  text-transform: uppercase;
+}
+
+.wordmark strong {
+  font: 900 64px var(--font-display);
+  color: var(--color-signal-orange);
+  letter-spacing: -0.01em;
 }

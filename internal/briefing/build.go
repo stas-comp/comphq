@@ -21,6 +21,10 @@ type Person struct {
 	ID      int64
 	Name    string
 	Removed bool
+	// Initials and ColorClass draw the person's circle (gate 4.46); the page
+	// fills them in, since Build is a pure function of dates and ids.
+	Initials   string
+	ColorClass string
 }
 
 // Task is an unfinished task with a due date, as the Briefing's own
@@ -69,9 +73,12 @@ type TaskCard struct {
 	Stamp string // TODAY, OVERDUE or a weekday date such as WED 23 SEP
 	// StampKind is "overdue", "today" or "date", for the stamp's styling.
 	StampKind string
-	Overdue   bool
-	Yours     bool
-	People    []Person
+	// DueLabel is the date line of the card: "Due Wed 23 Sep", or "Was due
+	// Sat 12 Sep" for an overdue job.
+	DueLabel string
+	Overdue  bool
+	Yours    bool
+	People   []Person
 }
 
 // EventCard is one "This week" or "Coming up" card.
@@ -140,7 +147,7 @@ func Build(in Input) Briefing {
 		return tasks[i].Position < tasks[j].Position
 	})
 	for _, t := range tasks {
-		card := TaskCard{ID: t.ID, Title: t.Title, Notes: t.Notes, People: t.People, Overdue: t.DueDate < todayStr}
+		card := TaskCard{ID: t.ID, Title: t.Title, Notes: t.Notes, People: t.People, Overdue: t.DueDate < todayStr, DueLabel: dueLabel(t.DueDate, todayStr)}
 		for _, p := range t.People {
 			if p.ID == in.PersonID {
 				card.Yours = true
@@ -208,6 +215,19 @@ func sortOccurrences(occs []Occurrence) {
 		}
 		return a.EventID < b.EventID
 	})
+}
+
+// dueLabel is a card's date line: "Due Wed 23 Sep", or "Was due Sat 12 Sep"
+// when the date has passed.
+func dueLabel(due, todayStr string) string {
+	d, err := time.Parse(dateLayout, due)
+	if err != nil {
+		return ""
+	}
+	if due < todayStr {
+		return "Was due " + d.Format("Mon 2 Jan")
+	}
+	return "Due " + d.Format("Mon 2 Jan")
 }
 
 // taskStamp is TODAY, OVERDUE, or a weekday date like "WED 23 SEP",
