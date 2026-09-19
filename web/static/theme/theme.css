@@ -682,3 +682,52 @@ select.field[multiple] {
 .tools .seg {
   margin: 0;
 }
+
+/* The task window (gates 4.22-4.29): one <dialog>, built from the parts
+   above so it looks as though it had always been in the design. Its
+   surface is the card colour, its head a panel head, its controls the
+   shared ones. */
+.task-window {
+  width: min(560px, calc(100vw - 32px));
+  max-height: calc(100vh - 48px);
+  padding: 0;
+  border: 1.5px solid var(--color-ink-navy);
+  border-radius: 12px;
+  background: var(--color-card);
+  color: var(--color-ink-text);
+  box-shadow: var(--shadow-raised);
+  overflow: hidden;
+}
+
+.task-window::backdrop {
+  background: rgba(20, 27, 45, 0.55);
+}
+
+.task-window-inner {
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 48px);
+}
+
+.task-window-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 18px 10px;
+  border-bottom: 3px solid var(--color-ink-navy);
+}
+
+.task-window-head h2 {
+  margin: 0;
+  flex: 1;
+  font-size: var(--font-size-h3);
+}
+
+.task-window-body {
+  padding: 16px 18px 18px;
+  overflow-y: auto;
+}
+
+body:has(dialog[open]) {
+  overflow: hidden;
+}

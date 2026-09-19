@@ -19,8 +19,11 @@ var sizeOptions = []sizeOption{{"S", "Small"}, {"M", "Medium"}, {"L", "Large"}}
 // link to it, so a task can always be added even when the window can't open.
 type newTaskPageData struct {
 	Message string
-	Title   string
-	Notes   string
+	// InWindow is true when the form is drawn inside the task window (a
+	// fragment): Cancel closes the window, and the form posts as a fragment.
+	InWindow bool
+	Title    string
+	Notes    string
 	Size    string
 	Stage   string
 	DueDate string // as typed, day first
@@ -30,6 +33,7 @@ type newTaskPageData struct {
 }
 
 // handleNewTaskForm serves GET /tasks/new: an empty form, In Ideas, Medium.
+// With ?fragment=1 it is just the form, for the task window.
 func (h *Handlers) handleNewTaskForm(w http.ResponseWriter, r *http.Request) {
 	h.renderNewTask(w, r, http.StatusOK, "", CreateInput{Size: "M", Stage: StageIdea}, nil)
 }
@@ -63,15 +67,21 @@ func (h *Handlers) renderNewTask(w http.ResponseWriter, r *http.Request, status 
 		stage = StageIdea
 	}
 
-	h.srv.RenderFrame(w, r, status, "tasks-new.html", "Add task", newTaskPageData{
-		Message: message,
-		Title:   input.Title,
-		Notes:   input.Notes,
-		Size:    size,
-		Stage:   stage,
-		DueDate: format.DayFirst(input.DueDate),
-		Sizes:   sizeOptions,
-		Stages:  stages,
-		People:  options,
-	})
+	data := newTaskPageData{
+		Message:  message,
+		InWindow: wantsFragment(r),
+		Title:    input.Title,
+		Notes:    input.Notes,
+		Size:     size,
+		Stage:    stage,
+		DueDate:  format.DayFirst(input.DueDate),
+		Sizes:    sizeOptions,
+		Stages:   stages,
+		People:   options,
+	}
+	if data.InWindow {
+		h.srv.RenderPartial(w, status, "tasks-new-form", data)
+		return
+	}
+	h.srv.RenderFrame(w, r, status, "tasks-new.html", "Add task", data)
 }

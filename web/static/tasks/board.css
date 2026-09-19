@@ -288,3 +288,9 @@
   width: 14px;
   height: 14px;
 }
+
+/* The new-task form inside the window fills it. */
+.task-window .add-task-form {
+  max-width: none;
+  margin: 0;
+}

@@ -75,13 +75,10 @@ async function handleDrop(item) {
 // re-fetch the page you are on (keeping any filter) and swap in the fresh
 // board — and keep the people menu open on its card, so several names can
 // be picked in a row.
-async function swapBoardAfter(form, submitter, menuTaskId) {
-  await fetch(form.action, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams(new FormData(form, submitter)).toString(),
-    redirect: 'manual',
-  })
+//
+// replaceBoardFromPage is also how the task window refreshes the board after
+// it saves (window.js).
+async function replaceBoardFromPage() {
   const res = await fetch(location.pathname + location.search)
   const html = await res.text()
   const newBoard = new DOMParser().parseFromString(html, 'text/html').querySelector('.task-board')
@@ -89,6 +86,16 @@ async function swapBoardAfter(form, submitter, menuTaskId) {
   if (!newBoard || !oldBoard) throw new Error('no board in the response')
   oldBoard.replaceWith(newBoard)
   initSortable()
+}
+
+async function swapBoardAfter(form, submitter, menuTaskId) {
+  await fetch(form.action, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams(new FormData(form, submitter)).toString(),
+    redirect: 'manual',
+  })
+  await replaceBoardFromPage()
   if (menuTaskId) {
     const trigger = document.querySelector(`.task-card[data-task-id="${menuTaskId}"] .people-menu-trigger`)
     if (trigger) await openPeopleMenu(trigger)

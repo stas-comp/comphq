@@ -1,0 +1,17 @@
+{{/* The task window (SPEC B9.7, gates 4.22-4.29): one dialog, built once, on
+the platform's own <dialog> element, which supplies Escape, the backdrop, the
+keyboard staying inside it and the return of focus. It is an enhancement
+only: + Add task and a card's title are ordinary links, and window.js fetches
+what they point to and shows it here. Without script, or if the fetch fails,
+the links do the same job as pages. */}}
+{{define "tasks-window"}}
+<dialog id="task-window" class="task-window" aria-labelledby="task-window-title">
+<div class="task-window-inner">
+<div class="task-window-head">
+<h2 id="task-window-title" class="task-window-title">Add task</h2>
+{{template "part-icon-button" .WindowClose}}
+</div>
+<div class="task-window-body"></div>
+</div>
+</dialog>
+{{end}}

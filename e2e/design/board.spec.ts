@@ -55,8 +55,9 @@ test('gate 4.15: there is no add-a-task form on the Board, and + Add task reache
 
   const add = page.getByRole('link', { name: '+ Add task' });
   await expect(add).toHaveClass(/\bbtn\b.*\bprimary\b|\bprimary\b.*\bbtn\b/);
-  await add.click();
-  await ready(page);
+  // With script the click opens the task window (see task-window.spec.ts); the link itself is the page.
+  await expect(add).toHaveAttribute('href', '/tasks/new');
+  await openNewTask(page);
   await expect(page).toHaveURL(/\/tasks\/new$/);
 
   const title = uniqueName('From the add page');

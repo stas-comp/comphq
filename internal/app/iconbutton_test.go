@@ -24,6 +24,15 @@ func TestNewIconButtonLabelsNameTheTask(t *testing.T) {
 	}
 }
 
+// SPEC gate 4.25: the task window closes with a close icon, which is the
+// one icon-only button that isn't a card action.
+func TestNewIconButtonClose(t *testing.T) {
+	got := NewIconButton(IconClose, "ignored", false)
+	if got.Icon != "close" || got.Label != "Close" || got.Type != "button" || got.Hook != "window-close" {
+		t.Errorf("NewIconButton(close) = %+v", got)
+	}
+}
+
 func TestNewIconButtonRefusesAFifthKind(t *testing.T) {
 	defer func() {
 		if recover() == nil {

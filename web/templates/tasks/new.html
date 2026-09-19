@@ -1,9 +1,12 @@
-{{define "tasks-new.html"}}
-<p><a href="/tasks/board">Back to Board</a></p>
-<h1>Add task</h1>
+{{/* The new-task form (SPEC gates 4.22, 4.28). One form, two ways in: as a
+page (tasks-new.html, where + Add task goes with no script) and as the
+task window's body (tasks-new-form, fetched with ?fragment=1). Same field
+ids in both. */}}
+{{define "tasks-new-form"}}
 {{if .Message}}<p class="message" role="alert">{{.Message}}</p>{{end}}
 
 <form method="post" action="/tasks" class="add-task-form">
+{{if .InWindow}}<input type="hidden" name="fragment" value="1">{{end}}
 <label for="new-task-title">Title</label>
 <input class="field" type="text" id="new-task-title" name="title" value="{{.Title}}" required>
 
@@ -32,7 +35,13 @@
 
 <div class="add-task-actions">
 <button class="btn primary" type="submit">Add task</button>
-<a class="btn" href="/tasks/board">Cancel</a>
+{{if .InWindow}}<button class="btn" type="button" data-hook="window-close">Cancel</button>{{else}}<a class="btn" href="/tasks/board">Cancel</a>{{end}}
 </div>
 </form>
+{{end}}
+
+{{define "tasks-new.html"}}
+<p><a href="/tasks/board">Back to Board</a></p>
+<h1>Add task</h1>
+{{template "tasks-new-form" .}}
 {{end}}

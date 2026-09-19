@@ -31,6 +31,8 @@ type boardColumn struct {
 }
 
 type boardPageData struct {
+	// WindowClose is the task window's close icon (gate 4.25).
+	WindowClose    app.IconButton
 	CurrentView    string
 	Columns        []boardColumn
 	People         []people.Person
@@ -140,6 +142,13 @@ func newCardView(t Task, meID int64, today time.Time) cardView {
 	}
 }
 
+// wantsFragment reports whether the request is from the task window, which
+// asks for (and posts) just the piece of page it shows: ?fragment=1 on a
+// GET, a fragment=1 field on a POST.
+func wantsFragment(r *http.Request) bool {
+	return r.FormValue("fragment") == "1"
+}
+
 // redirectTargetFrom reads the shared, allowlisted redirect_to field:
 // the move and assign endpoints are each reused from more than one
 // page, so a plain (non-JS) form submission needs to land back on
@@ -240,6 +249,7 @@ func (h *Handlers) renderBoard(w http.ResponseWriter, r *http.Request, status in
 	}
 
 	h.srv.RenderFrame(w, r, status, "tasks-board.html", "Tasks", boardPageData{
+		WindowClose:    app.NewIconButton(app.IconClose, "", false),
 		CurrentView:    "board",
 		Columns:        columns,
 		People:         activePeople,
@@ -294,13 +304,24 @@ func (h *Handlers) handleCreateTask(w http.ResponseWriter, r *http.Request) {
 
 	today := app.Today(h.srv.TestMode)
 	_, err = h.tasks.Create(r.Context(), input, person.ID, today)
+	// From the task window the form posts as a fragment: a saved task answers
+	// 204 (the window closes and the board is refreshed), a refused one
+	// answers 422 with the form again, message and typed values included.
+	refusedStatus := http.StatusOK
+	if wantsFragment(r) {
+		refusedStatus = http.StatusUnprocessableEntity
+	}
 	switch err {
 	case nil:
+		if wantsFragment(r) {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
 		http.Redirect(w, r, "/tasks/board", http.StatusFound)
 	case ErrEmptyTitle:
-		h.renderNewTask(w, r, http.StatusOK, "Please type a title.", input, personIDs)
+		h.renderNewTask(w, r, refusedStatus, "Please type a title.", input, personIDs)
 	case ErrInvalidDate:
-		h.renderNewTask(w, r, http.StatusOK, invalidDateMessage, input, personIDs)
+		h.renderNewTask(w, r, refusedStatus, invalidDateMessage, input, personIDs)
 	case ErrInvalidSize, ErrInvalidStage:
 		http.Error(w, err.Error(), http.StatusBadRequest)
 	default:

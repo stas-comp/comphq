@@ -13,7 +13,7 @@ WorkloadLine and WorkloadLabel. Draws nothing when there is no workload. */}}
 {{define "part-workload"}}{{if .WorkloadLine}}<div class="workload" role="img" aria-label="{{.WorkloadLabel}}">{{range .Workload}}<span class="workload-group">{{range .Blocks}}<span class="workload-block"></span>{{end}}</span>{{end}}</div>
 <p class="workload-line">{{.WorkloadLine}}</p>{{end}}{{end}}
 
-{{/* One of the four icon-only buttons (gate 4.11). Takes an app.IconButton
+{{/* One of the icon-only buttons (gate 4.11: the four card actions, and the window's close). Takes an app.IconButton
 built with app.NewIconButton: its Label is both the hover title and the
 spoken name. The only place an icon-only button is written. */}}
-{{define "part-icon-button"}}<button class="icon-btn" type="submit" title="{{.Label}}" aria-label="{{.Label}}"{{if .Disabled}} disabled{{end}}><span class="icon icon-{{.Icon}}" aria-hidden="true"></span></button>{{end}}
+{{define "part-icon-button"}}<button class="icon-btn" type="{{if .Type}}{{.Type}}{{else}}submit{{end}}" title="{{.Label}}" aria-label="{{.Label}}"{{if .Hook}} data-hook="{{.Hook}}"{{end}}{{if .Disabled}} disabled{{end}}><span class="icon icon-{{.Icon}}" aria-hidden="true"></span></button>{{end}}
