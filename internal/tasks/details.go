@@ -47,6 +47,9 @@ func (s *Store) Update(ctx context.Context, taskID int64, input UpdateInput, act
 	if !validStage(input.Stage) {
 		return ErrInvalidStage
 	}
+	if input.DueDate != "" && !format.ValidISODate(input.DueDate) {
+		return ErrInvalidDate
+	}
 
 	tx, err := s.DB.BeginTx(ctx, nil)
 	if err != nil {

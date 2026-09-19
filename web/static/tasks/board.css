@@ -6,15 +6,6 @@
   margin: var(--space-4) 0 var(--space-6);
 }
 
-.add-task-form input[type="text"],
-.add-task-form select {
-  font-family: var(--font-body);
-  font-size: 1rem;
-  padding: var(--space-2);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-}
-
 .add-task-form input[type="text"] {
   flex: 1 1 16rem;
 }
@@ -25,15 +16,6 @@
   gap: var(--space-2);
   align-items: center;
   margin: 0 0 var(--space-6);
-}
-
-.task-filter-form select,
-.task-filter-form input[type="search"] {
-  font-family: var(--font-body);
-  font-size: 1rem;
-  padding: var(--space-2);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
 }
 
 .task-board {
@@ -107,18 +89,6 @@
   flex-wrap: wrap;
 }
 
-.task-avatar {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 1.75rem;
-  height: 1.75rem;
-  border-radius: 50%;
-  color: var(--color-white);
-  font-size: var(--font-size-small);
-  font-weight: 700;
-}
-
 .task-card-due {
   margin: 0;
   font-size: var(--font-size-small);
@@ -132,25 +102,16 @@
   margin-top: var(--space-2);
 }
 
-.task-card-actions button {
-  font-size: var(--font-size-small);
-  padding: var(--space-1) var(--space-2);
-}
-
-.task-card-actions button[disabled] {
-  opacity: 0.5;
-}
-
 .task-move-to-form {
   display: flex;
+  flex-wrap: wrap;
   gap: var(--space-1);
 }
 
 .task-move-to-form select {
-  font-family: var(--font-body);
-  font-size: var(--font-size-small);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
+  flex: 1 1 6rem;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .task-overdue-stamp {
@@ -179,22 +140,6 @@
   gap: var(--space-2);
   max-width: 40rem;
   margin: var(--space-4) 0;
-}
-
-.task-details-form input[type="text"],
-.task-details-form input[type="date"],
-.task-details-form select,
-.task-details-form textarea {
-  font-family: var(--font-body);
-  font-size: 1rem;
-  padding: var(--space-2);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-}
-
-.task-details-form textarea {
-  min-height: 6rem;
-  resize: vertical;
 }
 
 .task-activity-list {

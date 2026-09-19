@@ -133,10 +133,42 @@ func TestCreateEventHTTPRedisplaysEveryField(t *testing.T) {
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("status = %d, want 200 (following the redirect to the details page)", resp.StatusCode)
 	}
-	for _, want := range []string{"Christmas concert", "Bring programmes", "2026-12-12", "2026-12-13", "18:00", "20:00", "2030-12-31"} {
+	for _, want := range []string{"Christmas concert", "Bring programmes", "12/12/2026", "13/12/2026", "18:00", "20:00", "31/12/2030"} { // the date fields show day first (gate 4.05)
 		if !strings.Contains(body, want) {
 			t.Errorf("details page missing %q; got:\n%s", want, body)
 		}
+	}
+}
+
+// TestCreateEventHTTPAcceptsDayFirstDates covers gate 4.05: the date fields
+// take UK order. The same event typed day first lands on the right days of
+// the month grid, and is shown back day first.
+func TestCreateEventHTTPAcceptsDayFirstDates(t *testing.T) {
+	ts, _ := newTestServer(t)
+	client := &http.Client{Jar: mustCookieJar(t)}
+	signIn(t, client, ts, "Sam")
+
+	resp := postForm(t, client, ts, "/calendar/events", url.Values{
+		"title": {"Day first"}, "start_date": {"5/12/2026"}, "end_date": {"06.12.2026"},
+	})
+	body := readBody(t, resp)
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("status = %d, want 200", resp.StatusCode)
+	}
+	for _, want := range []string{"Day first", "05/12/2026", "06/12/2026"} {
+		if !strings.Contains(body, want) {
+			t.Errorf("details page missing %q", want)
+		}
+	}
+
+	gridResp, err := client.Get(ts.URL + "/calendar?month=2026-12")
+	if err != nil {
+		t.Fatal(err)
+	}
+	grid := readBody(t, gridResp)
+	i5, i6 := strings.Index(grid, `data-date="2026-12-05"`), strings.Index(grid, `data-date="2026-12-07"`)
+	if i5 < 0 || i6 < 0 || !strings.Contains(grid[i5:i6], "Day first") {
+		t.Errorf("the event typed as 5/12/2026 to 06.12.2026 is not on 5 and 6 December in the month grid")
 	}
 }
 
@@ -211,7 +243,7 @@ func TestUpdateEventHTTPSavesChanges(t *testing.T) {
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("status = %d, want 200 (following the redirect back to the details page)", resp.StatusCode)
 	}
-	if !strings.Contains(body, "Edited") || !strings.Contains(body, "2026-10-02") || !strings.Contains(body, "Updated notes") {
+	if !strings.Contains(body, "Edited") || !strings.Contains(body, "02/10/2026") || !strings.Contains(body, "Updated notes") {
 		t.Errorf("details page missing the edited fields; got:\n%s", body)
 	}
 	if !strings.Contains(body, "Last changed by Sam") {

@@ -92,6 +92,7 @@ func (s *Server) Routes() http.Handler {
 	mux.Handle("GET /static/", http.StripPrefix("/static/", s.static))
 	if s.TestMode {
 		mux.HandleFunc("GET /__test/editor", s.handleTestEditor)
+		mux.HandleFunc("GET /__test/parts", s.handleTestParts)
 		mux.HandleFunc("GET /__test/egress", s.handleTestEgress)
 		mux.HandleFunc("GET /__test/routes", s.handleTestRoutes)
 		mux.HandleFunc("POST /__test/people/deactivate", s.handleTestDeactivatePerson)

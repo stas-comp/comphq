@@ -29,7 +29,7 @@ test('gate 2.11: a removed person no longer appears when assigning, but still sh
   await page.click('.add-task-form button[type="submit"]');
   await ready(page);
 
-  const avatar = page.locator('.task-card', { hasText: title }).locator('.task-avatar');
+  const avatar = page.locator('.task-card', { hasText: title }).locator('.av');
   await expect(avatar).toHaveAttribute('title', nameB);
 
   const res = await page.request.post(server.baseURL + '/__test/people/deactivate', {

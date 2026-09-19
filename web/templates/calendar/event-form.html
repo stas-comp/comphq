@@ -2,43 +2,43 @@
 {{if .Message}}<p class="message" role="alert">{{.Message}}</p>{{end}}
 <form method="post" action="{{.FormAction}}" class="calendar-event-form">
 <label for="event-title">Title</label>
-<input type="text" id="event-title" name="title" value="{{.Title}}" required>
+<input class="field" type="text" id="event-title" name="title" value="{{.Title}}" required>
 
 <label for="event-start-date">Date</label>
-<input type="date" id="event-start-date" name="start_date" value="{{.StartDate}}" required>
+<input class="field field-date" type="text" inputmode="numeric" autocomplete="off" placeholder="dd/mm/yyyy" id="event-start-date" name="start_date" value="{{.StartDate}}" required>
 
 <label for="event-end-date">End date (optional, for an event lasting several days)</label>
-<input type="date" id="event-end-date" name="end_date" value="{{.EndDate}}">
+<input class="field field-date" type="text" inputmode="numeric" autocomplete="off" placeholder="dd/mm/yyyy" id="event-end-date" name="end_date" value="{{.EndDate}}">
 
 <label for="event-start-time">Start time (leave blank for an all-day event)</label>
-<input type="time" id="event-start-time" name="start_time" value="{{.StartTime}}">
+<input class="field" type="time" id="event-start-time" name="start_time" value="{{.StartTime}}">
 
 <label for="event-end-time">End time (optional)</label>
-<input type="time" id="event-end-time" name="end_time" value="{{.EndTime}}">
+<input class="field" type="time" id="event-end-time" name="end_time" value="{{.EndTime}}">
 
 <label for="event-notes">Notes</label>
-<textarea id="event-notes" name="notes">{{.Notes}}</textarea>
+<textarea class="field" id="event-notes" name="notes">{{.Notes}}</textarea>
 
 <label for="event-recurrence">Repeats</label>
-<select id="event-recurrence" name="recurrence">
+<select class="field" id="event-recurrence" name="recurrence">
 {{$recurrence := .Recurrence}}
 {{range .Recurrences}}<option value="{{.Value}}"{{if eq .Value $recurrence}} selected{{end}}>{{.Label}}</option>{{end}}
 </select>
 
 <label for="event-until-date">Until (optional, for a repeating event)</label>
-<input type="date" id="event-until-date" name="until_date" value="{{.UntilDate}}">
+<input class="field field-date" type="text" inputmode="numeric" autocomplete="off" placeholder="dd/mm/yyyy" id="event-until-date" name="until_date" value="{{.UntilDate}}">
 
 <fieldset class="calendar-notice-field">
 <legend>Show in briefing ahead</legend>
 <label class="visually-hidden" for="event-notice-amount">Number (0 for not early)</label>
-<input type="number" id="event-notice-amount" name="notice_amount" min="0" value="{{.NoticeAmount}}">
+<input class="field" type="number" id="event-notice-amount" name="notice_amount" min="0" value="{{.NoticeAmount}}">
 <label class="visually-hidden" for="event-notice-unit">Unit</label>
-<select id="event-notice-unit" name="notice_unit">
+<select class="field" id="event-notice-unit" name="notice_unit">
 <option value="days"{{if eq .NoticeUnit "days"}} selected{{end}}>days</option>
 <option value="weeks"{{if eq .NoticeUnit "weeks"}} selected{{end}}>weeks</option>
 </select>
 </fieldset>
 
-<button type="submit">Save</button>
+<button class="btn primary" type="submit">Save</button>
 </form>
 {{end}}

@@ -4,11 +4,14 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
-	"strings"
 
 	"github.com/stas-comp/comphq/internal/app"
+	"github.com/stas-comp/comphq/internal/app/format"
 	"github.com/stas-comp/comphq/internal/people"
 )
+
+// invalidDateMessage is shown when a typed due date isn't a real day.
+const invalidDateMessage = "Please type the due date as day/month/year, like 25/09/2026."
 
 // stageLabels are the Board column headings, in display order (SPEC
 // gate 2.01).
@@ -75,13 +78,13 @@ type cardView struct {
 	OtherStages []stageOption
 }
 
-func newCardView(t Task) cardView {
+func newCardView(t Task, meID int64) cardView {
 	views := make([]assigneeView, 0, len(t.Assignees))
 	for _, a := range t.Assignees {
 		views = append(views, assigneeView{
 			Name:       a.Name,
 			Initials:   InitialsFor(a.Name),
-			ColorClass: AvatarColorClass(a.PersonID),
+			ColorClass: AvatarClass(a.PersonID, meID),
 			Removed:    a.Removed,
 		})
 	}
@@ -166,7 +169,7 @@ func (h *Handlers) renderBoard(w http.ResponseWriter, r *http.Request, status in
 
 	byStage := make(map[string][]cardView, len(Stages))
 	for _, t := range tasks {
-		byStage[t.Stage] = append(byStage[t.Stage], newCardView(t))
+		byStage[t.Stage] = append(byStage[t.Stage], newCardView(t, currentPersonID(r)))
 	}
 
 	columns := make([]boardColumn, 0, len(Stages))
@@ -238,7 +241,7 @@ func (h *Handlers) handleCreateTask(w http.ResponseWriter, r *http.Request) {
 		Notes:     r.FormValue("notes"),
 		Size:      r.FormValue("size"),
 		Stage:     r.FormValue("stage"),
-		DueDate:   strings.TrimSpace(r.FormValue("due_date")),
+		DueDate:   format.NormaliseDate(r.FormValue("due_date")),
 		PersonIDs: personIDs,
 	}
 
@@ -249,6 +252,8 @@ func (h *Handlers) handleCreateTask(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/tasks/board", http.StatusFound)
 	case ErrEmptyTitle:
 		h.renderBoard(w, r, http.StatusOK, "Please type a title.")
+	case ErrInvalidDate:
+		h.renderBoard(w, r, http.StatusOK, invalidDateMessage)
 	case ErrInvalidSize, ErrInvalidStage:
 		http.Error(w, err.Error(), http.StatusBadRequest)
 	default:

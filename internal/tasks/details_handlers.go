@@ -4,9 +4,9 @@ import (
 	"database/sql"
 	"net/http"
 	"strconv"
-	"strings"
 
 	"github.com/stas-comp/comphq/internal/app"
+	"github.com/stas-comp/comphq/internal/app/format"
 	"github.com/stas-comp/comphq/internal/people"
 )
 
@@ -94,7 +94,7 @@ func (h *Handlers) renderDetails(w http.ResponseWriter, r *http.Request, id int6
 	}
 
 	h.srv.RenderFrame(w, r, status, "tasks-details.html", "Task: "+task.Title, detailsPageData{
-		ID: task.ID, Title: task.Title, Notes: task.Notes, Size: task.Size, Stage: task.Stage, DueDate: task.DueDate,
+		ID: task.ID, Title: task.Title, Notes: task.Notes, Size: task.Size, Stage: task.Stage, DueDate: format.DayFirst(task.DueDate),
 		Stages:   allStages,
 		People:   buildPersonOptions(activePeople, task.Assignees),
 		Activity: activity,
@@ -128,7 +128,7 @@ func (h *Handlers) handleUpdateTask(w http.ResponseWriter, r *http.Request) {
 		Notes:     r.FormValue("notes"),
 		Size:      r.FormValue("size"),
 		Stage:     r.FormValue("stage"),
-		DueDate:   strings.TrimSpace(r.FormValue("due_date")),
+		DueDate:   format.NormaliseDate(r.FormValue("due_date")),
 		PersonIDs: personIDs,
 	}
 
@@ -138,6 +138,8 @@ func (h *Handlers) handleUpdateTask(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/tasks/"+strconv.FormatInt(id, 10), http.StatusFound)
 	case ErrEmptyTitle:
 		h.renderDetails(w, r, id, http.StatusOK, "Please type a title.")
+	case ErrInvalidDate:
+		h.renderDetails(w, r, id, http.StatusOK, invalidDateMessage)
 	case ErrTaskNotFound:
 		http.NotFound(w, r)
 	case ErrInvalidSize, ErrInvalidStage:

@@ -93,6 +93,9 @@ type Lane struct {
 	Ideas        []LaneTask
 	Workload     []WorkloadGroup
 	WorkloadLine string
+	// WorkloadLabel is the blocks' spoken equivalent (SPEC gate 4.10):
+	// "Workload: 7 blocks — large, medium, small".
+	WorkloadLabel string
 	// AssignOptions is every active person this lane's tasks can be
 	// assigned to by drag or "Assign to…" (SPEC gate 2.28) — every
 	// active person except this lane's own (reassigning to the person
@@ -163,6 +166,7 @@ func buildLane(personID int64, name string, tasksList []Task, everyone []people.
 
 	if showWorkload {
 		lane.Workload, lane.WorkloadLine = workloadFor(laneTasks)
+		lane.WorkloadLabel = WorkloadLabel(lane.Workload)
 	}
 	return lane
 }
@@ -192,6 +196,38 @@ func workloadFor(tasksList []Task) ([]WorkloadGroup, string) {
 		counts[t.Size]++
 	}
 	return groups, workloadLine(counts)
+}
+
+// blocksWord names a task's size from its block count: the same 1/2/4 the
+// blocks are drawn with (sizeWeight).
+func blocksWord(blocks int) string {
+	for size, weight := range sizeWeight {
+		if weight == blocks {
+			return sizeWordLower(size)
+		}
+	}
+	return ""
+}
+
+// WorkloadLabel is what a screen reader says for a row of workload blocks
+// (SPEC gate 4.10): the total, then each job's size in the order the jobs
+// are drawn — "Workload: 7 blocks — large, medium, small". It is empty
+// when there are no blocks, since then nothing is drawn.
+func WorkloadLabel(groups []WorkloadGroup) string {
+	total := 0
+	words := make([]string, 0, len(groups))
+	for _, g := range groups {
+		total += len(g.Blocks)
+		words = append(words, blocksWord(len(g.Blocks)))
+	}
+	if total == 0 {
+		return ""
+	}
+	noun := "blocks"
+	if total == 1 {
+		noun = "block"
+	}
+	return fmt.Sprintf("Workload: %d %s — %s", total, noun, strings.Join(words, ", "))
 }
 
 // workloadLine renders SPEC B4's example exactly: "1 large · 1 medium ·

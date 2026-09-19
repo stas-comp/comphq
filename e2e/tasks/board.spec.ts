@@ -58,6 +58,12 @@ async function dragOnce(page: Page, sourceTitle: string, targetTitle: string, dr
   const source = page.locator('.task-card', { hasText: sourceTitle });
   const target = page.locator('.task-card', { hasText: targetTitle });
   const sourceId = await source.getAttribute('data-task-id');
+  // A synthetic mouse can only drop on what is inside the window, and how
+  // far down a card sits depends on the page above it. Bring both cards
+  // into view first (the target last, so the source stays in view above
+  // it), then measure.
+  await source.scrollIntoViewIfNeeded();
+  await target.scrollIntoViewIfNeeded();
   // The source point is the title line specifically, not the card's
   // overall bounding-box centre: a card's actions row (move up/down,
   // the "Move to…" select) is filtered from starting a drag (board.js's
@@ -187,8 +193,8 @@ test('gate 2.03: a card shows its assigned people and due date', async ({ page, 
 
   const card = page.locator('.task-card', { hasText: title });
   await expect(card).toHaveCount(1);
-  await expect(card.locator('.task-avatar')).toHaveCount(1);
-  await expect(card.locator('.task-avatar')).toHaveAttribute('title', you);
+  await expect(card.locator('.av')).toHaveCount(1);
+  await expect(card.locator('.av')).toHaveAttribute('title', you);
   await expect(card).toContainText('2099-01-01');
   await expect(card.locator('.task-overdue-stamp')).toHaveCount(0);
 });

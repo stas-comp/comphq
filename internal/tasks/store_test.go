@@ -340,3 +340,34 @@ func TestAssigneesForIncludesRemovedPeopleMarked(t *testing.T) {
 		t.Fatal("removed person no longer appears among assignees at all — SPEC gate 2.11 requires it to still show, marked")
 	}
 }
+
+// SPEC gate 4.05: the due date is typed, so the store refuses anything
+// that isn't a real day rather than keeping text nothing can compare.
+func TestCreateAndUpdateRefuseADueDateThatIsNotARealDay(t *testing.T) {
+	sqlDB := openTestDB(t)
+	store := &Store{DB: sqlDB}
+	creator := testPerson(t, sqlDB, "Sam")
+	ctx := context.Background()
+
+	for _, bad := range []string{"next week", "31/02/2026", "2026-02-31", "25/09/2026"} {
+		if _, err := store.Create(ctx, CreateInput{Title: "Bad date", DueDate: bad}, creator, fixedNow); err != ErrInvalidDate {
+			t.Errorf("Create with due date %q: err = %v, want ErrInvalidDate", bad, err)
+		}
+	}
+
+	task, err := store.Create(ctx, CreateInput{Title: "Good date", DueDate: "2026-09-25"}, creator, fixedNow)
+	if err != nil {
+		t.Fatalf("Create with a real ISO date: %v", err)
+	}
+	err = store.Update(ctx, task.ID, UpdateInput{Title: "Good date", Size: "M", Stage: StageIdea, DueDate: "soon"}, creator, fixedNow)
+	if err != ErrInvalidDate {
+		t.Errorf("Update with due date %q: err = %v, want ErrInvalidDate", "soon", err)
+	}
+	got, err := store.Get(ctx, task.ID, fixedNow)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.DueDate != "2026-09-25" {
+		t.Errorf("due date after a refused update = %q, want the old 2026-09-25 kept", got.DueDate)
+	}
+}

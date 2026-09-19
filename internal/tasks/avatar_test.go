@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strconv"
+	"strings"
 	"testing"
 )
 
@@ -25,111 +26,108 @@ func TestInitialsFor(t *testing.T) {
 	}
 }
 
-func TestAvatarColorClassIsDeterministic(t *testing.T) {
-	if AvatarColorClass(5) != AvatarColorClass(5) {
-		t.Error("AvatarColorClass(5) is not deterministic")
+// SPEC gate 4.08: the same person is the same circle colour every time.
+func TestAvatarClassIsDeterministic(t *testing.T) {
+	if AvatarClass(5, 9) != AvatarClass(5, 9) {
+		t.Error("AvatarClass(5, 9) is not deterministic")
 	}
 }
 
-func TestAvatarColorClassIsAlwaysOneOfTheDefinedClasses(t *testing.T) {
-	re := regexp.MustCompile(`^task-avatar-(\d+)$`)
-	for id := int64(0); id < int64(avatarColorCount)*3; id++ {
-		class := AvatarColorClass(id)
-		m := re.FindStringSubmatch(class)
-		if m == nil {
-			t.Fatalf("AvatarColorClass(%d) = %q, doesn't match task-avatar-N", id, class)
+// Gate 4.08: the person using the app always gets the accent circle, on
+// every screen, and nobody else does.
+func TestAvatarClassGivesTheCurrentPersonTheAccentCircle(t *testing.T) {
+	if got := AvatarClass(7, 7); got != "av me" {
+		t.Errorf("AvatarClass(me) = %q, want %q", got, "av me")
+	}
+	for id := int64(1); id <= 20; id++ {
+		if id != 7 && AvatarClass(id, 7) == "av me" {
+			t.Errorf("AvatarClass(%d, me=7) = the accent circle, which only person 7 may have", id)
 		}
-		n, _ := strconv.Atoi(m[1])
-		if n < 0 || n >= avatarColorCount {
-			t.Fatalf("AvatarColorClass(%d) = %q, index out of range [0,%d)", id, class, avatarColorCount)
-		}
+	}
+	if got := AvatarClass(0, 0); got == "av me" {
+		t.Error("with nobody signed in (meID 0), person 0 must not get the accent circle")
 	}
 }
 
-// TestAvatarColorClassCSSMatchesGoPalette guards against the CSS
-// palette (web/static/theme/theme.css, hand-written since a class
-// selector can't be templated at request time — SPEC's CSP has no
-// 'unsafe-inline' for style-src) drifting from AvatarColorClass's own
-// notion of how many entries exist and what hue each one is.
-func TestAvatarColorClassCSSMatchesGoPalette(t *testing.T) {
+// Every class comes from the four-colour palette, whichever id it is
+// asked about, including ids that are zero or negative.
+func TestAvatarClassIsAlwaysOneOfThePalette(t *testing.T) {
+	palette := map[string]bool{}
+	for _, c := range avatarClasses {
+		palette[c] = true
+	}
+	seen := map[string]bool{}
+	for id := int64(-8); id < 40; id++ {
+		class := AvatarClass(id, 0)
+		if !palette[class] {
+			t.Fatalf("AvatarClass(%d) = %q, not one of %v", id, class, avatarClasses)
+		}
+		seen[class] = true
+	}
+	if len(seen) != len(avatarClasses) {
+		t.Errorf("only %d of the %d palette colours are ever used", len(seen), len(avatarClasses))
+	}
+}
+
+// cssRuleBackground reads the background of `selector { ... }` from
+// theme.css, resolving one level of var(--token).
+func cssRuleBackground(t *testing.T, css, selector string) string {
+	t.Helper()
+	m := regexp.MustCompile(regexp.QuoteMeta(selector) + `\s*\{[^}]*?background(?:-color)?:\s*([^;}]+)`).FindStringSubmatch(css)
+	if m == nil {
+		t.Fatalf("theme.css has no %s rule with a background", selector)
+	}
+	value := strings.TrimSpace(m[1])
+	if v := regexp.MustCompile(`^var\((--[a-z0-9-]+)\)$`).FindStringSubmatch(value); v != nil {
+		tok := regexp.MustCompile(regexp.QuoteMeta(v[1]) + `:\s*(#[0-9a-fA-F]{6})`).FindStringSubmatch(css)
+		if tok == nil {
+			t.Fatalf("theme.css doesn't define %s", v[1])
+		}
+		return tok[1]
+	}
+	return value
+}
+
+func hexLuminance(t *testing.T, hex string) float64 {
+	t.Helper()
+	if len(hex) != 7 || hex[0] != '#' {
+		t.Fatalf("%q is not a #rrggbb colour", hex)
+	}
+	channel := func(from int) float64 {
+		v, err := strconv.ParseUint(hex[from:from+2], 16, 8)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return float64(v) / 255
+	}
+	return relativeLuminance(channel(1), channel(3), channel(5))
+}
+
+// TestAvatarPaletteMeetsContrast proves PLAN.md P2-01's "with contrast
+// checked" for the v1.1 palette: white initials on each of the four
+// circle colours, and ink initials on the accent circle, must meet WCAG
+// AA's 4.5:1 — read from the CSS that is actually shipped.
+func TestAvatarPaletteMeetsContrast(t *testing.T) {
 	data, err := os.ReadFile(filepath.Join("..", "..", "web", "static", "theme", "theme.css"))
 	if err != nil {
 		t.Fatal(err)
 	}
 	css := string(data)
-
-	rule := regexp.MustCompile(`\.task-avatar-(\d+)\s*\{\s*background-color:\s*hsl\((\d+),\s*(\d+)%,\s*(\d+)%\);`)
-	matches := rule.FindAllStringSubmatch(css, -1)
-	if len(matches) != avatarColorCount {
-		t.Fatalf("theme.css has %d .task-avatar-N rules, want %d (avatarColorCount)", len(matches), avatarColorCount)
-	}
-
-	seen := make(map[int]bool)
-	for _, m := range matches {
-		index, _ := strconv.Atoi(m[1])
-		hue, _ := strconv.Atoi(m[2])
-		sat, _ := strconv.Atoi(m[3])
-		light, _ := strconv.Atoi(m[4])
-		seen[index] = true
-
-		if want := avatarHue(index); hue != want {
-			t.Errorf("task-avatar-%d hue = %d, want %d (avatarHue(%d))", index, hue, want, index)
-		}
-		if sat != avatarSaturation {
-			t.Errorf("task-avatar-%d saturation = %d%%, want %d%%", index, sat, avatarSaturation)
-		}
-		if light != avatarLightness {
-			t.Errorf("task-avatar-%d lightness = %d%%, want %d%%", index, light, avatarLightness)
-		}
-	}
-	for i := 0; i < avatarColorCount; i++ {
-		if !seen[i] {
-			t.Errorf("theme.css is missing a .task-avatar-%d rule", i)
-		}
-	}
-}
-
-// TestAvatarColorMeetsContrastForEveryHue proves PLAN.md P2-01's "a
-// colour derived from the person id, with contrast checked": white text
-// on the avatar background must meet WCAG AA's 4.5:1 contrast ratio at
-// every possible hue (not just the ones the fixed palette currently
-// uses), since avatarSaturation/avatarLightness are fixed constants
-// applied to every hue alike — so the palette could grow later without
-// ever needing this check revisited.
-func TestAvatarColorMeetsContrastForEveryHue(t *testing.T) {
 	const minContrast = 4.5
-	for hue := 0; hue < 360; hue++ {
-		r, g, b := hslToRGB(float64(hue), float64(avatarSaturation)/100, float64(avatarLightness)/100)
-		contrast := contrastRatio(1.0, relativeLuminance(r, g, b)) // 1.0 = white text
-		if contrast < minContrast {
-			t.Fatalf("hue %d: contrast against white = %.2f, want >= %.1f (rgb=%.3f,%.3f,%.3f)", hue, contrast, minContrast, r, g, b)
+
+	for _, class := range avatarClasses {
+		selector := "." + strings.ReplaceAll(class, " ", ".")
+		bg := cssRuleBackground(t, css, selector)
+		if got := contrastRatio(1.0, hexLuminance(t, bg)); got < minContrast { // 1.0 = white initials
+			t.Errorf("%s: white on %s = %.2f:1, want >= %.1f", selector, bg, got, minContrast)
 		}
 	}
-}
 
-// hslToRGB converts HSL (h in [0,360), s and l in [0,1]) to linear-scale
-// sRGB channel values in [0,1], following the standard algorithm.
-func hslToRGB(h, s, l float64) (r, g, b float64) {
-	c := (1 - math.Abs(2*l-1)) * s
-	hp := h / 60
-	x := c * (1 - math.Abs(math.Mod(hp, 2)-1))
-	var r1, g1, b1 float64
-	switch {
-	case hp < 1:
-		r1, g1, b1 = c, x, 0
-	case hp < 2:
-		r1, g1, b1 = x, c, 0
-	case hp < 3:
-		r1, g1, b1 = 0, c, x
-	case hp < 4:
-		r1, g1, b1 = 0, x, c
-	case hp < 5:
-		r1, g1, b1 = x, 0, c
-	default:
-		r1, g1, b1 = c, 0, x
+	me := cssRuleBackground(t, css, "."+strings.ReplaceAll(avatarMeClass, " ", "."))
+	ink := hexLuminance(t, "#141b2d")
+	if got := contrastRatio(hexLuminance(t, me), ink); got < minContrast {
+		t.Errorf(".av.me: ink on %s = %.2f:1, want >= %.1f", me, got, minContrast)
 	}
-	m := l - c/2
-	return r1 + m, g1 + m, b1 + m
 }
 
 // relativeLuminance is the WCAG 2.x formula for sRGB channel values in

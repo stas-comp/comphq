@@ -7,15 +7,13 @@
 {{range .Tasks}}
 <li class="task-card">
 <p class="task-card-title"><a href="/tasks/{{.ID}}">{{.Title}}</a></p>
-<p class="task-card-size">{{.SizeLabel}}</p>
+<p class="task-card-size">{{template "part-size" .SizeLabel}}</p>
 {{if .Assignees}}
-<p class="task-card-assignees">
-{{range .Assignees}}<span class="task-avatar {{.ColorClass}}"{{if .Removed}} title="{{.Name}} (removed)"{{else}} title="{{.Name}}"{{end}}>{{.Initials}}</span>{{end}}
-</p>
+<p class="task-card-assignees">{{template "part-people" .Assignees}}</p>
 {{end}}
 {{if .DueDate}}<p class="task-card-due">{{.DueDate}}</p>{{end}}
 <form method="post" action="/tasks/{{.ID}}/restore" class="inline-form">
-<button type="submit">Restore</button>
+<button class="mini" type="submit">Restore</button>
 </form>
 </li>
 {{end}}

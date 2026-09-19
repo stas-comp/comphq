@@ -47,7 +47,7 @@ test('gate 2.06: opening a card allows editing every detail, and Activity record
   await expect(page.locator('#details-notes')).toHaveValue('Draft the Q3 report.');
   await expect(page.locator('#details-size')).toHaveValue('L');
   await expect(page.locator('#details-stage')).toHaveValue('doing');
-  await expect(page.locator('#details-due-date')).toHaveValue('2026-09-25');
+  await expect(page.locator('#details-due-date')).toHaveValue('25/09/2026');
 
   const activityText = await page.locator('.task-activity-list').innerText();
   expect(activityText).toContain(`${name} created this`);

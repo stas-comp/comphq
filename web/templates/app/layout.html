@@ -38,7 +38,7 @@
 <header class="topbar">
 <form class="search" role="search" action="/kb/search" method="get" autocomplete="off">
 <label for="search-box" class="visually-hidden">Search</label>
-<input type="search" id="search-box" name="q" placeholder="Search">
+<input class="field" type="search" id="search-box" name="q" placeholder="Search">
 </form>
 <div class="who">
 <span>You: {{.PersonName}}</span>
@@ -46,7 +46,7 @@
 </div>
 </header>
 <main>
-<button id="refresh-notice" type="button" hidden>Updated — refresh</button>
+<button class="btn primary" id="refresh-notice" type="button" hidden>Updated — refresh</button>
 {{.BodyContent}}
 </main>
 </div>

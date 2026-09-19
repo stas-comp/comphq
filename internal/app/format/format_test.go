@@ -26,3 +26,58 @@ func TestDateTime(t *testing.T) {
 		t.Errorf("DateTime() = %q, want %q", got, want)
 	}
 }
+
+// SPEC gate 4.05: the date field accepts UK order (day first), and still
+// accepts the ISO form.
+func TestParseDayFirst(t *testing.T) {
+	cases := []struct {
+		in   string
+		want string
+		ok   bool
+	}{
+		{"25/09/2026", "2026-09-25", true},
+		{"5/9/2026", "2026-09-05", true},
+		{" 05-09-2026 ", "2026-09-05", true},
+		{"05.09.2026", "2026-09-05", true},
+		{"2026-09-25", "2026-09-25", true},
+		{"09/25/2026", "", false}, // month 25 doesn't exist: not silently read the American way
+		{"31/02/2026", "", false},
+		{"29/02/2028", "2028-02-29", true},
+		{"29/02/2026", "", false},
+		{"", "", false},
+		{"tomorrow", "", false},
+		{"25/09/26", "", false},
+	}
+	for _, c := range cases {
+		got, ok := ParseDayFirst(c.in)
+		if got != c.want || ok != c.ok {
+			t.Errorf("ParseDayFirst(%q) = (%q, %v), want (%q, %v)", c.in, got, ok, c.want, c.ok)
+		}
+	}
+}
+
+func TestNormaliseDateKeepsWhatItCannotRead(t *testing.T) {
+	if got := NormaliseDate("25/09/2026"); got != "2026-09-25" {
+		t.Errorf("NormaliseDate(day first) = %q, want 2026-09-25", got)
+	}
+	if got := NormaliseDate("  next week "); got != "next week" {
+		t.Errorf("NormaliseDate(unreadable) = %q, want the text kept so validation still refuses it", got)
+	}
+	if got := NormaliseDate(""); got != "" {
+		t.Errorf("NormaliseDate(empty) = %q, want empty", got)
+	}
+}
+
+func TestDayFirstRendersIsoAndLeavesOtherTextAlone(t *testing.T) {
+	if got := DayFirst("2026-09-05"); got != "05/09/2026" {
+		t.Errorf("DayFirst(iso) = %q, want 05/09/2026", got)
+	}
+	for _, in := range []string{"", "next week", "31/02/2026"} {
+		if got := DayFirst(in); got != in {
+			t.Errorf("DayFirst(%q) = %q, want it unchanged", in, got)
+		}
+	}
+	if got := DayFirst(NormaliseDate("5/9/2026")); got != "05/09/2026" {
+		t.Errorf("round trip = %q, want 05/09/2026", got)
+	}
+}

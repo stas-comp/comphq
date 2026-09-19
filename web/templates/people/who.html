@@ -15,7 +15,7 @@
 <form method="post" action="/who/select">
 <input type="hidden" name="next" value="{{$.Next}}">
 <input type="hidden" name="person_id" value="{{.ID}}">
-<button type="submit" class="person-button">{{.Name}}</button>
+<button type="submit" class="btn person-button">{{.Name}}</button>
 </form>
 {{end}}
 </div>
@@ -23,8 +23,8 @@
 <form method="post" action="/who/add" id="add-name-form" hidden>
 <input type="hidden" name="next" value="{{.Next}}">
 <label for="add-name-input">Your name</label>
-<input type="text" id="add-name-input" name="name" required>
-<button type="submit">Add</button>
+<input class="field" type="text" id="add-name-input" name="name" required>
+<button class="btn primary" type="submit">Add</button>
 </form>
 </main>
 <script src="/static/people/who.js"></script>

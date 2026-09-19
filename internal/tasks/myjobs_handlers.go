@@ -43,7 +43,7 @@ func (h *Handlers) renderMyJobs(w http.ResponseWriter, r *http.Request, status i
 
 	views := make([]simpleCardView, 0, len(grabs))
 	for _, t := range grabs {
-		views = append(views, newSimpleCardView(t))
+		views = append(views, newSimpleCardView(t, person.ID))
 	}
 
 	h.srv.RenderFrame(w, r, status, "tasks-myjobs.html", "Tasks", myJobsPageData{

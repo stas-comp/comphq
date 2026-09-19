@@ -531,3 +531,31 @@ func TestRestoreNotRemovedEventIsError(t *testing.T) {
 		t.Errorf("err = %v, want ErrEventNotFound", err)
 	}
 }
+
+// SPEC gate 4.05: dates are typed, so the store refuses any date field that
+// isn't a real day, and the "just this one" edit does too.
+func TestCreateAndMoveRefuseADateThatIsNotARealDay(t *testing.T) {
+	sqlDB := openTestDB(t)
+	store := &Store{DB: sqlDB}
+	sam := testPerson(t, sqlDB, "Sam")
+	ctx := context.Background()
+
+	for _, in := range []Input{
+		{Title: "Bad start", StartDate: "12/12/2026"},
+		{Title: "Bad start", StartDate: "2026-02-31"},
+		{Title: "Bad end", StartDate: "2026-10-01", EndDate: "tomorrow"},
+		{Title: "Bad until", StartDate: "2026-10-01", Recurrence: RecurrenceYearly, UntilDate: "31/12/2030"},
+	} {
+		if _, err := store.Create(ctx, in, sam, fixedNow); err != ErrInvalidDate {
+			t.Errorf("Create(%+v): err = %v, want ErrInvalidDate", in, err)
+		}
+	}
+
+	event, err := store.Create(ctx, Input{Title: "Yearly", StartDate: "2026-12-12", Recurrence: RecurrenceYearly}, sam, fixedNow)
+	if err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+	if err := store.SetMovedException(ctx, event.ID, "2026-12-12", "19/12/2026", "", "", "", sam, fixedNow); err != ErrInvalidDate {
+		t.Errorf("SetMovedException with a day-first date sent unconverted: err = %v, want ErrInvalidDate", err)
+	}
+}

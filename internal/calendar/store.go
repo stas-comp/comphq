@@ -67,6 +67,7 @@ var (
 	ErrEndDateBeforeStart    = errors.New("end date can't be before the start date")
 	ErrEndTimeNeedsStartTime = errors.New("end time needs a start time")
 	ErrInvalidRecurrence     = errors.New("that isn't a valid repeat option")
+	ErrInvalidDate           = errors.New("that isn't a valid date")
 )
 
 // Input is what adding or editing an event takes (SPEC gate 2.13).
@@ -94,6 +95,17 @@ func validRecurrence(r string) bool {
 // normalize trims the title and defaults recurrence, then runs SPEC
 // gate 2.13's validation: title required, end date not before start,
 // end time needs a start time.
+// validDates reports whether every non-empty date is a real day. The date
+// fields are typed (SPEC gate 4.05), so the browser no longer guarantees it.
+func validDates(dates ...string) bool {
+	for _, d := range dates {
+		if d != "" && !format.ValidISODate(d) {
+			return false
+		}
+	}
+	return true
+}
+
 func normalize(input Input) (Input, error) {
 	input.Title = strings.TrimSpace(input.Title)
 	if input.Title == "" {
@@ -104,6 +116,9 @@ func normalize(input Input) (Input, error) {
 	}
 	if !validRecurrence(input.Recurrence) {
 		return Input{}, ErrInvalidRecurrence
+	}
+	if !validDates(input.StartDate, input.EndDate, input.UntilDate) {
+		return Input{}, ErrInvalidDate
 	}
 	if input.EndDate != "" && input.EndDate < input.StartDate {
 		return Input{}, ErrEndDateBeforeStart
@@ -352,6 +367,9 @@ var ErrEmptyStartDate = errors.New("date can't be empty")
 func (s *Store) SetMovedException(ctx context.Context, eventID int64, originalDate, newStartDate, newEndDate, newStartTime, newEndTime string, actorID int64, now time.Time) error {
 	if newStartDate == "" {
 		return ErrEmptyStartDate
+	}
+	if !validDates(newStartDate, newEndDate) {
+		return ErrInvalidDate
 	}
 	if newEndDate != "" && newEndDate < newStartDate {
 		return ErrEndDateBeforeStart

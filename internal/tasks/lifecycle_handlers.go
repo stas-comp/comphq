@@ -19,13 +19,13 @@ type simpleCardView struct {
 	Assignees []assigneeView
 }
 
-func newSimpleCardView(t Task) simpleCardView {
+func newSimpleCardView(t Task, meID int64) simpleCardView {
 	views := make([]assigneeView, 0, len(t.Assignees))
 	for _, a := range t.Assignees {
 		views = append(views, assigneeView{
 			Name:       a.Name,
 			Initials:   InitialsFor(a.Name),
-			ColorClass: AvatarColorClass(a.PersonID),
+			ColorClass: AvatarClass(a.PersonID, meID),
 			Removed:    a.Removed,
 		})
 	}
@@ -47,7 +47,7 @@ func (h *Handlers) handleFinished(w http.ResponseWriter, r *http.Request) {
 	}
 	views := make([]simpleCardView, 0, len(tasks))
 	for _, t := range tasks {
-		views = append(views, newSimpleCardView(t))
+		views = append(views, newSimpleCardView(t, currentPersonID(r)))
 	}
 	h.srv.RenderFrame(w, r, http.StatusOK, "tasks-finished.html", "Finished tasks", finishedPageData{Tasks: views})
 }
@@ -91,7 +91,7 @@ func (h *Handlers) handleRemoved(w http.ResponseWriter, r *http.Request) {
 	}
 	views := make([]simpleCardView, 0, len(tasks))
 	for _, t := range tasks {
-		views = append(views, newSimpleCardView(t))
+		views = append(views, newSimpleCardView(t, currentPersonID(r)))
 	}
 	h.srv.RenderFrame(w, r, http.StatusOK, "tasks-removed.html", "Removed tasks", removedPageData{Tasks: views})
 }

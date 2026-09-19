@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"strings"
 	"time"
+
+	"github.com/stas-comp/comphq/internal/app/format"
 )
 
 // The four Board columns, in display order (SPEC gate 2.01).
@@ -54,6 +56,9 @@ var ErrEmptyTitle = errors.New("title can't be empty")
 var (
 	ErrInvalidSize  = errors.New("that isn't a valid size")
 	ErrInvalidStage = errors.New("that isn't a valid stage")
+	// ErrInvalidDate is a due date that isn't a real day (SPEC gate 4.05: the
+	// date field is typed, so nothing but the server can check it).
+	ErrInvalidDate = errors.New("that isn't a valid date")
 )
 
 // Store reads and writes tasks, their assignees and their activity.
@@ -104,6 +109,9 @@ func (s *Store) Create(ctx context.Context, input CreateInput, creatorID int64, 
 	}
 	if !validStage(stage) {
 		return Task{}, ErrInvalidStage
+	}
+	if input.DueDate != "" && !format.ValidISODate(input.DueDate) {
+		return Task{}, ErrInvalidDate
 	}
 
 	tx, err := s.DB.BeginTx(ctx, nil)

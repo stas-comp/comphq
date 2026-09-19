@@ -4,7 +4,7 @@
 <h1>{{.Version.Title}}</h1>
 
 <form method="post" action="/kb/articles/{{.Article.ID}}/versions/{{.Version.VersionNo}}/restore">
-<button type="submit">Restore this version</button>
+<button class="btn" type="submit">Restore this version</button>
 </form>
 
 <div class="kb-article-body">{{.BodyHTML}}</div>

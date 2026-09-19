@@ -1,18 +1,6 @@
 .calendar-view-switch {
-  display: flex;
-  gap: var(--space-3);
+  width: fit-content;
   margin: 0 0 var(--space-4);
-  font-weight: 600;
-}
-
-.calendar-view-switch a {
-  color: var(--color-text-muted);
-  text-decoration: none;
-}
-
-.calendar-view-switch a[aria-current="page"] {
-  color: var(--color-ink-text);
-  text-decoration: underline;
 }
 
 .calendar-month-nav {
@@ -175,24 +163,6 @@
   gap: var(--space-2);
   max-width: 30rem;
   margin: var(--space-4) 0;
-}
-
-.calendar-event-form input[type="text"],
-.calendar-event-form input[type="date"],
-.calendar-event-form input[type="time"],
-.calendar-event-form input[type="number"],
-.calendar-event-form select,
-.calendar-event-form textarea {
-  font-family: var(--font-body);
-  font-size: 1rem;
-  padding: var(--space-2);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-}
-
-.calendar-event-form textarea {
-  min-height: 6rem;
-  resize: vertical;
 }
 
 .calendar-notice-field {

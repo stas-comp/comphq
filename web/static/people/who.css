@@ -49,13 +49,7 @@ h1 {
 }
 
 .link-button {
-  background: none;
-  border: none;
   color: var(--color-sidebar-text);
-  text-decoration: underline;
-  cursor: pointer;
-  font-family: var(--font-body);
-  font-size: 1rem;
 }
 
 .link-button:hover,
@@ -80,21 +74,3 @@ h1 {
   align-items: center;
 }
 
-#add-name-form input[type="text"] {
-  font-family: var(--font-body);
-  font-size: 1rem;
-  padding: var(--space-2) var(--space-3);
-  border-radius: var(--radius-sm);
-  border: none;
-}
-
-#add-name-form button {
-  font-family: var(--font-body);
-  font-weight: 700;
-  padding: var(--space-2) var(--space-4);
-  border-radius: var(--radius-sm);
-  border: none;
-  background: var(--color-signal-orange);
-  color: var(--color-ink-navy);
-  cursor: pointer;
-}

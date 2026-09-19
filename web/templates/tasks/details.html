@@ -5,14 +5,14 @@
 
 <form method="post" action="/tasks/{{.ID}}" class="task-details-form">
 <label for="details-title">Title</label>
-<input type="text" id="details-title" name="title" value="{{.Title}}" required>
+<input class="field" type="text" id="details-title" name="title" value="{{.Title}}" required>
 
 <label for="details-notes">Notes</label>
-<textarea id="details-notes" name="notes">{{.Notes}}</textarea>
+<textarea class="field" id="details-notes" name="notes">{{.Notes}}</textarea>
 
 <label for="details-size">Size</label>
 {{$size := .Size}}
-<select id="details-size" name="size">
+<select class="field" id="details-size" name="size">
 <option value="S"{{if eq $size "S"}} selected{{end}}>Small</option>
 <option value="M"{{if eq $size "M"}} selected{{end}}>Medium</option>
 <option value="L"{{if eq $size "L"}} selected{{end}}>Large</option>
@@ -20,23 +20,23 @@
 
 <label for="details-stage">Column</label>
 {{$stage := .Stage}}
-<select id="details-stage" name="stage">
+<select class="field" id="details-stage" name="stage">
 {{range .Stages}}<option value="{{.Stage}}"{{if eq .Stage $stage}} selected{{end}}>{{.Label}}</option>{{end}}
 </select>
 
 <label for="details-due-date">Due date</label>
-<input type="date" id="details-due-date" name="due_date" value="{{.DueDate}}">
+<input class="field field-date" type="text" inputmode="numeric" autocomplete="off" placeholder="dd/mm/yyyy" id="details-due-date" name="due_date" value="{{.DueDate}}">
 
 <label for="details-people">People</label>
-<select id="details-people" name="person_id" multiple size="1">
+<select class="field" id="details-people" name="person_id" multiple size="1">
 {{range .People}}<option value="{{.ID}}"{{if .Selected}} selected{{end}}>{{.Name}}</option>{{end}}
 </select>
 
-<button type="submit">Save</button>
+<button class="btn primary" type="submit">Save</button>
 </form>
 
 <form method="post" action="/tasks/{{.ID}}/remove" class="task-remove-form">
-<button type="submit">Remove task</button>
+<button class="btn" type="submit">Remove task</button>
 </form>
 
 <h2>Activity</h2>

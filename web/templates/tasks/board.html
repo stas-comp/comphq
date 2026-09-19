@@ -6,34 +6,34 @@
 
 <form method="post" action="/tasks" class="add-task-form">
 <label class="visually-hidden" for="new-task-title">New task title</label>
-<input type="text" id="new-task-title" name="title" placeholder="New task" required>
+<input class="field" type="text" id="new-task-title" name="title" placeholder="New task" required>
 <label class="visually-hidden" for="new-task-stage">Starting column</label>
-<select id="new-task-stage" name="stage">
+<select class="field" id="new-task-stage" name="stage">
 {{range .Columns}}<option value="{{.Stage}}">{{.Label}}</option>{{end}}
 </select>
 <label class="visually-hidden" for="new-task-due-date">Due date</label>
-<input type="date" id="new-task-due-date" name="due_date">
+<input class="field field-date" type="text" inputmode="numeric" autocomplete="off" placeholder="dd/mm/yyyy" id="new-task-due-date" name="due_date">
 <label class="visually-hidden" for="new-task-people">People</label>
-<select id="new-task-people" name="person_id" multiple size="1">
+<select class="field" id="new-task-people" name="person_id" multiple size="1">
 {{range .People}}<option value="{{.ID}}">{{.Name}}</option>{{end}}
 </select>
-<button type="submit">Add task</button>
+<button class="btn primary" type="submit">Add task</button>
 </form>
 
 <form method="get" action="/tasks/board" class="task-filter-form">
 <label for="filter-mine">
-<input type="checkbox" id="filter-mine" name="mine" value="1"{{if .FilterMine}} checked{{end}}>
+<input class="check" type="checkbox" id="filter-mine" name="mine" value="1"{{if .FilterMine}} checked{{end}}>
 My tasks
 </label>
 <label class="visually-hidden" for="filter-person">Person</label>
-<select id="filter-person" name="person">
+<select class="field" id="filter-person" name="person">
 <option value="">Everyone</option>
 {{$personID := .FilterPersonID}}
 {{range .People}}<option value="{{.ID}}"{{if eq .ID $personID}} selected{{end}}>{{.Name}}</option>{{end}}
 </select>
 <label class="visually-hidden" for="filter-q">Search titles</label>
-<input type="search" id="filter-q" name="q" placeholder="Search titles" value="{{.FilterQuery}}">
-<button type="submit">Filter</button>
+<input class="field" type="search" id="filter-q" name="q" placeholder="Search titles" value="{{.FilterQuery}}">
+<button class="btn" type="submit">Filter</button>
 {{if .FilterActive}}<a href="/tasks/board">Clear filter</a>{{end}}
 </form>
 
@@ -45,31 +45,29 @@ My tasks
 {{range .Tasks}}
 <li class="task-card" data-task-id="{{.ID}}">
 <p class="task-card-title"><a href="/tasks/{{.ID}}">{{.Title}}</a></p>
-<p class="task-card-size">{{.SizeLabel}}</p>
+<p class="task-card-size">{{template "part-size" .SizeLabel}}</p>
 {{if .Assignees}}
-<p class="task-card-assignees">
-{{range .Assignees}}<span class="task-avatar {{.ColorClass}}"{{if .Removed}} title="{{.Name}} (removed)"{{else}} title="{{.Name}}"{{end}}>{{.Initials}}</span>{{end}}
-</p>
+<p class="task-card-assignees">{{template "part-people" .Assignees}}</p>
 {{end}}
 {{if .DueDate}}<p class="task-card-due">{{.DueDate}}{{if .Overdue}} <span class="task-overdue-stamp">OVERDUE</span>{{end}}</p>{{end}}
 <div class="task-card-actions">
 <form method="post" action="/tasks/{{.ID}}/move" class="inline-form">
 <input type="hidden" name="stage" value="{{.Stage}}">
 <input type="hidden" name="before_id" value="{{.PrevID}}">
-<button type="submit" aria-label="Move {{.Title}} up"{{if not .PrevID}} disabled{{end}}>Move up</button>
+<button class="mini" type="submit" aria-label="Move {{.Title}} up"{{if not .PrevID}} disabled{{end}}>Move up</button>
 </form>
 <form method="post" action="/tasks/{{.ID}}/move" class="inline-form">
 <input type="hidden" name="stage" value="{{.Stage}}">
 <input type="hidden" name="after_id" value="{{.NextID}}">
-<button type="submit" aria-label="Move {{.Title}} down"{{if not .NextID}} disabled{{end}}>Move down</button>
+<button class="mini" type="submit" aria-label="Move {{.Title}} down"{{if not .NextID}} disabled{{end}}>Move down</button>
 </form>
 <form method="post" action="/tasks/{{.ID}}/move" class="task-move-to-form">
 <label class="visually-hidden" for="move-to-{{.ID}}">Move {{.Title}} to</label>
-<select id="move-to-{{.ID}}" name="stage">
+<select class="field" id="move-to-{{.ID}}" name="stage">
 {{range .OtherStages}}<option value="{{.Stage}}">{{.Label}}</option>{{end}}
 </select>
 <input type="hidden" name="to_bottom" value="1">
-<button type="submit">Move to…</button>
+<button class="mini" type="submit">Move to…</button>
 </form>
 </div>
 </li>

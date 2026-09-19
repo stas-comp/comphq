@@ -61,7 +61,7 @@ testToday.describe('gate 2.12: month view', () => {
 
     await page.locator('.calendar-day[data-date="2026-09-24"] .calendar-day-number').click();
     await ready(page);
-    await expect(page.locator('#event-start-date')).toHaveValue('2026-09-24');
+    await expect(page.locator('#event-start-date')).toHaveValue('24/09/2026');
   });
 });
 
@@ -117,12 +117,12 @@ test('gate 2.13: every field is saved and redisplayed', async ({ page, server })
   await expect(page.locator('h1')).toHaveText(title);
   await expect(page.locator('#event-title')).toHaveValue(title);
   await expect(page.locator('#event-notes')).toHaveValue('Bring programmes');
-  await expect(page.locator('#event-start-date')).toHaveValue('2026-12-12');
-  await expect(page.locator('#event-end-date')).toHaveValue('2026-12-13');
+  await expect(page.locator('#event-start-date')).toHaveValue('12/12/2026');
+  await expect(page.locator('#event-end-date')).toHaveValue('13/12/2026');
   await expect(page.locator('#event-start-time')).toHaveValue('18:00');
   await expect(page.locator('#event-end-time')).toHaveValue('20:00');
   await expect(page.locator('#event-recurrence')).toHaveValue('yearly');
-  await expect(page.locator('#event-until-date')).toHaveValue('2030-12-31');
+  await expect(page.locator('#event-until-date')).toHaveValue('31/12/2030');
   await expect(page.locator('#event-notice-amount')).toHaveValue('2');
   await expect(page.locator('#event-notice-unit')).toHaveValue('weeks');
 });
@@ -152,13 +152,14 @@ test('an event can be added with keyboard only', async ({ page, server }) => {
   await page.locator('#event-title').focus();
   await page.keyboard.type(title);
   await page.locator('#event-start-date').focus();
-  await page.keyboard.type('10012026');
+  await page.keyboard.press('Control+A');
+  await page.keyboard.type('01/10/2026'); // day first, gate 4.05
   await page.locator('.calendar-event-form button[type="submit"]').focus();
   await page.keyboard.press('Enter');
   await ready(page);
 
   await expect(page.locator('h1')).toHaveText(title);
-  await expect(page.locator('#event-start-date')).toHaveValue('2026-10-01');
+  await expect(page.locator('#event-start-date')).toHaveValue('01/10/2026');
 });
 
 test('standard page checks for the month view, list view, add form and event details', async ({ page, server }) => {
@@ -209,7 +210,7 @@ test('gate 2.15: moving just one occurrence of a repeating event leaves other ye
   await openJustThisOne(page, title);
 
   await expect(page.locator('h1')).toHaveText('Change just this one');
-  await expect(page.locator('#occurrence-start-date')).toHaveValue('2026-12-12');
+  await expect(page.locator('#occurrence-start-date')).toHaveValue('12/12/2026');
   await page.fill('#occurrence-start-date', '2026-12-19');
   await page.locator('.calendar-event-form button[type="submit"]').click();
   await ready(page);

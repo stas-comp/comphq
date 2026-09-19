@@ -325,3 +325,41 @@ func TestUnassignedIdeaStillInUpForGrabsAndTakeMovesToTodo(t *testing.T) {
 		t.Errorf("stage after Take = %q, want %q", got.Stage, StageTodo)
 	}
 }
+
+// SPEC gate 4.10: one block for a small job, two for medium, four for
+// large, and a spoken equivalent that names the total and each job's
+// size in drawing order.
+func TestWorkloadBlocksAndSpokenLabel(t *testing.T) {
+	alex := people.Person{ID: 1, Name: "Alex"}
+	mine := []Assignee{{PersonID: 1, Name: "Alex"}}
+	tasksList := []Task{
+		{ID: 1, Size: "L", Stage: StageDoing, Assignees: mine},
+		{ID: 2, Size: "M", Stage: StageTodo, Assignees: mine},
+		{ID: 3, Size: "S", Stage: StageTodo, Assignees: mine},
+		{ID: 4, Size: "L", Stage: StageIdea, Assignees: mine}, // an idea isn't work yet
+	}
+	lane := laneFor(t, BuildLanes(tasksList, []people.Person{alex}), 1)
+
+	var sizes []int
+	for _, g := range lane.Workload {
+		sizes = append(sizes, len(g.Blocks))
+	}
+	if want := []int{4, 2, 1}; len(sizes) != 3 || sizes[0] != want[0] || sizes[1] != want[1] || sizes[2] != want[2] {
+		t.Errorf("blocks per job = %v, want %v (large 4, medium 2, small 1)", sizes, want)
+	}
+	if want := "Workload: 7 blocks — large, medium, small"; lane.WorkloadLabel != want {
+		t.Errorf("WorkloadLabel = %q, want %q", lane.WorkloadLabel, want)
+	}
+}
+
+func TestWorkloadLabelSingularAndEmpty(t *testing.T) {
+	if got, want := WorkloadLabel([]WorkloadGroup{{Blocks: make([]int, 1)}}), "Workload: 1 block — small"; got != want {
+		t.Errorf("one small job = %q, want %q", got, want)
+	}
+	if got := WorkloadLabel(nil); got != "" {
+		t.Errorf("no jobs = %q, want empty (nothing is drawn)", got)
+	}
+	if got, want := WorkloadLabel([]WorkloadGroup{{Blocks: make([]int, 2)}, {Blocks: make([]int, 2)}}), "Workload: 4 blocks — medium, medium"; got != want {
+		t.Errorf("two medium jobs = %q, want %q", got, want)
+	}
+}

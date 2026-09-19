@@ -7,22 +7,22 @@
 <input type="hidden" name="original_date" value="{{.OriginalDate}}">
 
 <label for="occurrence-start-date">Date</label>
-<input type="date" id="occurrence-start-date" name="start_date" value="{{.StartDate}}" required>
+<input class="field field-date" type="text" inputmode="numeric" autocomplete="off" placeholder="dd/mm/yyyy" id="occurrence-start-date" name="start_date" value="{{.StartDate}}" required>
 
 <label for="occurrence-end-date">End date (optional, for an event lasting several days)</label>
-<input type="date" id="occurrence-end-date" name="end_date" value="{{.EndDate}}">
+<input class="field field-date" type="text" inputmode="numeric" autocomplete="off" placeholder="dd/mm/yyyy" id="occurrence-end-date" name="end_date" value="{{.EndDate}}">
 
 <label for="occurrence-start-time">Start time (leave blank for an all-day event)</label>
-<input type="time" id="occurrence-start-time" name="start_time" value="{{.StartTime}}">
+<input class="field" type="time" id="occurrence-start-time" name="start_time" value="{{.StartTime}}">
 
 <label for="occurrence-end-time">End time (optional)</label>
-<input type="time" id="occurrence-end-time" name="end_time" value="{{.EndTime}}">
+<input class="field" type="time" id="occurrence-end-time" name="end_time" value="{{.EndTime}}">
 
-<button type="submit">Save</button>
+<button class="btn primary" type="submit">Save</button>
 </form>
 
 <form method="post" action="/calendar/events/{{.EventID}}/occurrence/cancel" class="calendar-cancel-occurrence-form">
 <input type="hidden" name="original_date" value="{{.OriginalDate}}">
-<button type="submit">Cancel just this one</button>
+<button class="btn" type="submit">Cancel just this one</button>
 </form>
 {{end}}

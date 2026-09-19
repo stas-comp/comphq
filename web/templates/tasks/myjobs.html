@@ -9,29 +9,24 @@
 <div class="myjobs-columns">
 <div class="myjobs-mine">
 <h2>My jobs</h2>
-{{if .Lane.WorkloadLine}}
-<div class="workload" aria-hidden="true">
-{{range .Lane.Workload}}<span class="workload-group">{{range .Blocks}}<span class="workload-block"></span>{{end}}</span>{{end}}
-</div>
-<p class="workload-line">{{.Lane.WorkloadLine}}</p>
-{{end}}
+{{template "part-workload" .Lane}}
 
 <h3>Working on now</h3>
 <ul class="team-task-list myjobs-working-list">
 {{range .Lane.WorkingOnNow}}
 <li class="team-task" data-task-id="{{.ID}}">
-<a href="/tasks/{{.ID}}">{{.Title}}</a> <span class="team-task-size">{{.SizeLabel}}</span>
+<a href="/tasks/{{.ID}}">{{.Title}}</a> {{template "part-size" .SizeLabel}}
 <div class="team-task-actions">
 <form method="post" action="/tasks/{{.ID}}/move" class="inline-form">
 <input type="hidden" name="stage" value="done">
 <input type="hidden" name="to_bottom" value="1">
 <input type="hidden" name="redirect_to" value="myjobs">
-<button type="submit">Done</button>
+<button class="mini go" type="submit">Done</button>
 </form>
 <form method="post" action="/tasks/{{.ID}}/assign" class="inline-form">
 <input type="hidden" name="from_person" value="{{$lane.PersonID}}">
 <input type="hidden" name="redirect_to" value="myjobs">
-<button type="submit">Give back</button>
+<button class="mini quiet" type="submit">Give back</button>
 </form>
 </div>
 </li>
@@ -42,24 +37,24 @@
 <ul class="team-task-list myjobs-upnext-list">
 {{range .Lane.UpNext}}
 <li class="team-task" data-task-id="{{.ID}}">
-{{.Number}}. <a href="/tasks/{{.ID}}">{{.Title}}</a> <span class="team-task-size">{{.SizeLabel}}</span>
+{{.Number}}. <a href="/tasks/{{.ID}}">{{.Title}}</a> {{template "part-size" .SizeLabel}}
 <div class="team-task-actions">
 <form method="post" action="/tasks/{{.ID}}/move" class="inline-form">
 <input type="hidden" name="stage" value="doing">
 <input type="hidden" name="to_bottom" value="1">
 <input type="hidden" name="redirect_to" value="myjobs">
-<button type="submit">Start</button>
+<button class="mini" type="submit">Start</button>
 </form>
 <form method="post" action="/tasks/{{.ID}}/move" class="inline-form">
 <input type="hidden" name="stage" value="done">
 <input type="hidden" name="to_bottom" value="1">
 <input type="hidden" name="redirect_to" value="myjobs">
-<button type="submit">Done</button>
+<button class="mini go" type="submit">Done</button>
 </form>
 <form method="post" action="/tasks/{{.ID}}/assign" class="inline-form">
 <input type="hidden" name="from_person" value="{{$lane.PersonID}}">
 <input type="hidden" name="redirect_to" value="myjobs">
-<button type="submit">Give back</button>
+<button class="mini quiet" type="submit">Give back</button>
 </form>
 </div>
 </li>
@@ -70,12 +65,12 @@
 <ul class="team-task-list myjobs-ideas-list">
 {{range .Lane.Ideas}}
 <li class="team-task" data-task-id="{{.ID}}">
-<a href="/tasks/{{.ID}}">{{.Title}}</a> <span class="team-task-size">{{.SizeLabel}}</span>
+<a href="/tasks/{{.ID}}">{{.Title}}</a> {{template "part-size" .SizeLabel}}
 <div class="team-task-actions">
 <form method="post" action="/tasks/{{.ID}}/assign" class="inline-form">
 <input type="hidden" name="from_person" value="{{$lane.PersonID}}">
 <input type="hidden" name="redirect_to" value="myjobs">
-<button type="submit">Give back</button>
+<button class="mini quiet" type="submit">Give back</button>
 </form>
 </div>
 </li>
@@ -88,9 +83,9 @@
 <ul class="team-task-list myjobs-grabs-list">
 {{range .UpForGrabs}}
 <li class="team-task" data-task-id="{{.ID}}">
-<a href="/tasks/{{.ID}}">{{.Title}}</a> <span class="team-task-size">{{.SizeLabel}}</span>
+<a href="/tasks/{{.ID}}">{{.Title}}</a> {{template "part-size" .SizeLabel}}
 <form method="post" action="/tasks/{{.ID}}/take" class="inline-form">
-<button type="submit">Take it</button>
+<button class="mini go" type="submit">Take it</button>
 </form>
 </li>
 {{end}}

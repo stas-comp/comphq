@@ -301,3 +301,86 @@ func TestNothingReferencesArchivo(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+var (
+	controlTagRe = regexp.MustCompile(`<(button|input|select|textarea)\b[^>]*>`)
+	classAttrRe  = regexp.MustCompile(`\sclass="([^"]*)"`)
+	typeAttrRe   = regexp.MustCompile(`\stype="([^"]*)"`)
+	templateActs = regexp.MustCompile(`\{\{.*?\}\}`)
+	cssClassRe   = regexp.MustCompile(`\.([a-zA-Z][\w-]*)`)
+)
+
+// SPEC gate 4.04, 4.05 and B9.9 layer 4: no <button>, <select>, <input> or
+// <textarea> renders anywhere without a theme class. Buttons are one of
+// the three kinds (primary and secondary are .btn, small is .mini) or a
+// toolbar or link-style button; every other control is a .field (or a
+// .check for a checkbox). A hidden input, and a file chooser that is
+// visually hidden behind a real button, don't render.
+func TestEveryControlInEveryTemplateHasAThemeClass(t *testing.T) {
+	root := repoRoot(t)
+	themeClasses := map[string]bool{}
+	for _, m := range cssClassRe.FindAllStringSubmatch(readCSS(t, themeCSSPath(t)), -1) {
+		themeClasses[m[1]] = true
+	}
+	allowed := map[string][]string{
+		"button":   {"btn", "mini", "tb", "link-button"},
+		"select":   {"field"},
+		"textarea": {"field"},
+		"input":    {"field", "check"},
+	}
+
+	checked := 0
+	err := filepath.WalkDir(filepath.Join(root, "web", "templates"), func(path string, d fs.DirEntry, err error) error {
+		if err != nil || d.IsDir() || !strings.HasSuffix(path, ".html") {
+			return err
+		}
+		data, err := os.ReadFile(path)
+		if err != nil {
+			return err
+		}
+		rel, _ := filepath.Rel(root, path)
+		for _, m := range controlTagRe.FindAllStringSubmatch(string(data), -1) {
+			tag, kind := m[0], m[1]
+			inputType := ""
+			if tm := typeAttrRe.FindStringSubmatch(tag); tm != nil {
+				inputType = tm[1]
+			}
+			if kind == "input" && inputType == "hidden" {
+				continue
+			}
+			var classes []string
+			if cm := classAttrRe.FindStringSubmatch(tag); cm != nil {
+				classes = strings.Fields(templateActs.ReplaceAllString(cm[1], " "))
+			}
+			checked++
+			if kind == "input" && inputType == "file" && slicesContains(classes, "visually-hidden") {
+				continue
+			}
+			ok := false
+			for _, c := range classes {
+				if slicesContains(allowed[kind], c) && themeClasses[c] {
+					ok = true
+				}
+			}
+			if !ok {
+				t.Errorf("%s: %s has no theme class (want one of %v from theme.css)", rel, tag, allowed[kind])
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if checked < 50 {
+		t.Errorf("only %d controls were found in the templates; the scan itself is broken", checked)
+	}
+}
+
+func slicesContains(list []string, want string) bool {
+	for _, s := range list {
+		if s == want {
+			return true
+		}
+	}
+	return false
+}

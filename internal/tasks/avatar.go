@@ -1,27 +1,24 @@
 package tasks
 
 import (
-	"fmt"
+	"net/http"
 	"strings"
+
+	"github.com/stas-comp/comphq/internal/people"
 )
 
-// avatarSaturation and avatarLightness are fixed so that white text is
-// always readable on the resulting colour, whichever hue a palette entry
-// uses (verified against the worst case — yellow, which maximises both
-// the red and green channels' WCAG weights most heavily — by
-// TestAvatarColorMeetsContrastForEveryHue).
-const (
-	avatarSaturation = 50
-	avatarLightness  = 25
-)
+// avatarClasses are the mockup's four circle colours (SPEC gate 4.08,
+// web/static/theme/theme.css `.av`, `.av.b`, `.av.c`, `.av.d`): the default
+// ink navy and three quiet blues, browns and greens, every one dark
+// enough for white initials (TestAvatarPaletteMeetsContrast). A fixed
+// class, not an inline style: the app's CSP has no 'unsafe-inline' for
+// style-src (or default-src, which style-src falls back to), so an inline
+// background-color is silently dropped rather than applied.
+var avatarClasses = []string{"av", "av b", "av c", "av d"}
 
-// avatarColorCount is the number of pre-defined .task-avatar-N CSS
-// classes in web/static/tasks/board.css, one per palette entry (evenly
-// spaced around the hue wheel). A fixed class name, not an inline style,
-// because the app's CSP has no 'unsafe-inline' for style-src (or
-// default-src, which style-src falls back to) — an inline
-// background-color is silently dropped by the browser, never applied.
-const avatarColorCount = 12
+// avatarMeClass is the accent circle the person using the app always gets
+// (gate 4.08), ink initials on the accent fill.
+const avatarMeClass = "av me"
 
 // InitialsFor returns up to two uppercase initials from a person's name
 // (SPEC A6: "people's initials in coloured circles").
@@ -44,23 +41,23 @@ func firstRune(s string) string {
 	return ""
 }
 
-// AvatarColorClass returns the CSS class for a person's initials circle,
-// deterministically derived from their id (PLAN.md P2-01: "a colour
-// derived from the person id, with contrast checked") — the same person
-// always gets the same colour, and white text on it always meets WCAG AA
-// contrast (>= 4.5:1, see TestAvatarColorMeetsContrastForEveryHue).
-func AvatarColorClass(personID int64) string {
-	// 5 is coprime with avatarColorCount (12), so consecutive ids cycle
-	// through every entry before repeating, instead of stepping by 1 and
-	// landing on adjacent (similar-looking) hues for neighbouring ids.
-	index := ((personID*5)%avatarColorCount + avatarColorCount) % avatarColorCount
-	return fmt.Sprintf("task-avatar-%d", index)
+// AvatarClass returns the CSS classes for a person's initials circle: the
+// accent circle when they are the person using the app (meID), otherwise
+// one of the four palette colours picked from their id, so the same
+// person is the same colour on every screen (gate 4.08). meID is 0 when
+// nobody is signed in, which is nobody's id.
+func AvatarClass(personID, meID int64) string {
+	if meID != 0 && personID == meID {
+		return avatarMeClass
+	}
+	n := int64(len(avatarClasses))
+	return avatarClasses[((personID%n)+n)%n]
 }
 
-// avatarHue is the hue (degrees) for palette entry i of avatarColorCount,
-// evenly spaced — used only by the CSS generator comment and the test
-// that verifies every entry meets contrast; the actual CSS values in
-// board.css are written out statically, not generated at build time.
-func avatarHue(i int) int {
-	return i * 360 / avatarColorCount
+// currentPersonID is the id of the person making the request, or 0.
+func currentPersonID(r *http.Request) int64 {
+	if p, ok := people.FromContext(r.Context()); ok {
+		return p.ID
+	}
+	return 0
 }

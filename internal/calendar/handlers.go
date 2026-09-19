@@ -84,12 +84,12 @@ func inputFromForm(r *http.Request) Input {
 	return Input{
 		Title:      r.FormValue("title"),
 		Notes:      r.FormValue("notes"),
-		StartDate:  r.FormValue("start_date"),
-		EndDate:    r.FormValue("end_date"),
+		StartDate:  format.NormaliseDate(r.FormValue("start_date")),
+		EndDate:    format.NormaliseDate(r.FormValue("end_date")),
 		StartTime:  r.FormValue("start_time"),
 		EndTime:    r.FormValue("end_time"),
 		Recurrence: r.FormValue("recurrence"),
-		UntilDate:  r.FormValue("until_date"),
+		UntilDate:  format.NormaliseDate(r.FormValue("until_date")),
 		NoticeDays: noticeDaysFrom(amount, r.FormValue("notice_unit")),
 	}
 }
@@ -100,6 +100,8 @@ func friendlyMessage(err error) string {
 	switch err {
 	case ErrEmptyTitle:
 		return "Please type a title."
+	case ErrInvalidDate:
+		return "Please type each date as day/month/year, like 25/09/2026."
 	case ErrEndDateBeforeStart:
 		return "The end date can't be before the start date."
 	case ErrEndTimeNeedsStartTime:
@@ -116,12 +118,12 @@ func (h *Handlers) renderNewEventForm(w http.ResponseWriter, r *http.Request, st
 		FormAction:   "/calendar/events",
 		Title:        input.Title,
 		Notes:        input.Notes,
-		StartDate:    input.StartDate,
-		EndDate:      input.EndDate,
+		StartDate:    format.DayFirst(input.StartDate),
+		EndDate:      format.DayFirst(input.EndDate),
 		StartTime:    input.StartTime,
 		EndTime:      input.EndTime,
 		Recurrence:   input.Recurrence,
-		UntilDate:    input.UntilDate,
+		UntilDate:    format.DayFirst(input.UntilDate),
 		NoticeAmount: amount,
 		NoticeUnit:   unit,
 		Recurrences:  recurrenceOptions(),
@@ -157,7 +159,7 @@ func (h *Handlers) handleCreateEvent(w http.ResponseWriter, r *http.Request) {
 	switch err {
 	case nil:
 		http.Redirect(w, r, fmt.Sprintf("/calendar/events/%d", event.ID), http.StatusFound)
-	case ErrEmptyTitle, ErrEndDateBeforeStart, ErrEndTimeNeedsStartTime:
+	case ErrEmptyTitle, ErrInvalidDate, ErrEndDateBeforeStart, ErrEndTimeNeedsStartTime:
 		h.renderNewEventForm(w, r, http.StatusOK, input, friendlyMessage(err))
 	case ErrInvalidRecurrence:
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -174,12 +176,12 @@ func (h *Handlers) renderEventDetails(w http.ResponseWriter, r *http.Request, st
 		EventID:       event.ID,
 		Title:         input.Title,
 		Notes:         input.Notes,
-		StartDate:     input.StartDate,
-		EndDate:       input.EndDate,
+		StartDate:     format.DayFirst(input.StartDate),
+		EndDate:       format.DayFirst(input.EndDate),
 		StartTime:     input.StartTime,
 		EndTime:       input.EndTime,
 		Recurrence:    input.Recurrence,
-		UntilDate:     input.UntilDate,
+		UntilDate:     format.DayFirst(input.UntilDate),
 		NoticeAmount:  amount,
 		NoticeUnit:    unit,
 		Recurrences:   recurrenceOptions(),
@@ -256,7 +258,7 @@ func (h *Handlers) handleUpdateEvent(w http.ResponseWriter, r *http.Request) {
 	switch err := h.store.Update(r.Context(), id, input, person.ID, today); err {
 	case nil:
 		http.Redirect(w, r, fmt.Sprintf("/calendar/events/%d", id), http.StatusFound)
-	case ErrEmptyTitle, ErrEndDateBeforeStart, ErrEndTimeNeedsStartTime:
+	case ErrEmptyTitle, ErrInvalidDate, ErrEndDateBeforeStart, ErrEndTimeNeedsStartTime:
 		event, getErr := h.store.Get(r.Context(), id)
 		if getErr != nil {
 			http.NotFound(w, r)
@@ -292,8 +294,8 @@ func (h *Handlers) renderOccurrenceForm(w http.ResponseWriter, r *http.Request, 
 		EventID:      eventID,
 		EventTitle:   eventTitle,
 		OriginalDate: originalDate,
-		StartDate:    input.StartDate,
-		EndDate:      input.EndDate,
+		StartDate:    format.DayFirst(input.StartDate),
+		EndDate:      format.DayFirst(input.EndDate),
 		StartTime:    input.StartTime,
 		EndTime:      input.EndTime,
 	})
@@ -343,8 +345,8 @@ func (h *Handlers) handleSetOccurrence(w http.ResponseWriter, r *http.Request) {
 
 	originalDate := r.FormValue("original_date")
 	input := Input{
-		StartDate: r.FormValue("start_date"),
-		EndDate:   r.FormValue("end_date"),
+		StartDate: format.NormaliseDate(r.FormValue("start_date")),
+		EndDate:   format.NormaliseDate(r.FormValue("end_date")),
 		StartTime: r.FormValue("start_time"),
 		EndTime:   r.FormValue("end_time"),
 	}
@@ -353,7 +355,7 @@ func (h *Handlers) handleSetOccurrence(w http.ResponseWriter, r *http.Request) {
 	switch err {
 	case nil:
 		http.Redirect(w, r, fmt.Sprintf("/calendar/events/%d", id), http.StatusFound)
-	case ErrEmptyStartDate, ErrEndDateBeforeStart, ErrEndTimeNeedsStartTime:
+	case ErrEmptyStartDate, ErrInvalidDate, ErrEndDateBeforeStart, ErrEndTimeNeedsStartTime:
 		event, getErr := h.store.Get(r.Context(), id)
 		if getErr != nil {
 			http.NotFound(w, r)

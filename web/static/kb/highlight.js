@@ -34,6 +34,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const clearButton = document.createElement('button')
   clearButton.type = 'button'
+  clearButton.className = 'link-button'
   clearButton.id = 'clear-highlights'
   clearButton.textContent = 'Clear highlights'
   clearButton.addEventListener('click', () => {

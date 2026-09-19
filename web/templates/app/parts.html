@@ -1,0 +1,14 @@
+{{/* Shared interface parts (SPEC B9.5), drawn by theme.css and used by every
+section so no screen invents its own. */}}
+
+{{/* A job's size chip. Takes the size's label: Small, Medium or Large. */}}
+{{define "part-size"}}<span class="size {{if eq . "Small"}}s{{else if eq . "Medium"}}m{{else}}l{{end}}">{{.}}</span>{{end}}
+
+{{/* A stack of people circles. Takes a list whose items have Name, Initials,
+ColorClass (from internal/tasks.AvatarClass) and Removed. */}}
+{{define "part-people"}}<span class="people">{{range .}}<span class="{{.ColorClass}}" title="{{.Name}}{{if .Removed}} (removed){{end}}">{{.Initials}}</span>{{end}}</span>{{end}}
+
+{{/* Workload blocks, with their spoken equivalent. Takes a lane: Workload,
+WorkloadLine and WorkloadLabel. Draws nothing when there is no workload. */}}
+{{define "part-workload"}}{{if .WorkloadLine}}<div class="workload" role="img" aria-label="{{.WorkloadLabel}}">{{range .Workload}}<span class="workload-group">{{range .Blocks}}<span class="workload-block"></span>{{end}}</span>{{end}}</div>
+<p class="workload-line">{{.WorkloadLine}}</p>{{end}}{{end}}
