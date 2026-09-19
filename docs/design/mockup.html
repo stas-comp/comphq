@@ -1,0 +1,614 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1"><style>:root{color-scheme:light}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Staff HQ Mockup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;800;900&family=Atkinson+Hyperlegible+Next:wght@400;600;700&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+:root{
+  --ink:#141B2D; --ink-2:#1F2842; --ink-3:#2C3656; --ink-text:#C9CEDC;
+  --paper:#F5F3EE; --card:#FFFFFF; --rule:#DEDAD0; --rule-2:#CBC6B9;
+  --text:#1A1F2B; --muted:#5A6072; --danger:#C62D2D; --danger-soft:#FBE3E1;
+  --desk:#D8DBE2; --desk-text:#232838;
+  --display:"Big Shoulders Display","Arial Narrow","Roboto Condensed",Impact,sans-serif;
+  --body:"Atkinson Hyperlegible Next","Atkinson Hyperlegible","Segoe UI",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",Consolas,"Courier New",monospace;
+}
+.studio[data-accent="orange"]{--accent:#FF6B1A;--accent-soft:#FFE2CF;--accent-deep:#A94000;--accent-wash:#FFF3EA}
+.studio[data-accent="yellow"]{--accent:#FFC72C;--accent-soft:#FFEFBF;--accent-deep:#7D5A00;--accent-wash:#FFF9E6}
+.studio[data-accent="magenta"]{--accent:#EE3F86;--accent-soft:#FCDAE8;--accent-deep:#A01C52;--accent-wash:#FEF1F6}
+*{box-sizing:border-box}
+body{background:var(--desk);color:var(--desk-text);font-family:var(--body);font-size:15px}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,a:focus-visible,input:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.studio{padding:20px clamp(12px,3vw,36px) 32px;display:grid;gap:16px;max-width:1440px;margin:0 auto}
+.controls{display:flex;flex-wrap:wrap;align-items:end;gap:14px 32px}
+.controls .name{margin-right:auto}
+.controls .name b{display:block;font-family:var(--display);font-weight:900;font-size:30px;letter-spacing:.02em;line-height:1;color:var(--ink);text-transform:uppercase}
+.controls .name span{font-size:13px;color:#4A5063}
+.group{display:grid;gap:6px}
+.group > span{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#4A5063}
+.group .row{display:flex;flex-wrap:wrap;gap:6px}
+.pill{border:1.5px solid #9EA3B2;background:#EEF0F4;border-radius:999px;padding:6px 14px;font-size:14px;display:inline-flex;align-items:center;gap:8px}
+.pill[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:#fff}
+.dot{width:14px;height:14px;border-radius:50%;border:1.5px solid rgba(0,0,0,.25)}
+.scroller{overflow-x:auto;border-radius:10px;box-shadow:0 18px 40px -18px rgba(20,27,45,.45),0 0 0 1px rgba(20,27,45,.18)}
+.window{min-width:1080px;background:var(--paper);color:var(--text)}
+.titlebar{height:34px;background:#E9EBF0;display:flex;align-items:center;gap:10px;padding:0 0 0 12px;font-size:13px;color:#3A4052;border-bottom:1px solid #CFD3DC}
+.titlebar .fav{width:16px;height:16px;border-radius:3px;background:var(--ink);color:var(--accent);font:900 9px/16px var(--display);text-align:center}
+.titlebar .ns{font-size:12px;color:#6A7080}
+.titlebar .wc{margin-left:auto;display:flex}
+.titlebar .wc i{width:46px;height:34px;display:grid;place-items:center;font-style:normal;color:#3A4052}
+.app{display:grid;grid-template-columns:224px minmax(0,1fr);min-height:740px}
+.side{background:var(--ink);color:var(--ink-text);display:flex;flex-direction:column;padding:22px 14px 16px;gap:4px}
+.mark{padding:0 10px 22px;line-height:.82}
+.mark small{display:block;font:800 17px var(--display);letter-spacing:.32em;color:#fff;text-transform:uppercase}
+.mark strong{font:900 64px var(--display);color:var(--accent);letter-spacing:-.01em}
+.nav{display:flex;align-items:center;gap:12px;width:100%;border:0;background:transparent;border-radius:8px;padding:11px 12px;font-size:16px;font-weight:600;color:var(--ink-text);text-align:left}
+.nav:hover{background:var(--ink-2);color:#fff}
+.nav svg{width:20px;height:20px;flex:none;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.nav[aria-current="page"]{background:var(--accent);color:var(--ink)}
+.side .spacer{flex:1}
+.side .ver{font:500 11px var(--mono);color:#7C849C;padding:10px 12px 0}
+.main{display:flex;flex-direction:column;min-width:0;position:relative}
+.top{display:flex;align-items:center;gap:16px;padding:14px 32px;border-bottom:1px solid var(--rule);background:var(--paper)}
+.search{display:flex;align-items:center;gap:10px;width:440px;background:var(--card);border:1.5px solid var(--rule-2);border-radius:8px;padding:9px 12px;font-size:15px;color:var(--muted)}
+.search svg{width:18px;height:18px;stroke:var(--muted);fill:none;stroke-width:2.2}
+.search.active{border-color:var(--ink);color:var(--text);box-shadow:0 0 0 3px var(--accent-soft)}
+.search kbd{margin-left:auto;font:500 11px var(--mono);border:1px solid var(--rule-2);border-radius:4px;padding:1px 6px;color:var(--muted)}
+.you{margin-left:auto;display:flex;align-items:center;gap:10px;font-size:14px}
+.you a{color:var(--text);font-weight:700;text-decoration:underline;text-decoration-color:var(--accent);text-decoration-thickness:3px;text-underline-offset:3px}
+.av{width:30px;height:30px;border-radius:50%;display:inline-grid;place-items:center;font-size:12px;font-weight:700;color:#fff;background:var(--ink-3);border:2px solid var(--card)}
+.av.b{background:#4E5B7A}.av.c{background:#6B5A4E}.av.d{background:#3F6660}
+.av.me{background:var(--accent);color:var(--ink)}
+.people{display:flex}.people .av{width:26px;height:26px;font-size:11px}.people .av + .av{margin-left:-7px}
+.screen{padding:28px 32px 36px;display:grid;gap:22px;align-content:start}
+.eyebrow{font:500 12px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+h1,h2,h3{margin:0;text-wrap:balance}
+.display{font-family:var(--display);font-weight:900;text-transform:uppercase;line-height:.9;letter-spacing:.005em}
+.btn{border:1.5px solid var(--ink);background:var(--card);border-radius:8px;padding:8px 14px;font-weight:700;font-size:14px}
+.btn.primary{background:var(--accent);border-color:var(--ink);color:var(--ink)}
+.stamp{display:inline-block;font:800 13px/1 var(--display);letter-spacing:.12em;text-transform:uppercase;padding:5px 7px 4px;border:2px solid currentColor;border-radius:3px;white-space:nowrap}
+.stamp.today{color:var(--ink);background:var(--accent);border-color:var(--ink);transform:rotate(-2deg)}
+.stamp.overdue{color:var(--danger);background:var(--danger-soft);transform:rotate(-2deg)}
+.stamp.yours{color:var(--accent-deep);border-color:var(--accent-deep);background:var(--accent-wash)}
+.stamp.when{color:var(--ink);border-color:var(--rule-2);background:var(--card)}
+.date{font:500 13px var(--mono);color:var(--muted);font-variant-numeric:tabular-nums}
+@media (prefers-reduced-motion:no-preference){.nav,.pill,.btn{transition:background-color .15s,color .15s}}
+
+.brief-head{display:flex;align-items:end;gap:24px;flex-wrap:wrap}
+.brief-head h1{font-size:76px;color:var(--ink)}
+.brief-head h1 span{color:var(--accent-deep)}
+.brief-head p{margin:0 0 8px;font-size:17px;color:var(--muted)}
+.brief-head .toggle{margin-left:auto;display:flex;gap:6px;margin-bottom:6px}
+.brief-grid{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:28px;align-items:start}
+.panel{display:grid;gap:10px}
+.panel-head{display:flex;align-items:baseline;gap:12px;border-bottom:3px solid var(--ink);padding-bottom:6px}
+.panel-head h2{font:900 30px var(--display);text-transform:uppercase;color:var(--ink);letter-spacing:.01em}
+.panel-head .count{font:500 13px var(--mono);color:var(--muted)}
+.item{background:var(--card);border:1px solid var(--rule);border-radius:10px;padding:14px 16px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 14px;align-items:start}
+.item h3{font-size:17px;font-weight:700;line-height:1.3}
+.item .meta{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:14px;color:var(--muted)}
+.item .stamps{display:flex;gap:6px;justify-content:end;flex-wrap:wrap}
+.item .note{grid-column:1/-1;font-size:14px;color:var(--text);background:var(--accent-wash);border-radius:6px;padding:7px 10px}
+.item.late{border-color:#EDB9B4}
+
+.kb{position:relative}
+.crumbs{font-size:14px;color:var(--muted)}
+.crumbs a{color:var(--text)}
+.article{max-width:720px;display:grid;gap:14px;font-size:17px;line-height:1.65}
+.article h1{font-size:54px;color:var(--ink)}
+.article .by{display:flex;gap:14px;align-items:center;flex-wrap:wrap;font-size:14px;color:var(--muted)}
+.article .by .acts{margin-left:auto;display:flex;gap:8px}
+.article h2{font:800 26px var(--display);text-transform:uppercase;color:var(--ink);letter-spacing:.02em;margin-top:8px}
+.article p{margin:0}
+.article table{border-collapse:collapse;width:100%;font-size:15px;background:var(--card)}
+.article th{font:800 14px var(--display);letter-spacing:.1em;text-transform:uppercase;text-align:left;background:var(--ink);color:#fff;padding:8px 12px}
+.article td{border-bottom:1px solid var(--rule);padding:8px 12px}
+.article .hit{background:var(--accent-soft);border-radius:6px;padding:10px 14px;margin:0 -14px;outline:2px solid var(--accent);outline-offset:0}
+mark{background:var(--accent);color:var(--ink);padding:0 3px;border-radius:3px;font-weight:700}
+.clear{font-size:13px;color:var(--muted)}
+.results{position:absolute;top:-14px;left:32px;width:520px;background:var(--card);border:1.5px solid var(--ink);border-radius:10px;box-shadow:0 22px 40px -20px rgba(20,27,45,.5);z-index:2;overflow:hidden}
+.results .r{padding:12px 16px;border-bottom:1px solid var(--rule);display:grid;gap:3px}
+.results .r.sel{background:var(--accent-wash)}
+.results .r b{font-size:16px}
+.results .r .cat{font:500 11px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.results .r p{margin:0;font-size:14px;color:var(--text)}
+.results .foot{padding:9px 16px;font-size:13px;color:var(--muted);background:var(--paper)}
+
+.tools{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.tools h1{font-size:54px;color:var(--ink);margin-right:12px}
+.seg{display:flex;border:1.5px solid var(--ink);border-radius:8px;overflow:hidden}
+.seg span{padding:7px 12px;font-size:14px;font-weight:600;background:var(--card)}
+.seg span + span{border-left:1.5px solid var(--ink)}
+.seg span.on{background:var(--ink);color:#fff}
+.tools .spacer{flex:1}
+.board{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;align-items:start}
+.col{background:#ECE9E1;border-radius:10px;padding:10px;display:grid;gap:8px}
+.col-head{display:flex;align-items:baseline;gap:8px;padding:2px 4px 4px}
+.col-head h2{font:900 24px var(--display);text-transform:uppercase;color:var(--ink)}
+.col-head .n{font:500 12px var(--mono);color:var(--muted)}
+.col-head .hint{margin-left:auto;font-size:12px;font-weight:700;color:var(--accent-deep)}
+.col.todo{background:var(--accent-wash);outline:2px solid var(--accent-soft)}
+.card{background:var(--card);border:1px solid var(--rule);border-radius:8px;padding:10px 12px;display:grid;gap:8px}
+.card h3{font-size:15px;font-weight:700;line-height:1.3}
+.card .row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.card .row .people{margin-left:auto}
+.card .rank{font:900 20px/1 var(--display);color:var(--accent-deep);margin-right:2px}
+.card .mv{display:flex;gap:4px}
+.card .mv i{font-style:normal;width:24px;height:24px;display:grid;place-items:center;border:1px solid var(--rule-2);border-radius:5px;font-size:12px;color:var(--muted)}
+.card.done h3{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--rule-2)}
+.col .more{font-size:13px;color:var(--muted);padding:4px}
+
+.cal-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));border-top:3px solid var(--ink);border-left:1px solid var(--rule)}
+.cal-grid .dow{font:800 15px var(--display);letter-spacing:.14em;text-transform:uppercase;padding:8px 10px;border-right:1px solid var(--rule);border-bottom:1px solid var(--rule);color:var(--ink);background:var(--paper)}
+.cal-grid .dow.sat{background:var(--accent);color:var(--ink)}
+.day{min-height:108px;border-right:1px solid var(--rule);border-bottom:1px solid var(--rule);background:var(--card);padding:6px 6px 8px;display:flex;flex-direction:column;gap:4px}
+.day.sat{background:var(--accent-wash)}
+.day.out{background:#F0EEE8}
+.day.out .num{color:#A3A7B2}
+.day .num{font:500 13px var(--mono);color:var(--muted);align-self:flex-start;padding:1px 5px}
+.day.today .num{background:var(--ink);color:#fff;border-radius:4px}
+.chip{font-size:12.5px;font-weight:700;border-radius:4px;padding:3px 6px;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chip.ev{background:var(--ink);color:#fff}
+.chip.ev.cont{background:var(--ink-3);color:#D5D9E4;font-weight:600}
+.chip.task{background:var(--card);border:1.5px solid var(--ink);color:var(--ink);display:flex;align-items:center;gap:5px}
+.chip.task::before{content:"";width:9px;height:9px;border:1.5px solid var(--ink);border-radius:2px;flex:none}
+.chip.task.late{border-color:var(--danger);color:var(--danger)}
+.chip.task.late::before{border-color:var(--danger)}
+.legend{display:flex;gap:18px;align-items:center;font-size:13px;color:var(--muted)}
+.legend .chip{display:inline-flex}
+
+.seg button{border:0;background:var(--card);padding:7px 12px;font-size:14px;font-weight:600;color:var(--text)}
+.seg > button + span,.seg > span + button{border-left:1.5px solid var(--ink)}
+.seg button:hover{background:var(--accent-wash)}
+.tools .how{font-size:14px;color:var(--muted)}
+.size{font:800 12px/1 var(--display);letter-spacing:.08em;text-transform:uppercase;padding:4px 6px 3px;border-radius:3px}
+.size.s{background:#E3DFD5;color:var(--ink)}
+.size.m{background:#56607A;color:#fff}
+.size.l{background:var(--ink);color:#fff}
+.team{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(232px,1fr);gap:14px;overflow-x:auto;padding-bottom:8px;align-items:start}
+.lane{background:#ECE9E1;border-radius:10px;padding:10px;display:grid;gap:8px}
+.lane.unassigned{background:transparent;border:2px dashed var(--rule-2)}
+.lane.me{background:var(--accent-wash);outline:2px solid var(--accent-soft)}
+.lane-head{display:grid;gap:7px;padding:2px 4px 10px;border-bottom:1.5px solid var(--rule-2)}
+.lane-head .who{display:flex;align-items:center;gap:8px}
+.lane-head h2{font:900 24px var(--display);text-transform:uppercase;color:var(--ink)}
+.lane-head .sum{font:500 12px var(--mono);color:var(--muted)}
+.load{display:flex;flex-wrap:wrap;gap:4px 7px;min-height:16px}
+.load .t{display:flex;gap:2px}
+.load .t i{width:11px;height:16px;background:var(--ink);border-radius:2px}
+.lane.me .load .t i{background:var(--accent-deep)}
+.sub{font:800 13px var(--display);letter-spacing:.12em;text-transform:uppercase;color:var(--muted);padding:4px 4px 0}
+.card .also{font-size:12px;color:var(--muted)}
+.picker{min-height:774px;background:var(--ink);color:#fff;display:grid;place-items:center;padding:40px}
+.picker-inner{display:grid;gap:26px;justify-items:center;text-align:center;max-width:760px}
+.picker .mark strong{font-size:96px}
+.picker .mark small{font-size:24px}
+.picker h1{font:900 52px var(--display);text-transform:uppercase;letter-spacing:.01em}
+.names{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;width:100%}
+.names button{background:var(--ink-2);border:2px solid var(--ink-3);color:#fff;border-radius:10px;padding:18px 10px;font-size:20px;font-weight:700}
+.names button:hover,.names button.hover{background:var(--accent);border-color:var(--accent);color:var(--ink)}
+.picker a{color:var(--ink-text);font-size:15px;text-decoration:underline;text-decoration-color:var(--accent);text-underline-offset:4px}
+.note-foot{font-size:13px;color:#4A5063;margin:0}
+
+.seg > * + *{border-left:1.5px solid var(--ink)}
+.mini{border:1.5px solid var(--ink);background:var(--card);border-radius:6px;padding:4px 9px;font-weight:700;font-size:13px;color:var(--ink);white-space:nowrap}
+.mini.go{background:var(--accent)}
+.mini.quiet{border-color:var(--rule-2);color:var(--muted);font-weight:600}
+.myjobs{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:22px;align-items:start}
+.area{border-radius:12px;padding:14px;display:grid;gap:9px}
+.area.mine{background:var(--accent-wash);outline:2px solid var(--accent-soft)}
+.area.grabs{border:2px dashed var(--rule-2)}
+.area .card{cursor:grab}
+.area-head{display:grid;gap:8px;padding:0 4px 12px;border-bottom:1.5px solid var(--rule-2)}
+.area-head .who{display:flex;align-items:center;gap:10px}
+.area-head h2{font:900 30px var(--display);text-transform:uppercase;color:var(--ink);letter-spacing:.01em}
+.area-head p{margin:0;font-size:14px;color:var(--muted)}
+.area-head .sum{font:500 12px var(--mono);color:var(--muted)}
+.area.mine .load .t i{background:var(--accent-deep)}
+.card .acts{display:flex;gap:6px;align-items:center;margin-left:auto}
+.drop{border:2px dashed var(--accent-deep);border-radius:8px;padding:12px;text-align:center;font-size:14px;font-weight:700;color:var(--accent-deep);background:var(--card)}
+.nobody{margin-left:auto;font-size:12px;font-weight:700;color:var(--accent-deep)}
+
+.edit-head{display:flex;align-items:center;gap:10px}
+.edit-head .crumbs{flex:1}
+.editor{display:grid;gap:14px;max-width:820px}
+.bar{display:flex;flex-wrap:wrap;align-items:center;gap:2px;background:var(--card);border:1.5px solid var(--rule-2);border-radius:10px;padding:6px}
+.bar .tb{border:0;background:transparent;border-radius:6px;height:34px;padding:0 10px;font-weight:700;font-size:14px;color:var(--ink)}
+.bar .tb:hover{background:var(--accent-wash)}
+.bar .sep{width:1px;height:22px;background:var(--rule-2);margin:0 4px}
+.bar .word{margin-left:auto;display:inline-flex;align-items:center;gap:8px;border:1.5px solid var(--ink);background:var(--accent);border-radius:7px;padding:6px 12px;font-weight:700;font-size:14px;color:var(--ink)}
+.bar .word svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.imported{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:start;background:var(--card);border:1.5px solid var(--ink);border-radius:10px;padding:12px 14px;font-size:14px;line-height:1.5}
+.imported ul{margin:4px 0 0;padding-left:18px}
+.title-in{font:900 46px/1 var(--display);text-transform:uppercase;color:var(--ink);border-bottom:2px solid var(--rule-2);padding:4px 0 10px}
+.article.doc{max-width:none;background:var(--card);border:1px solid var(--rule);border-radius:10px;padding:24px 30px 30px;gap:12px}
+.article.doc ol{margin:0;padding-left:24px}
+.shot{margin:0;display:grid;gap:6px}
+.shot svg{width:100%;max-width:520px;height:auto;border:1px solid var(--rule);border-radius:6px}
+.shot figcaption{font-size:13px;color:var(--muted)}
+.missing{border:2px dashed var(--danger);background:var(--danger-soft);color:#7A1C1C;border-radius:8px;padding:12px 14px;font-size:14px;line-height:1.45;display:grid;gap:3px}
+</style>
+
+<div class="studio" data-accent="orange" id="studio">
+  <div class="controls">
+    <div class="name"><b>Staff HQ</b><span>Design mockup · signal orange · example content only</span></div>
+    <div class="group" role="group" aria-labelledby="lbl-screen">
+      <span id="lbl-screen">Screen</span>
+      <div class="row">
+        <button class="pill" data-screen-choice="briefing" aria-pressed="true">Briefing</button>
+        <button class="pill" data-screen-choice="kb" aria-pressed="false">Knowledge Base</button>
+        <button class="pill" data-screen-choice="editor" aria-pressed="false">Import from Word</button>
+        <button class="pill" data-screen-choice="tasks" aria-pressed="false">Tasks: My jobs</button>
+        <button class="pill" data-screen-choice="board" aria-pressed="false">Tasks: Board</button>
+        <button class="pill" data-screen-choice="team" aria-pressed="false">Tasks: Team</button>
+        <button class="pill" data-screen-choice="calendar" aria-pressed="false">Calendar</button>
+        <button class="pill" data-screen-choice="picker" aria-pressed="false">Name picker</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="scroller">
+  <div class="window">
+    <div class="titlebar"><span class="fav">HQ</span><span>Staff HQ</span><span class="ns">Not secure</span><span class="wc"><i>&#8211;</i><i>&#9633;</i><i>&#10005;</i></span></div>
+
+    <div class="app" id="app">
+      <aside class="side">
+        <div class="mark"><small>Staff</small><strong>HQ</strong></div>
+        <button class="nav" data-screen-choice="briefing" aria-current="page"><svg viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4h6v3H9zM9 12h6M9 16h4"/></svg>Briefing</button>
+        <button class="nav" data-screen-choice="kb"><svg viewBox="0 0 24 24"><path d="M4 5a2 2 0 0 1 2-2h5v17H6a2 2 0 0 0-2 2zM20 5a2 2 0 0 0-2-2h-5v17h5a2 2 0 0 1 2 2z"/></svg>Knowledge Base</button>
+        <button class="nav" data-screen-choice="tasks"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="5" height="16" rx="1"/><rect x="10" y="4" width="5" height="11" rx="1"/><rect x="17" y="4" width="4" height="7" rx="1"/></svg>Tasks</button>
+        <button class="nav" data-screen-choice="calendar"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Calendar</button>
+        <div class="spacer"></div>
+        <button class="nav"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1"/></svg>Settings</button>
+        <div class="ver">Version 1.0.0</div>
+      </aside>
+
+      <div class="main">
+        <div class="top">
+          <div class="search" id="searchbox"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg><span id="searchtext">Search articles</span><kbd>/</kbd></div>
+          <div class="you">You: <strong>Priya</strong> <span class="av me">PR</span> <a href="#" onclick="return false">Change</a></div>
+        </div>
+
+        <section class="screen" data-screen="briefing">
+          <div class="brief-head">
+            <div>
+              <div class="eyebrow">Today's briefing</div>
+              <h1 class="display">Saturday <span>19 September</span></h1>
+            </div>
+            <div class="toggle"><span class="seg"><span class="on">Everyone</span><span>Just mine</span></span></div>
+          </div>
+          <div class="brief-grid">
+            <div class="panel">
+              <div class="panel-head"><h2>Must be done today</h2><span class="count">4 tasks · due before next Saturday</span></div>
+              <div class="item late">
+                <div><h3>Order printer toner (HP 305A)</h3><div class="meta"><span class="date">Was due Sat 12 Sep</span><span class="people"><span class="av b">JO</span></span></div></div>
+                <div class="stamps"><span class="stamp overdue">Overdue</span></div>
+              </div>
+              <div class="item">
+                <div><h3>Print exam papers</h3><div class="meta"><span class="date">Due Wed 23 Sep</span><span class="people"><span class="av me">PR</span><span class="av c">SA</span></span></div></div>
+                <div class="stamps"><span class="stamp yours">Yours</span><span class="stamp today">Today</span></div>
+              </div>
+              <div class="item">
+                <div><h3>Post September newsletter</h3><div class="meta"><span class="date">Due Fri 25 Sep</span><span class="people"><span class="av d">AL</span></span></div></div>
+                <div class="stamps"><span class="stamp today">Today</span></div>
+              </div>
+              <div class="item">
+                <div><h3>Refill first-aid kit</h3><div class="meta"><span class="date">Due Fri 25 Sep</span><span class="people"><span class="av me">PR</span></span></div></div>
+                <div class="stamps"><span class="stamp yours">Yours</span><span class="stamp today">Today</span></div>
+              </div>
+            </div>
+            <div style="display:grid;gap:26px">
+              <div class="panel">
+                <div class="panel-head"><h2>This week</h2><span class="count">to Fri 25 Sep</span></div>
+                <div class="item">
+                  <div><h3>Exams</h3><div class="meta"><span class="date">Mon 21 – Fri 25 Sep</span></div></div>
+                  <div class="stamps"><span class="stamp when">Mon 21 Sep</span></div>
+                  <div class="note">Print exam papers today — 3 sets per room.</div>
+                </div>
+                <div class="item">
+                  <div><h3>Volunteer rota meeting</h3><div class="meta"><span class="date">Wed 23 Sep · 18:30</span></div></div>
+                  <div class="stamps"><span class="stamp when">Wed 23 Sep</span></div>
+                </div>
+              </div>
+              <div class="panel">
+                <div class="panel-head"><h2>Coming up</h2><span class="count">shown ahead of time</span></div>
+                <div class="item">
+                  <div><h3>Christmas card campaign</h3><div class="meta"><span class="date">Sat 31 Oct · 6 weeks' notice</span></div></div>
+                  <div class="stamps"><span class="stamp when">In 6 weeks</span></div>
+                  <div class="note">Order card stock and update the address list.</div>
+                </div>
+                <div class="item">
+                  <div><h3>Christmas concert</h3><div class="meta"><span class="date">Sat 12 Dec · 12 weeks' notice</span></div></div>
+                  <div class="stamps"><span class="stamp when">In 12 weeks</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="screen kb" data-screen="kb" hidden>
+          <div class="results" role="listbox" aria-label="Search results for toner">
+            <div class="r sel"><span class="cat">Office facts</span><b>Printers: which is where</b><p>…Spare <mark>toner</mark> lives in the grey cabinet by the kitchen door…</p></div>
+            <div class="r"><span class="cat">Mailing SOPs</span><b>Monthly newsletter mail-out</b><p>…check the <mark>toner</mark> level before starting a 400-copy run…</p></div>
+            <div class="r"><span class="cat">Office facts</span><b>Ordering supplies</b><p>…reorder <mark>toner</mark> when only one spare is left…</p></div>
+            <div class="foot">3 articles · press Enter to see all results</div>
+          </div>
+          <div class="crumbs" style="margin-top:236px"><a href="#" onclick="return false">Knowledge Base</a> › Office facts</div>
+          <article class="article">
+            <h1 class="display">Printers: which is where</h1>
+            <div class="by"><span>Updated by <b>Jo</b> · <span class="date">Sat 12 Sep 2026, 11:04</span></span><a href="#" onclick="return false" style="color:var(--text)">History (6)</a><span class="acts"><button class="btn">Archive</button><button class="btn primary">Edit</button></span></div>
+            <p>We have three printers. The big office copier handles anything over 50 pages; the other two are for quick jobs.</p>
+            <table>
+              <thead><tr><th>Printer</th><th>Where</th><th>Takes</th></tr></thead>
+              <tbody>
+                <tr><td>Office copier</td><td>Main office, by the window</td><td>Kyocera TK-5240</td></tr>
+                <tr><td>Front desk</td><td>Reception</td><td>HP 305A</td></tr>
+                <tr><td>Label printer</td><td>Mail room shelf</td><td>Dymo 99010 labels</td></tr>
+              </tbody>
+            </table>
+            <h2>Spares</h2>
+            <p class="hit">Spare <mark>toner</mark> lives in the grey cabinet by the kitchen door, top shelf. If you take the last one, add a task to reorder it.</p>
+            <span class="clear">Showing matches for “toner” · <a href="#" onclick="return false" style="color:var(--text)">Clear highlights</a></span>
+          </article>
+        </section>
+
+        <section class="screen" data-screen="editor" hidden>
+          <div class="edit-head">
+            <span class="crumbs"><a href="#" onclick="return false">Knowledge Base</a> › Mailing SOPs › New article</span>
+            <button class="btn">Cancel</button><button class="btn primary">Publish</button>
+          </div>
+          <div class="editor">
+            <div class="bar" role="toolbar" aria-label="Formatting">
+              <button class="tb">Heading</button><button class="tb">Subheading</button><span class="sep"></span>
+              <button class="tb" aria-label="Bold"><b>B</b></button><button class="tb" aria-label="Italic"><i>I</i></button><span class="sep"></span>
+              <button class="tb">• List</button><button class="tb">1. List</button><button class="tb">Link</button><button class="tb">Table</button><button class="tb">Picture</button>
+              <button class="word"><svg viewBox="0 0 24 24"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M12 18v-6M9 15l3 3 3-3"/></svg>Import from Word</button>
+            </div>
+            <div class="imported" role="status">
+              <span class="stamp yours">Imported</span>
+              <div><b>Newsletter mail-out.docx</b> is in the editor. Nothing is published until you press Publish.
+                <ul>
+                  <li>Came across: 2 headings, 1 list, 1 table, 1 picture.</li>
+                  <li><b>1 thing couldn't be brought in:</b> a chart. It's marked below.</li>
+                  <li>Left out: 2 comments.</li>
+                </ul>
+              </div>
+              <button class="mini quiet">Dismiss</button>
+            </div>
+            <div class="title-in">Monthly newsletter mail-out</div>
+            <div class="article doc">
+              <h2>Before you start</h2>
+              <ol>
+                <li>Check the <b>toner</b> level on the office copier.</li>
+                <li>Load A4 address labels (Dymo 99010) into the label printer.</li>
+                <li>Export the address list from the <i>Volunteers</i> spreadsheet.</li>
+              </ol>
+              <figure class="shot">
+                <svg viewBox="0 0 520 190" role="img" aria-label="Screenshot of the Volunteers spreadsheet with the Export button circled">
+                  <rect width="520" height="190" fill="#FFFFFF"/>
+                  <rect width="520" height="28" fill="#E9EBF0"/>
+                  <rect x="12" y="8" width="60" height="12" rx="2" fill="#B9BECB"/>
+                  <rect x="392" y="6" width="112" height="16" rx="3" fill="#2E7D4F"/>
+                  <ellipse cx="448" cy="14" rx="66" ry="15" fill="none" stroke="#C62D2D" stroke-width="3"/>
+                  <rect x="12" y="42" width="496" height="18" fill="#DDE3EC"/>
+                  <g fill="#C9CEDC"><rect x="20" y="70" width="120" height="8"/><rect x="170" y="70" width="180" height="8"/><rect x="380" y="70" width="90" height="8"/>
+                  <rect x="20" y="96" width="100" height="8"/><rect x="170" y="96" width="200" height="8"/><rect x="380" y="96" width="70" height="8"/>
+                  <rect x="20" y="122" width="130" height="8"/><rect x="170" y="122" width="160" height="8"/><rect x="380" y="122" width="96" height="8"/>
+                  <rect x="20" y="148" width="90" height="8"/><rect x="170" y="148" width="190" height="8"/><rect x="380" y="148" width="80" height="8"/></g>
+                  <g stroke="#E6E8EE"><line x1="12" y1="86" x2="508" y2="86"/><line x1="12" y1="112" x2="508" y2="112"/><line x1="12" y1="138" x2="508" y2="138"/><line x1="12" y1="164" x2="508" y2="164"/></g>
+                </svg>
+                <figcaption>Picture from the Word document, now stored on the NAS</figcaption>
+              </figure>
+              <h2>Printing labels</h2>
+              <p>Print one <b>test sheet</b> first. If the labels drift to the right, choose “Actual size” in the print window.</p>
+              <div class="missing"><b>A chart from the Word document couldn't be brought in.</b><span>Tip: in Word, take a screenshot of the chart (Windows key + Shift + S) and paste it here. Or delete this box.</span></div>
+              <table>
+                <thead><tr><th>Month</th><th>Copies</th><th>Labels</th></tr></thead>
+                <tbody><tr><td>September</td><td>400</td><td>380</td></tr><tr><td>October</td><td>420</td><td>395</td></tr></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <section class="screen" data-screen="tasks" hidden>
+          <div class="tools">
+            <h1 class="display">Tasks</h1>
+            <span class="seg"><span class="on">My jobs</span><button data-screen-choice="board">Board</button><button data-screen-choice="team">Team</button></span>
+            <span class="how">Finished your jobs? Drag one from Up for grabs into your list, or press Take it.</span>
+            <span class="spacer"></span>
+            <button class="btn primary">+ Add task</button>
+          </div>
+          <div class="myjobs">
+            <div class="area mine">
+              <div class="area-head">
+                <div class="who"><span class="av me">PR</span><h2>My jobs</h2><span class="stamp yours" style="margin-left:auto">Priya</span></div>
+                <div class="load" data-load="L M S"></div>
+                <span class="sum">1 large · 1 medium · 1 small</span>
+              </div>
+              <div class="sub">Working on now</div>
+              <div class="card"><h3>Update Christmas card address list</h3><div class="row"><span class="size l">Large</span><span class="date">Sat 17 Oct</span><span class="acts"><button class="mini quiet">Give back</button><button class="mini go">Done ✓</button></span></div></div>
+              <div class="sub">Up next</div>
+              <div class="card"><div class="row"><span class="rank">1</span><h3 style="flex:1">Print exam papers</h3><span class="mv"><i>↑</i><i>↓</i></span></div><div class="row"><span class="size m">Medium</span><span class="date">Wed 23 Sep</span><span class="acts"><button class="mini quiet">Give back</button><button class="mini">Start</button></span></div><span class="also">Also on it: Sam</span></div>
+              <div class="card"><div class="row"><span class="rank">2</span><h3 style="flex:1">Refill first-aid kit</h3><span class="mv"><i>↑</i><i>↓</i></span></div><div class="row"><span class="size s">Small</span><span class="date">Fri 25 Sep</span><span class="acts"><button class="mini quiet">Give back</button><button class="mini">Start</button></span></div></div>
+              <div class="drop">Drop a job here to take it</div>
+            </div>
+            <div class="area grabs">
+              <div class="area-head"><h2>Up for grabs</h2><p>Nobody has taken these yet. Most important first.</p></div>
+              <div class="sub">Jobs</div>
+              <div class="card"><h3>Book piano tuner for concert</h3><div class="row"><span class="size m">Medium</span><span class="date">Sat 31 Oct</span><span class="acts"><button class="mini go">Take it</button></span></div></div>
+              <div class="card"><h3>Photocopy concert programmes</h3><div class="row"><span class="size l">Large</span><span class="date">Sat 5 Dec</span><span class="acts"><button class="mini go">Take it</button></span></div></div>
+              <div class="card"><h3>Clear out the stationery cupboard</h3><div class="row"><span class="size s">Small</span><span class="date">No date</span><span class="acts"><button class="mini go">Take it</button></span></div></div>
+              <div class="sub">Ideas</div>
+              <div class="card"><h3>Volunteer thank-you lunch</h3><div class="row"><span class="size m">Medium</span><span class="date">No date</span><span class="acts"><button class="mini go">Take it</button></span></div><span class="also">Taking an idea moves it to To do.</span></div>
+            </div>
+          </div>
+          <div class="legend"><span>Workload blocks: small job = 1 block, medium = 2, large = 4.</span></div>
+        </section>
+
+        <section class="screen" data-screen="board" hidden>
+          <div class="tools">
+            <h1 class="display">Tasks</h1>
+            <span class="seg"><button data-screen-choice="tasks">My jobs</button><span class="on">Board</span><button data-screen-choice="team">Team</button></span>
+            <span class="seg"><span class="on">Everyone</span><span>My tasks</span><span>Person ▾</span></span>
+            <span class="search" style="width:220px">Filter by word</span>
+            <span class="spacer"></span>
+            <button class="btn primary">+ Add task</button>
+          </div>
+          <div class="board">
+            <div class="col">
+              <div class="col-head"><h2>Ideas</h2><span class="n">2</span></div>
+              <div class="card"><h3>Volunteer thank-you lunch</h3><div class="row"><span class="date">No date</span></div></div>
+              <div class="card"><h3>Label the storage shelves</h3><div class="row"><span class="people"><span class="av c">SA</span></span></div></div>
+            </div>
+            <div class="col todo">
+              <div class="col-head"><h2>To do</h2><span class="n">3</span><span class="hint">Top = most important</span></div>
+              <div class="card"><div class="row"><span class="rank">1</span><h3 style="flex:1">Print exam papers</h3></div><div class="row"><span class="date">Wed 23 Sep</span><span class="people"><span class="av me">PR</span><span class="av c">SA</span></span></div><div class="row"><span class="mv"><i>↑</i><i>↓</i></span><span class="size m">Medium</span><span class="stamp yours">Yours</span></div></div>
+              <div class="card"><div class="row"><span class="rank">2</span><h3 style="flex:1">Order printer toner (HP 305A)</h3></div><div class="row"><span class="date" style="color:var(--danger)">Sat 12 Sep</span><span class="people"><span class="av b">JO</span></span></div><div class="row"><span class="mv"><i>↑</i><i>↓</i></span><span class="size s">Small</span><span class="stamp overdue">Overdue</span></div></div>
+              <div class="card"><div class="row"><span class="rank">3</span><h3 style="flex:1">Book piano tuner for concert</h3></div><div class="row"><span class="date">Sat 31 Oct</span><span class="nobody">Up for grabs</span></div><div class="row"><span class="mv"><i>↑</i><i>↓</i></span><span class="size m">Medium</span></div></div>
+            </div>
+            <div class="col">
+              <div class="col-head"><h2>In progress</h2><span class="n">2</span></div>
+              <div class="card"><h3>Post September newsletter</h3><div class="row"><span class="date">Fri 25 Sep</span><span class="people"><span class="av d">AL</span></span></div></div>
+              <div class="card"><h3>Update Christmas card address list</h3><div class="row"><span class="date">Sat 17 Oct</span><span class="people"><span class="av me">PR</span></span></div></div>
+            </div>
+            <div class="col">
+              <div class="col-head"><h2>Done</h2><span class="n">2</span></div>
+              <div class="card done"><h3>Move HelpScout articles</h3><div class="row"><span class="date">Finished Sat 19 Sep</span></div></div>
+              <div class="card done"><h3>Fix the kitchen tap sign</h3><div class="row"><span class="date">Finished Sat 12 Sep</span></div></div>
+              <div class="more">Finished tasks (14) · Removed tasks</div>
+            </div>
+          </div>
+        </section>
+
+        <section class="screen" data-screen="team" hidden>
+          <div class="tools">
+            <h1 class="display">Team</h1>
+            <span class="seg"><button data-screen-choice="tasks">My jobs</button><button data-screen-choice="board">Board</button><span class="on">Team</span></span>
+            <span class="how">Drag a job onto someone to hand it over. Drag up or down to set their priorities.</span>
+            <span class="spacer"></span>
+            <button class="btn primary">+ Add task</button>
+          </div>
+          <div class="team">
+            <div class="lane unassigned">
+              <div class="lane-head"><div class="who"><h2>Unassigned</h2></div><span class="sum">3 jobs waiting for someone</span></div>
+              <div class="card"><h3>Book piano tuner for concert</h3><div class="row"><span class="size m">Medium</span><span class="date">Sat 31 Oct</span></div></div>
+              <div class="card"><h3>Photocopy concert programmes</h3><div class="row"><span class="size l">Large</span><span class="date">Sat 5 Dec</span></div></div>
+              <div class="card"><h3>Clear out the stationery cupboard</h3><div class="row"><span class="size s">Small</span><span class="date">No date</span></div></div>
+            </div>
+            <div class="lane">
+              <div class="lane-head"><div class="who"><span class="av d">AL</span><h2>Alex</h2></div><div class="load" data-load="M L S"></div><span class="sum">1 large · 1 medium · 1 small</span></div>
+              <div class="sub">Working on now</div>
+              <div class="card"><h3>Post September newsletter</h3><div class="row"><span class="size m">Medium</span><span class="date">Fri 25 Sep</span></div></div>
+              <div class="sub">Up next</div>
+              <div class="card"><div class="row"><span class="rank">1</span><h3 style="flex:1">Book the hall for the concert</h3></div><div class="row"><span class="size l">Large</span><span class="date">Sat 10 Oct</span><span class="mv" style="margin-left:auto"><i>↑</i><i>↓</i></span></div></div>
+              <div class="card"><div class="row"><span class="rank">2</span><h3 style="flex:1">Update website events page</h3></div><div class="row"><span class="size s">Small</span><span class="date">No date</span><span class="mv" style="margin-left:auto"><i>↑</i><i>↓</i></span></div></div>
+            </div>
+            <div class="lane">
+              <div class="lane-head"><div class="who"><span class="av b">JO</span><h2>Jo</h2></div><div class="load" data-load="S"></div><span class="sum">1 small</span></div>
+              <div class="sub">Up next</div>
+              <div class="card"><div class="row"><span class="rank">1</span><h3 style="flex:1">Order printer toner (HP 305A)</h3></div><div class="row"><span class="size s">Small</span><span class="stamp overdue">Overdue</span><span class="mv" style="margin-left:auto"><i>↑</i><i>↓</i></span></div></div>
+            </div>
+            <div class="lane me">
+              <div class="lane-head"><div class="who"><span class="av me">PR</span><h2>Priya</h2><span class="stamp yours" style="margin-left:auto">You</span></div><div class="load" data-load="L M S"></div><span class="sum">1 large · 1 medium · 1 small</span></div>
+              <div class="sub">Working on now</div>
+              <div class="card"><h3>Update Christmas card address list</h3><div class="row"><span class="size l">Large</span><span class="date">Sat 17 Oct</span></div></div>
+              <div class="sub">Up next</div>
+              <div class="card"><div class="row"><span class="rank">1</span><h3 style="flex:1">Print exam papers</h3></div><div class="row"><span class="size m">Medium</span><span class="date">Wed 23 Sep</span><span class="mv" style="margin-left:auto"><i>↑</i><i>↓</i></span></div><span class="also">Also on it: Sam</span></div>
+              <div class="card"><div class="row"><span class="rank">2</span><h3 style="flex:1">Refill first-aid kit</h3></div><div class="row"><span class="size s">Small</span><span class="date">Fri 25 Sep</span><span class="mv" style="margin-left:auto"><i>↑</i><i>↓</i></span></div></div>
+            </div>
+            <div class="lane">
+              <div class="lane-head"><div class="who"><span class="av c">SA</span><h2>Sam</h2></div><div class="load" data-load="M S"></div><span class="sum">1 medium · 1 small</span></div>
+              <div class="sub">Up next</div>
+              <div class="card"><div class="row"><span class="rank">1</span><h3 style="flex:1">Print exam papers</h3></div><div class="row"><span class="size m">Medium</span><span class="date">Wed 23 Sep</span><span class="mv" style="margin-left:auto"><i>↑</i><i>↓</i></span></div><span class="also">Also on it: Priya</span></div>
+              <div class="card"><div class="row"><span class="rank">2</span><h3 style="flex:1">Sort donated stationery</h3></div><div class="row"><span class="size s">Small</span><span class="date">No date</span><span class="mv" style="margin-left:auto"><i>↑</i><i>↓</i></span></div></div>
+            </div>
+          </div>
+          <div class="legend"><span>Workload blocks: small job = 1 block, medium = 2, large = 4. No limits — you decide who can take more.</span></div>
+        </section>
+
+        <section class="screen" data-screen="calendar" hidden>
+          <div class="tools">
+            <h1 class="display">September 2026</h1>
+            <button class="btn">‹ Previous</button><button class="btn">Today</button><button class="btn">Next ›</button>
+            <span class="seg"><span class="on">Month</span><span>List</span></span>
+            <span class="spacer"></span>
+            <button class="btn primary">+ Add event</button>
+          </div>
+          <div class="cal-grid" id="cal"></div>
+          <div class="legend"><span class="chip ev">Event</span><span class="chip task">Task due</span><span>Saturdays are highlighted — that's office day.</span></div>
+        </section>
+      </div>
+    </div>
+
+    <div class="picker" id="picker" hidden>
+      <div class="picker-inner">
+        <div class="mark"><small>Staff</small><strong>HQ</strong></div>
+        <h1>Who's using this computer?</h1>
+        <div class="names">
+          <button>Alex</button><button>Bea</button><button>Chris</button><button>Jo</button>
+          <button>Mohammed</button><button class="hover">Priya</button><button>Sam</button><button>Tom</button>
+        </div>
+        <a href="#" onclick="return false">My name isn't here</a>
+      </div>
+    </div>
+  </div>
+  </div>
+  <p class="note-foot">Everything shown is example content. The final app uses the same layout, with fonts stored inside the app.</p>
+</div>
+
+<script>
+(function(){
+  var studio=document.getElementById('studio');
+  var cal=document.getElementById('cal');
+  var dows=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  dows.forEach(function(d){var e=document.createElement('div');e.className='dow'+(d==='Sat'?' sat':'');e.textContent=d;cal.appendChild(e);});
+  var items={
+    '8':[['ev','Board meeting 19:00']],
+    '12':[['task late','Order printer toner']],
+    '19':[['ev','Office day']],
+    '21':[['ev','Exams']],'22':[['ev cont','Exams']],'23':[['ev cont','Exams'],['ev','Rota meeting 18:30'],['task','Print exam papers']],'24':[['ev cont','Exams']],'25':[['ev cont','Exams'],['task','Post newsletter']],
+    '26':[['ev','Office day']],'12b':[],'5':[['ev','Office day']],'o3':[['ev','Harvest fair set-up']]
+  };
+  items['12'].push(['ev','Office day']);
+  var days=[];
+  days.push({n:31,out:true,k:'a31'});
+  for(var i=1;i<=30;i++)days.push({n:i,k:String(i)});
+  for(var j=1;j<=4;j++)days.push({n:j,out:true,k:'o'+j});
+  days.forEach(function(d,idx){
+    var col=idx%7;
+    var el=document.createElement('div');
+    el.className='day'+(col===5?' sat':'')+(d.out?' out':'')+(d.k==='19'?' today':'');
+    var num=document.createElement('span');num.className='num';num.textContent=d.n;el.appendChild(num);
+    (items[d.k]||[]).forEach(function(c){var ch=document.createElement('span');ch.className='chip '+c[0];ch.textContent=c[1];el.appendChild(ch);});
+    cal.appendChild(el);
+  });
+
+  var weight={S:1,M:2,L:4},word={S:'small',M:'medium',L:'large'};
+  document.querySelectorAll('.load').forEach(function(el){
+    var sizes=el.dataset.load.split(' '),total=0;
+    sizes.forEach(function(sz){
+      var t=document.createElement('span');t.className='t';
+      for(var k=0;k<weight[sz];k++)t.appendChild(document.createElement('i'));
+      el.appendChild(t);total+=weight[sz];
+    });
+    el.setAttribute('role','img');
+    el.setAttribute('aria-label','Workload: '+total+' blocks ('+sizes.map(function(sz){return word[sz];}).join(', ')+')');
+  });
+  var app=document.getElementById('app'),picker=document.getElementById('picker');
+  var sbox=document.getElementById('searchbox'),stext=document.getElementById('searchtext');
+  var navFor={board:'tasks',team:'tasks',editor:'kb'};
+  function setScreen(s){
+    var n=navFor[s]||s;
+    document.querySelectorAll('.pill[data-screen-choice]').forEach(function(b){b.setAttribute('aria-pressed',b.dataset.screenChoice===s?'true':'false');});
+    document.querySelectorAll('.nav[data-screen-choice]').forEach(function(b){if(b.dataset.screenChoice===n)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current');});
+    document.querySelectorAll('[data-screen]').forEach(function(sec){sec.hidden=sec.dataset.screen!==s;});
+    app.hidden=s==='picker';picker.hidden=s!=='picker';
+    var kb=s==='kb';sbox.classList.toggle('active',kb);stext.textContent=kb?'toner':'Search articles';
+  }
+  document.querySelectorAll('[data-screen-choice]').forEach(function(b){b.addEventListener('click',function(){setScreen(b.dataset.screenChoice);});});
+  setScreen('tasks');
+})();
+</script>
+
+</body></html>

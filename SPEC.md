@@ -53,7 +53,11 @@ Everything is stored on the NAS. It works with no internet connection, costs not
 
 **1. Ease of use: intuitive and attractive.**
 - Every page shares the same frame, so nobody gets lost.
-- Big, clear buttons with words, not just icons.
+- **Buttons say what they do.** Icons alone are allowed only for four small, repeated controls on a
+  card or row — **move up**, **move down**, **remove** and **give back** — each with a hover tooltip
+  and a spoken name. Everything with a consequence (Take it, Start, Done, Publish, Archive, Save,
+  Add task, Add event) keeps its words. *(Changed at v1.1, 19 Sep 2026, at the owner's request; the
+  rule is the one the design mockup already follows.)*
 - No page ever needs special knowledge. The article editor works like Word or Google Docs.
 - Anything you can do by dragging, you can also do with a button.
 - Messages are in plain English ("Someone else changed this article while you were editing"), never error codes.
@@ -201,6 +205,11 @@ Everything is stored on the NAS. It works with no internet connection, costs not
 - **HQ motifs:** a "Comp HQ" wordmark, stamp-style labels (TODAY, OVERDUE, YOURS), highlighted Saturdays, and one icon per section.
 - **Avoided:** tiny grey text, busy gradients, stock illustrations, animations that make you wait.
 - Light theme only.
+- **From v1.1 the look is no longer described in words alone.** `docs/design/mockup.html` is the
+  agreed design, screen by screen; it opens in any browser. Where this spec and the mockup disagree
+  about appearance, **the mockup wins**. Where they disagree about *behaviour*, **the spec wins** —
+  the mockup is filled with made-up content and doesn't show every state. The exact colours, fonts
+  and parts taken from it are fixed in B9.
 
 ## A11. Gates
 
@@ -327,7 +336,7 @@ Each gate is a pass/fail statement. The build agent checks every gate itself wit
 
 **My jobs (the screen Tasks opens on)**
 - **2.32** Opening Tasks always shows **My jobs** first, for the name picked on that computer.
-- **2.33** My jobs shows two areas. **My jobs** holds the person's Working on now and Up next jobs (numbered by priority) with their workload blocks, matching their Team view column. **Up for grabs** holds jobs nobody is on (In progress and To do, in priority order), then ideas nobody is on. Jobs belonging only to other people, and finished jobs, don't appear.
+- **2.33** My jobs shows two areas. **My jobs** holds the person's Working on now and Up next jobs (numbered by priority) with their workload blocks, matching their Team view column. **Up for grabs** holds jobs nobody is on (In progress and To do, in priority order), then ideas nobody is on. Jobs belonging only to other people, and finished jobs, don't appear. *(From v1.1: ideas the person is on appear in a third group, **Ideas I'm on** — gate 4.48.)*
 - **2.34** Dragging a To do job from Up for grabs into My jobs puts the person on it, placed where it was dropped in their Up next. Pressing **Take it** does the same but keeps the job's current place in the priority order.
 - **2.35** Taking an idea (by dragging or Take it) puts the person on it and moves it to To do, where it was dropped, or at the bottom when Take it is used. The task's Activity records both changes.
 - **2.36** A taken job leaves Up for grabs on every computer within 60 seconds, or straight away when that window is clicked back into. If two people try to take the same job at almost the same moment, the second person sees "Sam has just taken this job", and the job isn't added to their list.
@@ -359,6 +368,94 @@ In these examples, Saturday 19 September 2026 is the briefing Saturday.
 **👤 Owner checks — end of Phase 3**
 - **O3.1** On a real Saturday (or a practice run), the briefing shows what you'd expect for the week: nothing missing, nothing surprising.
 - **O3.2** Final look-and-feel check across the whole app.
+
+### Phase 4 — Look and feel (v1.1)
+
+Phase 4 changes how the app *looks*, not what it does, with two exceptions: the task window at
+4.22–4.29, and the assigned-ideas fix at 4.48–4.51. Every gate below is checked against
+`docs/design/mockup.html`. Nothing in Phases 1–3 changes meaning.
+
+**The design system (true on every screen)**
+- **4.01** Headings are set in **Big Shoulders Display** — the tall, narrow, heavy capitals of the mockup. The font file is stored inside the app; no font is ever fetched from the internet.
+- **4.02** Dates, counts and version numbers are set in **IBM Plex Mono**, with figures all the same width, so a column of dates lines up.
+- **4.03** The accent is the vivid orange **#FF6B1A**. Text on an accent fill is ink navy, never white. Accent-coloured *text* on the paper background uses the deeper **#A94000**. Every text-and-background pair in the app passes the 4.5:1 readability check.
+- **4.04** Buttons come in three kinds and no others: **primary** (accent fill, ink text, ink outline), **secondary** (white, ink outline), and **small** (compact, for cards and rows). No unstyled browser button appears anywhere.
+- **4.05** No raw browser control appears anywhere, including inside the task window. Drop-downs, date fields, text boxes and the search box are all styled to match, and the date field shows and accepts UK order (day first).
+- **4.06** Every switch between views — My jobs / Board / Team, Month / List, Everyone / Just mine — uses one shared segmented control: joined boxes with the current one filled ink.
+- **4.07** Stamps (TODAY, OVERDUE, YOURS, IMPORTED) are condensed capitals on a coloured field: TODAY accent, OVERDUE red on a pale red field, YOURS outlined in the deep accent.
+- **4.08** A person is a coloured circle holding their initials. The same person is the same colour on every screen, and the person using the app gets the accent circle. Several people on one item stack with a slight overlap.
+- **4.09** Job size shows as a chip reading SMALL, MEDIUM or LARGE, in three increasingly dark shades.
+- **4.10** Workload shows as small blocks — one for a small job, two for medium, four for large — and carries a spoken equivalent ("Workload: 7 blocks — large, medium, small").
+- **4.11** Icon-only buttons exist for exactly four things: move up, move down, remove, give back. Each has a hover tooltip and a spoken name. Every other button keeps its words (A2).
+- **4.12** Icons are simple line drawings stored inside the app, all the same weight and size. No icon is fetched from the internet.
+
+**The frame**
+- **4.13** The sidebar carries the stacked wordmark: a small wide-spaced **COMP** above a large accent **HQ**. The section you're in is a solid accent block with ink text.
+- **4.14** The top bar holds the styled search box with a "/" key hint, and on the right "You: *name*" with that person's circle and a Change link.
+
+**Tasks — Board**
+- **4.15** The board's controls are one row: the My jobs / Board / Team switch, the Everyone / My tasks / Person filter, the word filter, and a primary **+ Add task** at the right. There is no add-a-task form sitting on the board.
+- **4.16** A card shows, in this order: its priority number (To do only, in large accent figures), the title, the due date, the people circles, the size chip, and its icon buttons.
+- **4.17** The **To do** column is tinted with the pale accent wash and headed "Top = most important". Column headings are condensed capitals with a count beside them.
+- **4.18** Every card carries a **remove** icon. Removing from the card does exactly what removing from the task's own page does: it goes to Removed tasks and can be brought back (A3 — nothing is ever permanently deleted).
+- **4.19** A card carries a **give back** icon, shown only to a person who is on that job. Pressing it takes **only that person** off. Anyone else on the job stays on it, and the job returns to Up for grabs only if nobody is left (same behaviour as gate 2.37).
+- **4.20** Pressing the people circles on a card opens a short list of names. Picking a name puts that person on the job; picking a selected name takes them off. Several people can be on one job. The board updates without leaving the page, and the change is recorded in the task's Activity like any other assignment.
+- **4.21** A finished card shows its title struck through in grey.
+
+**Tasks — the task window**
+- **4.22** Pressing **+ Add task** opens the task window, empty and ready for a new job: title, description, size, starting column, due date and people, ending in a primary **Add task** and a Cancel. Description and size can now be set while creating a job, which the board form never allowed.
+- **4.23** Pressing a card opens the same window **to read**: the title, the description laid out as text rather than sitting in a box, who's on it, its size, its column and its due date. A primary **Edit** turns it into the form of 4.22, filled in.
+- **4.24** The task's history ("Sam moved this to In progress") sits at the foot of the window behind a **History** expander, closed when the window opens.
+- **4.25** The window closes with Escape, with a close icon, or by pressing the page behind it, returning you to exactly where you were on the board. Closing it with unsaved changes asks first.
+- **4.26** Opening the window moves the keyboard into it and keeps it there while it's open — Tab cannot wander onto the board behind. Closing it puts the keyboard back on the card you opened.
+- **4.27** Every task still has its own page at its own address, unchanged. A Calendar link to a task still lands there, and refreshing the window on that page still works.
+- **4.28** If the window can't open, nothing is lost: **+ Add task** and a card's title are ordinary links to that page, which does the same job (A2 priority 2 — stability).
+- **4.29** Saving from the window updates the board without reloading the whole page, and records the change in the task's history exactly as editing from its page does.
+
+**Tasks — My jobs and Team**
+- **4.30** On My jobs, the **My jobs** side is tinted with the accent wash and the **Up for grabs** side has a dashed outline, so it reads as a holding area rather than someone's list. The drop target reads "Drop a job here to take it".
+- **4.31** On Team, the **Unassigned** lane has a dashed outline and no fill, your own lane is tinted with a YOU stamp, and every lane head shows the person's circle, their name in condensed capitals, their workload blocks and a summary line ("1 large · 1 medium · 1 small").
+- **4.32** Take it, Give back, Start and Done ✓ stay as worded small buttons on both screens, and a card on either screen opens the same task window as 4.23.
+
+**Calendar**
+- **4.33** Saturday's column is tinted with the accent wash and its day heading is a solid accent block — office day is unmistakable at a glance.
+- **4.34** Ordinary days, Saturdays and days outside the month are three clearly different shades, and no two of them can be confused. *(Today they are near-identical — this gate fixes a real readability fault.)*
+- **4.35** Today's date number sits in a filled ink-navy chip.
+- **4.36** Events are solid ink-navy chips. Task due dates are white chips outlined in ink with a small empty square, red when overdue. The later days of a multi-day event are a lighter navy.
+- **4.37** A legend under the grid explains the two kinds of chip and the Saturday tint.
+- **4.38** Previous, Today and Next are secondary buttons, beside a Month / List segmented switch and a primary **+ Add event**.
+
+**Knowledge Base**
+- **4.39** An article's title is large condensed capitals; its section headings are the same face, smaller. The body stays the calm, very readable face at a generous size on the paper background (A2 priority 1 beats priority 4 inside reading areas).
+- **4.40** Article tables have a solid ink-navy header row with white condensed capitals.
+- **4.41** The byline row reads "Updated by *name* · *date*", with History on the right, then Archive, then a primary **Edit**.
+- **4.42** Search results appear below the box as a bordered panel with a shadow: each result shows its category in small capitals, its title, and the matching words highlighted in accent. The selected result is tinted. Opening it highlights and outlines the found paragraph in the article, with a "Clear highlights" link.
+- **4.43** The editor's formatting controls sit in one bordered bar, with **Import from Word** as a primary button with its icon at the right-hand end. The import summary appears as a bordered notice with an IMPORTED stamp. Anything that couldn't be brought in is a red dashed box in place.
+
+**Saturday Briefing**
+- **4.44** The date is a very large condensed heading with the day and month in the deeper accent.
+- **4.45** Each panel heading is condensed capitals over a thick ink rule, with its count beside it.
+- **4.46** Items are white cards: title, then date and people, with stamps aligned right. An event's note sits in a pale accent strip across the bottom of its card. An overdue item's card is outlined in red.
+
+**Name picker**
+- **4.47** The name picker is a full ink-navy screen with the large wordmark, the question in condensed capitals, and the names as a grid of large buttons that turn accent when pointed at.
+
+**Assigned ideas (the fix)**
+- **4.48** A job in the **Ideas** column that has someone on it appears in that person's My jobs, in a third group headed **Ideas I'm on**, below Working on now and Up next. It does not count towards their workload blocks, because it isn't work yet.
+- **4.49** The same job appears in that person's Team column under an **Ideas** heading, and does **not** appear in Up for grabs, because somebody is already on it.
+- **4.50** An idea nobody is on still appears in Up for grabs exactly as before (gate 2.33), and taking it still moves it to To do (gate 2.34).
+- **4.51** Creating a task and choosing people in the same step puts those people on it whatever column it starts in, and it appears straight away in each of their My jobs and in their Team column. *(This is the reported fault: an idea created with people on it was visible on the Board but nowhere else.)*
+
+**Still true afterwards**
+- **4.52** Every screen still passes the accessibility check and still works from a small laptop window (1024 × 700) up to a full HD screen, with no sideways scrolling that shouldn't be there.
+- **4.53** With the test library loaded, every page is still ready within 1.5 seconds and search still answers within 1 second.
+- **4.54** Every gate from Phases 1, 2 and 3 still passes, unchanged.
+
+**👤 Owner checks — end of Phase 4**
+- **O4.1** Open `docs/design/mockup.html` in Brave or Chrome next to the real app and go through the screens one by one. You agree each one now reads as the same design.
+- **O4.2** Make a task with the **+ Add task** button, giving it a description and putting someone on it. Confirm it appears in their My jobs and in their column on Team.
+- **O4.3** Click a task to read it, press Edit, change something and save. Confirm the window is as easy to use as you hoped, and that closing it puts you back where you were.
+- **O4.4** Use the new card icons for a few minutes — move a job up, give one back, remove one — and confirm they're clear enough for your team without being explained.
 
 ## A12. What's not included
 
@@ -715,6 +812,10 @@ The daily and pre-update copies exist so a future agent helping the owner has cl
 | 2.32–2.38 | E2E: fresh name on a computer lands on My jobs; fixtures with own, shared, other-person, unassigned `todo`/`doing` and unassigned ideas assert exactly what shows on each side. Take by drag (drop position respected) and by button (position kept); taking an idea moves it to To do. Two browser contexts take the same job: the first succeeds, the second gets the "has just taken" message and no change. Refresh within 65s in the other context. Give back returns the job to Up for grabs. Speed and axe as layers 5–6. |
 | 2.12–2.20 | Unit tests (recurrence table: weekly, month-end clamp for 31 Jan → 28 Feb 2027, leap day, `until`, multi-day, moved, cancelled) plus E2E for the UI flows, including the exact 2.15 dates. |
 | 3.01–3.12 | Unit tests on `Build` with the exact example dates from Part A, plus E2E with `COMPHQ_TEST_TODAY` set to 2026-09-19 (Saturday), 2026-09-16 (Wednesday) and 2026-09-12 for 3.07, and two contexts for 3.12. |
+| 4.01–4.21, 4.30–4.47 | Five automatic layers, per B9.9. The first opens `docs/design/mockup.html` beside the app and asserts the app's computed styles match the mockup's, element for element, so the mockup is the contract rather than its description. Then: a token test that reads `theme.css` against the B9.2 table and rejects any colour or font literal in a section stylesheet; Playwright assertions on **computed** styles for real rendered elements (resolved font families, the accent fill, the three distinct day shades for 4.34, the tint on To do, today's ink chip); and drift rules — no unstyled `button`/`select`/`input`, no icon-only button without both `title` and `aria-label`, no white text on the accent, no text in `--color-signal-orange`. Contrast comes from the existing axe layer. Screenshots in `reports/screens/` refreshed for O4.1. |
+| 4.22–4.29 | E2E on the task window: open from **+ Add task** and from a card; create with a description and a size and assert both stored; read-only then Edit then save, asserting the board updates and the right history row appears; close by Escape, by the close icon and by the backdrop, asserting focus returns to the card; Tab cycles inside the window only. **With JavaScript disabled**, assert `+ Add task` and a card title still reach a working page and a task can still be created and edited there (gate 4.28). Assert `/tasks/{id}` still answers directly and a Calendar link still lands on it (4.27). Axe runs with the window open. |
+| 4.48–4.51 | Written failing-first (B9.8): a unit test creating an `idea` with a person on it, asserting it appears in that person's My jobs group and Team column and **not** in Up for grabs, and that their workload blocks are unchanged by it. Plus E2E: create a task choosing people in the same step, then assert it on the Board, on My jobs and on Team. |
+| 4.52–4.54 | The Phase 1–3 suites re-run unchanged, at the same thresholds. A weakened, skipped or deleted Phase 1–3 test fails the phase (B8 rule 5). |
 
 Also asserted in CI: `deploy/truenas.yaml` doesn't set `COMPHQ_TEST_MODE`; image tags are pinned; base images are pinned by digest; no `http(s)://` asset URLs appear in templates or CSS other than in the Setup page text.
 
@@ -731,3 +832,217 @@ Also asserted in CI: `deploy/truenas.yaml` doesn't set `COMPHQ_TEST_MODE`; image
 9. **No runtime calls to the internet** apart from the publish-time image copy. No CDNs, no analytics, no telemetry.
 10. **Follow the expand-only migration rule (B6)** and keep the previous-version rollback test green.
 11. Never enter passwords or tokens on the owner's behalf. When GitHub sign-in is needed, ask the owner to complete it, with steps.
+
+## B9. The v1.1 design system
+
+### B9.1 Where the design lives
+
+`docs/design/mockup.html` is the agreed design, saved into this repository on 19 Sep 2026 from the
+owner's design conversation. It is a reference, not code to copy: it uses made-up content, loads its
+fonts from the internet, and carries a fake browser window around the app. Take from it the colours,
+type, spacing, parts and per-screen layout — nothing else.
+
+`docs/design/mockup.html` is **reference material, not shipped code**. It is never served by the app,
+never embedded in the binary, and never linted or tested. Its Google Fonts link is expected and must
+not be "fixed"; if the no-external-asset check in B7 ever grows to scan the whole repository, exclude
+`docs/` rather than editing the mockup. Leave the file exactly as saved, so it stays a faithful record
+of what the owner approved.
+
+**Read the mockup; don't work from this spec's prose alone.** Every Phase 4 task in `PLAN.md` names
+the part of `docs/design/mockup.html` it implements — a screen's `<section data-screen="...">` and the
+CSS rules it uses. Open the file and read that markup and those rules before writing anything. The
+gates in A11 say what must be **true**; the mockup says what it must **look like**. Where a spacing,
+weight, size or radius isn't named in a gate, the mockup's value is the answer — don't invent one, and
+don't round it off.
+
+The mockup does not show the task window (4.22–4.29) — that was agreed after it was drawn. Build the
+window from the mockup's own parts, so it looks as though it had always been there.
+
+`web/static/theme/theme.css` stays the single place where colours, fonts, radii and spacing are
+defined (A2 priority 3, B2). Section stylesheets may only do layout; a section stylesheet that
+introduces its own colour or font value is a defect.
+
+### B9.2 Tokens
+
+Replace the current palette with the mockup's. Names stay as they are where they already match.
+
+| Token | Value | Used for |
+|---|---|---|
+| `--color-ink-navy` | `#141B2D` | sidebar, name picker, event chips, table headers |
+| `--color-ink-navy-light` | `#1F2842` | sidebar hover |
+| `--color-ink-navy-3` | `#2C3656` | continuing multi-day event chips, default avatar |
+| `--color-signal-orange` | `#FF6B1A` | accent **fills** only |
+| `--color-signal-orange-deep` | `#A94000` | accent **text** on paper; priority numbers |
+| `--color-accent-soft` | `#FFE2CF` | focus rings, outlines of tinted areas |
+| `--color-accent-wash` | `#FFF3EA` | tinted columns and panels (To do, My jobs, Saturday) |
+| `--color-paper` | `#F5F3EE` | page background |
+| `--color-paper-muted` | `#ECE9E1` | board columns, team lanes |
+| `--color-card` | `#FFFFFF` | cards, article surfaces, the task window |
+| `--color-ink-text` | `#1A1F2B` | body text |
+| `--color-text-muted` | `#5A6072` | secondary text |
+| `--color-border` | `#DEDAD0` | hairlines |
+| `--color-border-strong` | `#CBC6B9` | control outlines, dashed holding areas |
+| `--color-danger` | `#C62D2D` | overdue |
+| `--color-danger-soft` | `#FBE3E1` | overdue stamp field |
+| `--font-display` | `"Big Shoulders Display"` | headings, stamps, column and panel titles, size chips |
+| `--font-body` | `"Atkinson Hyperlegible Next"` | all body and control text (unchanged) |
+| `--font-mono` | `"IBM Plex Mono"` | dates, counts, version |
+
+**The contrast rule (supersedes D-09).** The old palette dulled the orange to `#c2410c` so that white
+text on it would pass 4.5:1. The mockup solves the same problem without dulling anything: the bright
+accent is only ever a **fill**, and the text on it is ink navy. Where orange is the text itself, it is
+the deep accent on paper. Measured:
+
+| Pair | Ratio | |
+|---|---|---|
+| ink navy on accent `#141B2D` / `#FF6B1A` | 6.02:1 | pass |
+| **white on accent** `#FFFFFF` / `#FF6B1A` | **2.85:1** | **fails — never do this** |
+| deep accent on paper `#A94000` / `#F5F3EE` | 5.54:1 | pass |
+| deep accent on card `#A94000` / `#FFFFFF` | 6.14:1 | pass |
+| body on paper `#1A1F2B` / `#F5F3EE` | 14.86:1 | pass |
+| muted on paper `#5A6072` / `#F5F3EE` | 5.65:1 | pass |
+| muted on board column `#5A6072` / `#ECE9E1` | 5.17:1 | pass |
+| overdue stamp `#C62D2D` / `#FBE3E1` | 4.50:1 | pass, but exactly on the line |
+| sidebar text on navy `#C9CEDC` / `#141B2D` | 10.90:1 | pass |
+
+So:
+
+- **Never** white text on the accent. Ink navy on accent, always.
+- **Never** `--color-signal-orange` as a text colour. Use `--color-signal-orange-deep`.
+- The overdue stamp sits exactly on 4.50:1. Don't lighten either of its two colours; if one has to
+  change, darken the text rather than the field, and re-measure.
+
+Record this in `docs/decisions.md` as a new decision superseding D-09, and edit D-09 to say it has
+been superseded rather than deleting it.
+
+### B9.3 Fonts
+
+Add **Big Shoulders Display** and **IBM Plex Mono**, both under the SIL Open Font Licence, so they may
+be stored inside the app. Keep **Atkinson Hyperlegible Next** for body text. **Retire Archivo** and
+delete its file — nothing may reference it once Phase 4 is done.
+
+- Self-hosted `woff2` in `web/static/theme/fonts/`, subset to Latin, variable weight where the family
+  offers it, served with a long cache lifetime and `font-display: swap`, exactly as the existing two are.
+- Commit the licence text for each family alongside the files.
+- The existing CI assertion that no `http(s)://` asset URL appears in templates or CSS (B7) already
+  proves nothing is fetched from the internet. Do not weaken it.
+
+### B9.4 Icons
+
+One small line-art set stored in `web/static/theme/icons/`, drawn on a 24 × 24 grid, stroke width 2,
+round caps and joins, `fill: none`, `stroke: currentColor`, so an icon takes the colour of its button.
+Needed for v1.1: `arrow-up`, `arrow-down`, `trash`, `give-back`, `plus`, `search`, `check`, `chevron`,
+`close`, plus the five section icons already present, redrawn to match if they don't.
+
+Every icon-only button (gate 4.11) needs both a `title` for the hover tooltip and an `aria-label`, and
+they must say the same thing, naming the task: "Move *Print exam papers* up".
+
+### B9.5 Shared parts
+
+These live in `theme.css` and are used by every section rather than being re-invented per screen. The
+mockup's own class names are a reasonable starting point:
+
+`.btn` / `.btn.primary` · `.mini` (small card buttons) · `.seg` (segmented switch) · `.stamp` (+
+`.today` `.overdue` `.yours`) · `.size` (+ `.s` `.m` `.l`) · `.av` / `.people` (avatars and stacks) ·
+`.load` (workload blocks) · `.card` · `.panel-head` · `.date` (mono) · `.icon-btn`.
+
+Styled form controls (gate 4.05) belong here too, and are shared by the board and the task window. The
+date field must show day-first; a native `<input type=date>` follows the computer's locale and
+currently shows `mm/dd/yyyy`, which is wrong for this office — fix it however is simplest and most
+stable, and note what you chose in `docs/decisions.md`.
+
+### B9.6 Assigning from a card (gate 4.20)
+
+No new storage and no new endpoint. The people circles open a small menu listing current people; each
+choice posts to the existing assign endpoint (`from_person` / `to_person`, `internal/tasks/assign.go`),
+which already keeps every other assignee untouched and already records Activity. Give back on a card
+(gate 4.19) is the same endpoint with `from_person` = self and no `to_person`, exactly as My jobs
+already does it. Remove on a card (gate 4.18) posts to the existing `/tasks/{id}/remove`.
+
+### B9.7 The task window (gates 4.22–4.29)
+
+**No new endpoints and no new storage.** Everything the window needs already exists:
+
+- `handleCreateTask` (`internal/tasks/handlers.go`) already accepts `title`, `notes`, `size`, `stage`,
+  `due_date` and repeated `person_id`. The board's form simply never offered description or size, which
+  is why gate 4.22 can add both without touching the server.
+- `POST /tasks/{id}` (`internal/tasks/details.go`, P2-04) already edits the same set in one transaction
+  and already records the right activity row per kind of change.
+- `GET /tasks/{id}` already renders the full page the window is a nicer face for, and `ListActivity`
+  already produces the history for gate 4.24.
+
+So the window is one shared piece of the interface over endpoints that are done. Build it as **one**
+window with three states — new, reading, editing — not three separate things.
+
+**It is an enhancement, never a requirement (gate 4.28).** Server-rendered pages stay the ground truth:
+`+ Add task` is a link to a new-task page and a card's title is a link to `/tasks/{id}`. The window
+intercepts those links when it can, and when it can't, the links still work on their own. This is A2
+priority 2 (stability) beating priority 4 (design), and it is not optional.
+
+**It must behave like a dialog, not a floating box.** Use the platform's own `<dialog>` element rather
+than building one: it gives Escape, the keyboard trap of gate 4.26, the backdrop and the return of
+focus without hand-written code, and it is the simpler and more stable choice (A2 priority 2). The
+accessibility layer of B7 covers the rest.
+
+**Don't remove the task page.** v1.2 keeps it too — Calendar links point at it, and a refreshed browser
+window must still land somewhere real (gate 4.27).
+
+### B9.8 The assigned-ideas fix (gates 4.48–4.51)
+
+The cause is known. `ListForTeamView` (`internal/tasks/lanes.go`) selects only `stage IN ('doing',
+'todo')`, while `Create` defaults a new task to `idea` (`internal/tasks/store.go`). An idea with people
+on it therefore appears on the Board and nowhere else: not in My jobs, not in Team, and not in Up for
+grabs either, because `ListUpForGrabs` excludes anything somebody is on.
+
+Direction:
+
+- The team/my-jobs query includes `idea` as well, and the lane builder puts those tasks in their own
+  group rather than mixing them into Working on now or Up next.
+- Workload blocks count `todo` and `doing` only. An idea must not change anybody's workload.
+- `ListUpForGrabs` is unchanged: unassigned ideas still surface there.
+- Guard it with a test that fails against today's code before the fix: create a task in `idea` with a
+  person on it, and assert it appears in that person's My jobs and Team column. Write that test first
+  and watch it fail, so the fix is proven rather than assumed.
+
+### B9.9 How Phase 4 gates are checked
+
+"Looks like the mockup" is made testable in five layers, all automatic:
+
+1. **Against the mockup itself.** The test suite opens `docs/design/mockup.html` in the same browser
+   as the app and reads its **computed** styles, then asserts the app's matching element agrees:
+   font family, weight, size, letter-spacing and text-transform for each kind of heading, stamp, size
+   chip and date; background and border for a card, a board column, the To do column, a team lane, the
+   Unassigned lane, a Saturday cell and an out-of-month cell; and the fill and text colour of a primary
+   button. This is what makes the mockup the contract rather than my description of it — if the two
+   disagree, the mockup wins (A10) and the app is wrong.
+
+   This works with no internet. `getComputedStyle` reports the *declared* font stack whether or not the
+   font file loaded, so the mockup's Google Fonts link never needs to resolve in CI. Compare the first
+   family named, not a resolved file. Don't compare whole screenshots — the two hold different content
+   and that test would fail forever for no useful reason.
+
+2. **Tokens.** A test reads `theme.css` and asserts the B9.2 table exactly — every name present, every
+   value as written, and no colour or font literal anywhere in a section stylesheet.
+3. **What the browser actually renders.** Playwright asserts computed styles on real elements: the
+   resolved font family of a heading, of a date, of body text; the background of a primary button; the
+   backgrounds of an ordinary day, a Saturday and an out-of-month day being three measurably different
+   values (gate 4.34); the tint on the To do column; the ink chip on today's date. These are the gates
+   an agent can prove without a human eye.
+4. **Rules that catch drift.** No `<button>`, `<select>` or `<input>` renders without a theme class
+   (gate 4.05); no icon-only button lacks both `title` and `aria-label` (4.11); no element uses white
+   text on the accent, and no text uses `--color-signal-orange` (B9.2).
+5. **Nothing broke.** The existing accessibility, window-size and speed suites run unchanged, and
+   every Phase 1–3 gate still passes (gate 4.54). Contrast is checked by the accessibility layer, not
+   by eye.
+
+Then refresh every screenshot in `reports/screens/` so the owner can hold them beside the mockup for
+O4.1, adding one of the task window open.
+
+### B9.10 Not in v1.1
+
+**Checklists** (the remainder of the owner's request 4) are **v1.2** and will be specified separately.
+They need storage of their own, so they are deliberately not started in Phase 4. The task window is
+built so that a checklist can later be added inside it without rearranging anything.
+
+Settings does not appear in the mockup. It inherits the shared parts of B9.5 and the new tokens, but
+its layout is unchanged.
