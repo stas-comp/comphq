@@ -1,13 +1,12 @@
-{{define "tasks-details.html"}}
-<p><a href="/tasks/board">Back to Board</a></p>
-<h1>{{.Title}}</h1>
-{{if .Message}}<p class="message" role="alert">{{.Message}}</p>{{end}}
-
+{{/* The edit form, once: on the task's own page, and as the task window's
+editing face (fragment). Same field ids in both. */}}
+{{define "tasks-details-form"}}
 <form method="post" action="/tasks/{{.ID}}" class="task-details-form">
+{{if .InWindow}}<input type="hidden" name="fragment" value="1">{{end}}
 <label for="details-title">Title</label>
 <input class="field" type="text" id="details-title" name="title" value="{{.Title}}" required>
 
-<label for="details-notes">Notes</label>
+<label for="details-notes">Description</label>
 <textarea class="field" id="details-notes" name="notes">{{.Notes}}</textarea>
 
 <label for="details-size">Size</label>
@@ -32,8 +31,19 @@
 {{range .People}}<option value="{{.ID}}"{{if .Selected}} selected{{end}}>{{.Name}}</option>{{end}}
 </select>
 
+<div class="add-task-actions">
 <button class="btn primary" type="submit">Save</button>
+{{if .InWindow}}<button class="btn" type="button" data-hook="window-cancel-edit">Cancel</button>{{end}}
+</div>
 </form>
+{{end}}
+
+{{define "tasks-details.html"}}
+<p><a href="/tasks/board">Back to Board</a></p>
+<h1>{{.Title}}</h1>
+{{if .Message}}<p class="message" role="alert">{{.Message}}</p>{{end}}
+
+{{template "tasks-details-form" .}}
 
 <form method="post" action="/tasks/{{.ID}}/remove" class="task-remove-form">
 <button class="btn" type="submit">Remove task</button>

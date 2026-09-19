@@ -4,7 +4,7 @@ import { expectNoSideScroll } from '../helpers/no-side-scroll';
 import { signInAsNewPerson } from '../helpers/people';
 import { ready } from '../helpers/ready';
 import { uniqueName } from '../helpers/unique-name';
-import { openNewTask } from '../helpers/tasks';
+import { openNewTask, openTaskPage } from '../helpers/tasks';
 
 type Page = import('@playwright/test').Page;
 
@@ -18,8 +18,7 @@ async function addTask(page: Page, title: string, stage: string, personName?: st
   await page.click('.add-task-form button[type="submit"]');
   await ready(page);
   if (size) {
-    await page.locator('.task-card', { hasText: title }).locator('.task-card-title a').click();
-    await ready(page);
+    await openTaskPage(page, title);
     await page.selectOption('#details-size', size);
     await page.click('.task-details-form button[type="submit"]');
     await ready(page);

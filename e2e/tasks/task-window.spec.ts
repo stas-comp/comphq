@@ -2,6 +2,7 @@ import { expect, test } from '../helpers/fixtures';
 import { axeCheck } from '../helpers/axe';
 import { signInAsNewPerson } from '../helpers/people';
 import { ready } from '../helpers/ready';
+import { openTaskPage } from '../helpers/tasks';
 import { uniqueName } from '../helpers/unique-name';
 
 type Page = import('@playwright/test').Page;
@@ -54,8 +55,7 @@ test('gate 4.22: a job made in the window keeps its description and size, and ap
   await expect(page).toHaveURL(/\/tasks\/board$/);
 
   // Stored: the task's own page shows both.
-  await card.locator('.task-card-title a').click();
-  await ready(page);
+  await openTaskPage(page, title);
   await expect(page.locator('#details-notes')).toHaveValue('Three sets per room, stapled.');
   await expect(page.locator('#details-size')).toHaveValue('L');
   await page.goto(server.baseURL + '/tasks/board');

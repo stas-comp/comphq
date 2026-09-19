@@ -2,7 +2,7 @@ import { expect, test } from '../helpers/fixtures';
 import { signInAsNewPerson } from '../helpers/people';
 import { ready } from '../helpers/ready';
 import { uniqueName } from '../helpers/unique-name';
-import { openNewTask } from '../helpers/tasks';
+import { openNewTask, openTaskPage } from '../helpers/tasks';
 
 // SPEC gate 4.05: the date field shows and accepts UK order (day first),
 // wherever a date is typed. D-61.
@@ -19,8 +19,7 @@ test('a task due date typed day first is saved and shown day first', async ({ pa
 
   const card = page.locator('.task-card', { hasText: title });
   await expect(card).toHaveCount(1);
-  await card.locator('.task-card-title a').click();
-  await ready(page);
+  await openTaskPage(page, title);
   await expect(page.locator('#details-due-date')).toHaveValue('05/11/2026');
   await expect(page.locator('#details-due-date')).toHaveAttribute('placeholder', 'dd/mm/yyyy');
 

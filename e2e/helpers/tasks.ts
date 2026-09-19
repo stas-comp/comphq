@@ -11,3 +11,13 @@ export async function openNewTask(page: Page): Promise<void> {
   await page.goto(new URL('/tasks/new', page.url()).href);
   await ready(page);
 }
+
+// Clicking a card's title opens the task window (SPEC gate 4.23); the same
+// link, followed as a link, is the task's own page (gate 4.27). Tests that
+// mean the page go there by the link's address.
+export async function openTaskPage(page: Page, title: string): Promise<void> {
+  const href = await page.locator('.task-card', { hasText: title }).locator('.task-card-title a').first().getAttribute('href');
+  if (!href) throw new Error(`no card titled ${title}`);
+  await page.goto(new URL(href, page.url()).href);
+  await ready(page);
+}

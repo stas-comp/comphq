@@ -4,7 +4,7 @@ import { expectNoSideScroll } from '../helpers/no-side-scroll';
 import { signInAsNewPerson } from '../helpers/people';
 import { ready } from '../helpers/ready';
 import { uniqueName } from '../helpers/unique-name';
-import { openNewTask } from '../helpers/tasks';
+import { openNewTask, openTaskPage } from '../helpers/tasks';
 
 type Page = import('@playwright/test').Page;
 
@@ -17,8 +17,7 @@ async function addTask(page: Page, title: string, stage = 'idea'): Promise<void>
 }
 
 async function openDetails(page: Page, title: string): Promise<void> {
-  await page.locator('.task-card', { hasText: title }).locator('.task-card-title a').click();
-  await ready(page);
+  await openTaskPage(page, title);
 }
 
 // SPEC gate 2.06: opening a card allows editing every detail, and its
@@ -90,10 +89,7 @@ test('the task details page works with keyboard only', async ({ page, server }) 
   const title = uniqueName('Keyboard task');
   await addTask(page, title, 'idea');
 
-  const titleLink = page.locator('.task-card', { hasText: title }).locator('.task-card-title a');
-  await titleLink.focus();
-  await page.keyboard.press('Enter');
-  await ready(page);
+  await openTaskPage(page, title); // the page itself, by its address (the title link opens the window)
   await expect(page).toHaveURL(/\/tasks\/\d+$/);
 
   const notesField = page.locator('#details-notes');

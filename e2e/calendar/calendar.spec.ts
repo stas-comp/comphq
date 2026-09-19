@@ -5,7 +5,7 @@ import { expectNoSideScroll } from '../helpers/no-side-scroll';
 import { signInAsNewPerson } from '../helpers/people';
 import { ready } from '../helpers/ready';
 import { uniqueName } from '../helpers/unique-name';
-import { openNewTask } from '../helpers/tasks';
+import { openNewTask, openTaskPage } from '../helpers/tasks';
 
 type Page = import('@playwright/test').Page;
 
@@ -347,8 +347,7 @@ test('gate 2.19: a due task shows as an outlined chip and opens the task, but fi
 
   const removedTitle = uniqueName('Removed task');
   await addTask(page, removedTitle, 'todo', '2026-09-25');
-  await page.locator('.task-card', { hasText: removedTitle }).locator('.task-card-title a').click();
-  await ready(page);
+  await openTaskPage(page, removedTitle);
   await page.locator('.task-remove-form button[type="submit"]').click();
   await ready(page);
 

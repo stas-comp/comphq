@@ -4,7 +4,7 @@ import { expectNoSideScroll } from '../helpers/no-side-scroll';
 import { signInAsNewPerson } from '../helpers/people';
 import { ready } from '../helpers/ready';
 import { uniqueName } from '../helpers/unique-name';
-import { openNewTask } from '../helpers/tasks';
+import { openNewTask, openTaskPage } from '../helpers/tasks';
 
 type Page = import('@playwright/test').Page;
 
@@ -74,8 +74,7 @@ test('gate 2.09: Remove hides a task from the board and lists it in Removed task
 
   const title = uniqueName('Removable task');
   await addTask(page, title, 'idea');
-  await page.locator('.task-card', { hasText: title }).locator('.task-card-title a').click();
-  await ready(page);
+  await openTaskPage(page, title);
 
   await page.locator('.task-remove-form button[type="submit"]').click();
   await ready(page);

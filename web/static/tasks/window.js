@@ -1,9 +1,11 @@
-// The task window (SPEC B9.7, gates 4.22, 4.25, 4.26, 4.28). A single
-// <dialog>, opened over the Board by the + Add task link. The link is an
-// ordinary link to the new-task page and stays one: this script only
-// intercepts a plain click on it, fetches the same form as a fragment and
-// shows it here. If script doesn't run, or anything fails, the link simply
-// goes to the page, which does the same job.
+// The task window (SPEC B9.7, gates 4.22-4.29). One <dialog> over the Board
+// with three states: new (the form for a task that doesn't exist yet),
+// reading (a task laid out as text, with its History behind an expander) and
+// editing (the same form, filled in). + Add task and a card's title are
+// ordinary links, to the new-task page and to the task's own page; this
+// script only intercepts a plain click on them, fetches what they point to
+// as a fragment and shows it here. If script doesn't run, or anything fails,
+// the link simply goes to the page, which does the same job.
 //
 // The platform's own <dialog> gives Escape, the backdrop, the keyboard
 // staying inside the window (everything behind it is inert) and, on close,
@@ -19,38 +21,76 @@
   let dirty = false
 
   function requestClose() {
-    if (dirty && !window.confirm('Leave without saving?')) return
+    if (dirty && !window.confirm('Leave without saving?')) return false
     dialog.close()
+    return true
   }
 
-  function show(state, title, html, trigger) {
+  // Draws a fragment in the window. The fragment names its own heading
+  // (data-window-title); a form fragment has none, so it keeps "Add task".
+  function show(state, html, fallbackTitle, trigger) {
     if (trigger) opener = trigger
-    heading.textContent = title
     body.innerHTML = html
     body.dataset.state = state
+    const named = body.querySelector('[data-window-title]')
+    heading.textContent = named ? named.dataset.windowTitle : fallbackTitle
     dirty = false
     if (!dialog.open) dialog.showModal()
     const first = body.querySelector('[autofocus], input:not([type="hidden"]), select, textarea')
     if (first) first.focus()
+    else heading.focus()
+  }
+
+  async function fetchFragment(url) {
+    const res = await fetch(url)
+    if (!res.ok) throw new Error('could not load ' + url)
+    return res.text()
   }
 
   async function openNewTask(link) {
     try {
-      const res = await fetch('/tasks/new?fragment=1')
-      if (!res.ok) throw new Error('could not load the form')
-      show('new', 'Add task', await res.text(), link)
+      show('new', await fetchFragment('/tasks/new?fragment=1'), 'Add task', link)
     } catch (err) {
       window.location.href = link.href // the page does the same job
     }
   }
 
-  // + Add task: a plain click opens the window; anything else (a new tab,
-  // a modified click) is left to the link.
+  async function openTask(id, link) {
+    try {
+      show('reading', await fetchFragment('/tasks/' + id + '?fragment=1'), 'Task', link)
+    } catch (err) {
+      window.location.href = link.href // the task's own page does the same job
+    }
+  }
+
+  async function readTask(id) {
+    show('reading', await fetchFragment('/tasks/' + id + '?fragment=1'), 'Task')
+  }
+
+  async function editTask(id) {
+    show('editing', await fetchFragment('/tasks/' + id + '?fragment=1&mode=edit'), 'Edit task')
+  }
+
+  const plainClick = (event) => event.button === 0 && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey
+
+  // + Add task, and a card's title: a plain click opens the window; anything
+  // else (a new tab, a modified click) is left to the link.
   document.addEventListener('click', (event) => {
-    const link = event.target instanceof Element ? event.target.closest('a[href="/tasks/new"]') : null
-    if (!link || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
-    event.preventDefault()
-    openNewTask(link)
+    if (!(event.target instanceof Element) || !plainClick(event)) return
+    const add = event.target.closest('a[href="/tasks/new"]')
+    if (add) {
+      event.preventDefault()
+      openNewTask(add)
+      return
+    }
+    const title = event.target.closest('.task-board .task-card-title a')
+    if (title) {
+      const match = /^\/tasks\/(\d+)$/.exec(new URL(title.href).pathname)
+      if (match) {
+        event.preventDefault()
+        openTask(match[1], title)
+      }
+    }
   })
 
   // Anything typed makes the window "unsaved".
@@ -58,21 +98,39 @@
     dirty = true
   })
 
-  // Close: the close icon and Cancel, the backdrop (a click on the dialog
-  // element itself, since the inner box fills the rest), and Escape.
   // A drag that starts inside the window (selecting text) and ends on the
   // backdrop must not close it, so the press has to start on the backdrop too.
   let pressedOnBackdrop = false
   dialog.addEventListener('mousedown', (event) => {
     pressedOnBackdrop = event.target === dialog
   })
-  dialog.addEventListener('click', (event) => {
+
+  const taskIdOf = () => {
+    const holder = body.querySelector('[data-task-id]')
+    return holder ? holder.dataset.taskId : null
+  }
+
+  dialog.addEventListener('click', async (event) => {
     if (event.target === dialog) {
       if (pressedOnBackdrop) requestClose()
       return
     }
-    if (event.target instanceof Element && event.target.closest('[data-hook="window-close"]')) requestClose()
+    const hook = event.target instanceof Element ? event.target.closest('[data-hook]') : null
+    if (!hook) return
+    switch (hook.dataset.hook) {
+      case 'window-close':
+        requestClose()
+        break
+      case 'window-edit': // reading -> editing
+        await editTask(taskIdOf())
+        break
+      case 'window-cancel-edit': // editing -> reading, asking first if something was typed
+        if (dirty && !window.confirm('Leave without saving?')) break
+        await readTask(taskIdOf())
+        break
+    }
   })
+
   dialog.addEventListener('cancel', (event) => {
     event.preventDefault() // Escape: ask first if there is something to lose
     requestClose()
@@ -83,13 +141,17 @@
     if (opener && document.contains(opener)) opener.focus() // back on what opened it
   })
 
-  // Saving: the form posts as a fragment. A saved task is 204: close the
-  // window and refresh the board in place. A refused one is 422 with the
-  // form again, message and typed values included, and the window stays.
+  // Saving: the form posts as a fragment. A saved task is 204: a new task
+  // closes the window; an edited one shows the task again, reading, with its
+  // History updated. Either way the board is refreshed in place. A refused
+  // save is 422 with the form again, message and typed values included, and
+  // the window stays.
   body.addEventListener('submit', async (event) => {
     const form = event.target
     if (!(form instanceof HTMLFormElement)) return
     event.preventDefault()
+    const state = body.dataset.state
+    const id = taskIdOf()
     let res
     try {
       res = await fetch(form.action, {
@@ -106,11 +168,12 @@
     }
     if (res.status === 204) {
       dirty = false
-      dialog.close()
       try {
+        if (state === 'editing' && id) await readTask(id)
+        else dialog.close()
         await replaceBoardFromPage()
       } catch (err) {
-        window.location.reload() // saved; just show the fresh board
+        window.location.reload() // saved; just show the fresh page
       }
       return
     }

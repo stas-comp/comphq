@@ -3,7 +3,7 @@ import { axeCheck } from '../helpers/axe';
 import { expectNoSideScroll } from '../helpers/no-side-scroll';
 import { signInAsNewPerson } from '../helpers/people';
 import { ready } from '../helpers/ready';
-import { openNewTask } from '../helpers/tasks';
+import { openNewTask, openTaskPage } from '../helpers/tasks';
 import { uniqueName } from '../helpers/unique-name';
 
 type Page = import('@playwright/test').Page;
@@ -32,8 +32,7 @@ async function secondPerson(browser: import('@playwright/test').Browser, baseURL
 }
 
 async function activityOf(page: Page, baseURL: string, title: string): Promise<string> {
-  await card(page, title).locator('.task-card-title a').click();
-  await ready(page);
+  await openTaskPage(page, title);
   const text = await page.locator('.task-activity-list').innerText();
   await page.goto(baseURL + '/tasks/board');
   await ready(page);

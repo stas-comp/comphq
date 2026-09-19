@@ -1,0 +1,36 @@
+{{/* The task window's two faces for an existing task (gates 4.23, 4.24). Both
+are fetched as fragments by window.js; the task's own page (tasks-details.html)
+is unchanged and is where the title link goes with no script. */}}
+
+{{define "tasks-window-read"}}
+<div class="task-read" data-window-title="{{.Title}}" data-task-id="{{.ID}}">
+<dl class="task-read-facts">
+<div><dt>Size</dt><dd>{{template "part-size" .SizeLabel}}</dd></div>
+<div><dt>Column</dt><dd>{{.StageLabel}}</dd></div>
+<div><dt>Due</dt><dd>{{if .DueLabel}}<span class="date">{{.DueLabel}}</span>{{else}}No date{{end}}</dd></div>
+<div><dt>On it</dt><dd>{{if .Assignees}}<span class="task-read-people">{{template "part-people" .Assignees}}<span class="task-read-names">{{range $i, $a := .Assignees}}{{if $i}}, {{end}}{{$a.Name}}{{if $a.Removed}} (removed){{end}}{{end}}</span></span>{{else}}Nobody yet{{end}}</dd></div>
+</dl>
+{{if .Notes}}<div class="task-read-notes">{{.Notes}}</div>{{else}}<p class="task-read-notes task-read-empty">No description.</p>{{end}}
+<details class="task-history">
+<summary>History</summary>
+{{if .Activity}}
+<ul class="task-activity-list">
+{{range .Activity}}<li>{{.Text}} · {{.At}}</li>{{end}}
+</ul>
+{{else}}
+<p>No activity yet.</p>
+{{end}}
+</details>
+<div class="add-task-actions">
+<button class="btn primary" type="button" data-hook="window-edit">Edit</button>
+<a class="btn" href="/tasks/{{.ID}}">Open the page</a>
+</div>
+</div>
+{{end}}
+
+{{define "tasks-window-edit"}}
+<div class="task-edit" data-window-title="Edit task" data-task-id="{{.ID}}">
+{{if .Message}}<p class="message" role="alert">{{.Message}}</p>{{end}}
+{{template "tasks-details-form" .}}
+</div>
+{{end}}

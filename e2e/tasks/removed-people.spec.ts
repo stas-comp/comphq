@@ -2,7 +2,7 @@ import { expect, test } from '../helpers/fixtures';
 import { signInAsNewPerson } from '../helpers/people';
 import { ready } from '../helpers/ready';
 import { uniqueName } from '../helpers/unique-name';
-import { openNewTask } from '../helpers/tasks';
+import { openNewTask, openTaskPage } from '../helpers/tasks';
 
 // SPEC gate 2.11: a removed person no longer appears when assigning,
 // but still shows on their old tasks, marked "(removed)" — on the
@@ -48,8 +48,7 @@ test('gate 2.11: a removed person no longer appears when assigning, but still sh
 
   await expect(avatar).toHaveAttribute('title', `${nameB} (removed)`);
 
-  await page.locator('.task-card', { hasText: title }).locator('.task-card-title a').click();
-  await ready(page);
+  await openTaskPage(page, title);
   const removedOption = page.locator('#details-people option', { hasText: `${nameB} (removed)` });
   await expect(removedOption).toHaveCount(1);
   const isSelected = await removedOption.evaluate((el) => (el as HTMLOptionElement).selected);
