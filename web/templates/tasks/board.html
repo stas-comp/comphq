@@ -66,14 +66,17 @@
 </form>
 </div>
 </div>
+<details class="task-move">
+<summary>Move to…</summary>
 <form method="post" action="/tasks/{{.ID}}/move" class="task-move-to-form">
 <label class="visually-hidden" for="move-to-{{.ID}}">Move {{.Title}} to</label>
 <select class="field" id="move-to-{{.ID}}" name="stage">
 {{range .OtherStages}}<option value="{{.Stage}}">{{.Label}}</option>{{end}}
 </select>
 <input type="hidden" name="to_bottom" value="1">
-<button class="mini" type="submit">Move to…</button>
+<button class="mini" type="submit">Move</button>
 </form>
+</details>
 </li>
 {{end}}
 </ul>

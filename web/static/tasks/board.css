@@ -142,6 +142,20 @@
   display: flex;
 }
 
+/* The button equivalent of dragging a card to another column (SPEC B2 rule:
+   every drag has a button), kept out of the way until asked for so a card
+   reads as the mockup draws it. */
+.task-move > summary {
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-text-muted);
+}
+
+.task-move[open] > summary {
+  margin-bottom: 6px;
+}
+
 .task-move-to-form {
   display: flex;
   flex-wrap: wrap;

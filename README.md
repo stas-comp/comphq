@@ -138,13 +138,23 @@ Once you've moved everything, go to **Settings → Content check**. It should sh
 
 Click **Tasks** in the left-hand list. Across the top there's a switch: **My jobs · Board · Team**.
 
-**My jobs** is where Tasks opens. On the left are your own jobs: what you're **Working on now**, then **Up next** in priority order, with a row of little blocks showing how much you've got on (a small job is one block, a medium two, a large four). On the right is **Up for grabs** — jobs, then ideas, that nobody has taken yet.
+**My jobs** is where Tasks opens. On the left are your own jobs: what you're **Working on now**, then **Up next** in priority order, with a row of little blocks showing how much you've got on (a small job is one block, a medium two, a large four). Below those, **Ideas I'm on** lists any idea you've been put on (an idea isn't work yet, so it doesn't add to your blocks). On the right is **Up for grabs** — jobs, then ideas, that nobody has taken yet; its dashed outline shows it's a holding area, and "Drop a job here to take it" marks where a dragged job goes.
 
 - **To take a job**, press **Take it**, or drag it from Up for grabs into your Up next list. Dragging puts it exactly where you drop it; **Take it** keeps the job's place in the priority order. Taking an idea moves it to To do.
 - If two people go for the same job at the same moment, the second person is told who got there first, and nothing changes for them.
 - **Start** moves a job to In progress, **Done** finishes it, and **Give back** takes you off a job you can't do — it returns to Up for grabs if nobody else is on it.
 
-The **Board** shows every job in four columns: **Ideas → To do → In progress → Done**. Add a job at the top, drag cards between columns or use the small buttons (they do the same thing). In **To do**, the top of the column is the most important. Click a card's title to open it: you can change its title, notes, people, due date and size, remove it, and see the **Activity** list of who changed what. Jobs that have sat in Done for more than two weeks tuck away into **Finished tasks** (a link at the top of the Board), where **Reopen** brings one back. **Removed tasks** lists removed ones, where **Restore** brings them back. Nothing is ever permanently deleted.
+The **Board** shows every job in four columns: **Ideas → To do → In progress → Done**. Press **+ Add task** (top right) to add a job: a window opens where you type the title and, if you like, a description, size, starting column, due date and people, then press **Add task**. Dates are typed day first, like **25/09/2026**. In **To do**, the top of the column is the most important, and each card there carries its priority number.
+
+Every card has three small icons, each with a tooltip that names the job:
+
+- the **up and down arrows** move the card up or down in its column (dragging does the same);
+- the **bin** removes the job — it goes to **Removed tasks**, where **Restore** brings it back, so nothing is lost;
+- the **arrow curling back** (only on jobs you're on) is **Give back**: it takes *you* off the job and leaves anyone else on it. The job returns to Up for grabs only if nobody is left.
+
+Press the **little circles** (or **Assign** on a job nobody is on) to open a short list of names: pick a name to put that person on the job, pick a ticked name to take them off. Several people can be on one job. To move a card to another column without dragging, open **Move to…** at the bottom of the card.
+
+**Click a card's title** to open the job in a window, laid out to read: its description, who's on it, its size, column and due date. **Edit** turns it into the form; **History** at the foot (closed until you open it) lists who changed what. Escape, the **×**, **Cancel** or a click on the page behind closes the window and puts you back where you were, and if you've typed something it asks before it throws it away. Every job also has its own page (the same address, for example from a Calendar link), which does the same things. Jobs that have sat in Done for more than two weeks tuck away into **Finished tasks** (a link at the top of the Board), where **Reopen** brings one back. **Removed tasks** lists removed ones, where **Restore** brings them back. Nothing is ever permanently deleted.
 
 The **Team** view has one column for each person, plus **Unassigned**, each showing that person's jobs and how much they have on. It's the quick way to see who can take on more. Drag a job onto someone else's column (or use **Assign to…**) to hand it over.
 
@@ -152,7 +162,7 @@ Any page that shows the same jobs on more than one computer refreshes itself wit
 
 ## Using the Calendar
 
-Click **Calendar**. It opens on this month, weeks starting on Monday, with Saturdays shaded and today outlined. Use **Previous**, **Next** and **Today** to move around, or **List** for the next twelve weeks in date order. Jobs with a due date appear on their day as outlined boxes with a tick-box; events are solid orange. Click a job to open it.
+Click **Calendar**. It opens on this month, weeks starting on Monday, with **Saturday** — office day — picked out in orange and its column shaded, and today's date in a dark box. Use **Previous**, **Next** and **Today** to move around, or **List** for the next twelve weeks in date order. Jobs with a due date appear on their day as outlined boxes with a small empty square (red when overdue); events are solid dark blue, a shade lighter on the later days of an event that lasts several days. A key under the grid explains them. Click a job to open it.
 
 - **To add an event**, click a day's number (or **Add event**). Give it a title and a date. You can also give it an end date (for something lasting several days), a start and end time (leave the start blank for an all-day event), notes, how often it **Repeats** (Never, Weekly, Monthly or Yearly, with an optional **Until** date), and **Show in briefing ahead** — how many days or weeks before it should start appearing in the Saturday Briefing.
 - Weekly events fall on the same weekday. Monthly ones fall on the same date, and an event on the 31st shows on the last day of shorter months. Yearly ones fall on the same date, and 29 February shows on 28 February in other years.
@@ -170,7 +180,7 @@ It has three sections, each item a card with a stamp on it. Click any card to op
 - **This week** lists events happening from today up to that Friday, in date order, with their notes right on the card — so "Exams — Print exam papers today" is there without opening anything. An event lasting several days that has already started says **until** and its last day.
 - **Coming up** lists later events whose **show ahead** time has started, stamped with how far away they are, such as **IN 6 WEEKS**.
 
-Jobs that are yours carry a **YOURS** stamp. Press **Just mine** (under the headline) to show only your own jobs, and **Everything** to go back. Events don't belong to anyone, so they stay in both views.
+Jobs that are yours carry a **YOURS** stamp. Press **Just mine** (beside the headline) to show only your own jobs, and **Everyone** to go back. Events don't belong to anyone, so they stay in both views.
 
 **What "show ahead" means.** When you add or change an event, **Show in briefing ahead** sets how early it starts appearing in **Coming up**. A campaign on Saturday 31 October set to 6 weeks first appears on the briefing for Saturday 19 September (in 6 weeks), and not on the one before it. Set it to 0 for an event that should only appear in **This week**. For a repeating event, only its *next* date is shown in **Coming up**, and a date you cancelled, or moved with **Change just this one**, is respected.
 
@@ -190,8 +200,8 @@ This is your Phase 2 check with real content. Set aside about half an hour.
 As with HelpScout, this is one way and one time. Only move cards that are still active — finished ones can stay behind in Trello.
 
 1. In **Tasks**, open the **Board**.
-2. For each active Trello card, type its title in the box at the top, pick the column it's in now (**Ideas**, **To do** or **In progress**), add the due date if it has one, choose the people, and press **Add task**.
-3. Open the new card and paste in any notes from Trello, and set its size (small, medium or large) so the Team view shows people's load fairly.
+2. For each active Trello card, press **+ Add task**, type its title, paste in any notes from Trello as the description, set its size (small, medium or large) so the Team view shows people's load fairly, pick the column it's in now (**Ideas**, **To do** or **In progress**), add the due date if it has one, choose the people, and press **Add task**.
+3. Open the new card to check it looks right.
 4. Put the **To do** cards in priority order, most important at the top.
 5. When you've been through them all, look at the **Team** view and check it matches who's really doing what. If nothing is missing, you can close Trello.
 

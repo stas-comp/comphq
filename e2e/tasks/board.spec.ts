@@ -283,6 +283,7 @@ test('gate 2.05: Move to… lands a card at the bottom of the target column', as
   await addTask(page, moving, 'idea');
 
   const movingCard = page.locator('.task-card', { hasText: moving });
+  await movingCard.locator('.task-move > summary').click(); // the Move to… button equivalent opens on request
   await movingCard.locator('.task-move-to-form select').selectOption('todo');
   await movingCard.locator('.task-move-to-form').locator('button').click();
   await ready(page);
