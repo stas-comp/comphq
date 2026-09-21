@@ -53,6 +53,7 @@ func Section(srv *app.Server, tasksCSV, eventsCSV, stepsCSV CSVSource) app.Secti
 			mux.HandleFunc("GET /settings/content-check", h.handleContentCheck)
 			mux.HandleFunc("GET /settings/about", h.handleAbout)
 			mux.HandleFunc("GET /settings/setup", h.handleSetup)
+			mux.HandleFunc("GET /settings/setup/icon", h.handleSetupIcon)
 		},
 	}
 }

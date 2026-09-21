@@ -50,3 +50,35 @@
   overflow-x: auto;
   font-size: var(--font-size-small);
 }
+
+/* Set up this computer (gate 5.25): the ways to try, one after another. Each
+   is a section of its own, since none of them assumes the one before it worked. */
+.setup-way {
+  max-width: 44rem;
+  margin: var(--space-6) 0;
+}
+
+/* A command is long. It wraps instead of scrolling sideways, so it can be read
+   whole and there is no hidden part to reach by keyboard. */
+.setup-way pre {
+  margin: 0 0 var(--space-2);
+  padding: var(--space-3);
+  background: var(--color-paper-muted);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  font: 500 13px var(--font-mono);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.setup-way h3 {
+  margin: var(--space-4) 0 var(--space-2);
+}
+
+.setup-way ol {
+  padding-left: var(--space-6);
+}
+
+.setup-way li + li {
+  margin-top: var(--space-1);
+}

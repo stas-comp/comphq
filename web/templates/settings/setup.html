@@ -1,22 +1,78 @@
 {{define "settings-setup.html"}}
 {{template "settings-subnav" .}}
 <h1>Set up this computer</h1>
-<p>Create a desktop shortcut that opens Comp HQ in its own window, in Chrome or Brave.</p>
+<p>Comp HQ works best in a window of its own, with its own icon, like any other program — no address bar, no tabs. There are a few ways to set that up, in the order to try them. If the first doesn't work for you, the second doesn't depend on it.</p>
 
-<h2>Google Chrome</h2>
+{{/* The menu wording in ways 1 and 3 is what the browsers say as this was written and
+is checked against the computers in the office (PLAN P5-08). Browser menus move, so
+each step also says what it is for. */}}
+<section class="setup-way" id="way-install" aria-labelledby="way-install-title">
+<h2 id="way-install-title">1. Install it as an app — Edge or Chrome</h2>
+<p>This is the easiest: one menu item, and nothing to copy. Open Comp HQ in the browser first.</p>
+
+<h3>In Microsoft Edge</h3>
+<ol>
+<li>Click the three dots <strong>⋯</strong> at the top right of the window.</li>
+<li>Choose <strong>Apps</strong>, then <strong>Install this site as an app</strong>.</li>
+<li>Click <strong>Install</strong>. If it asks whether to add a desktop shortcut or pin it, say yes.</li>
+</ol>
+
+<h3>In Google Chrome</h3>
+<ol>
+<li>Click the three dots <strong>⋮</strong> at the top right of the window.</li>
+<li>Choose <strong>Save and share</strong>, then <strong>Install page as app…</strong>. (On some versions it is called <strong>Create shortcut…</strong> instead — if so, tick <strong>Open as window</strong> before you go on.)</li>
+<li>Click <strong>Install</strong> (or <strong>Create</strong>).</li>
+</ol>
+
+<p>Comp HQ then opens in its own window, with the Comp HQ icon, and it is in the Start menu. If you can't find those menu items, or nothing seems to have happened, use way 2 — it doesn't need this one.</p>
+</section>
+
+<section class="setup-way" id="way-shortcut" aria-labelledby="way-shortcut-title">
+<h2 id="way-shortcut-title">2. Make a shortcut with a command — Chrome, Edge or Brave</h2>
+<p>This works in any of the three, it is the way to do it in Brave, and it always gives a window with no address bar. Copy the command for your browser:</p>
+
+<h3>Google Chrome</h3>
 <pre id="chrome-command">{{.ChromeCommand}}</pre>
 <button type="button" class="mini copy-button" data-target="chrome-command">Copy</button>
 
-<h2>Brave</h2>
+<h3>Microsoft Edge</h3>
+<pre id="edge-command">{{.EdgeCommand}}</pre>
+<button type="button" class="mini copy-button" data-target="edge-command">Copy</button>
+
+<h3>Brave</h3>
 <pre id="brave-command">{{.BraveCommand}}</pre>
 <button type="button" class="mini copy-button" data-target="brave-command">Copy</button>
 
-<h2>Steps</h2>
+<h3>Then</h3>
 <ol>
-<li>Right-click an empty spot on the Desktop, then choose New → Shortcut.</li>
-<li>Paste the command above for your browser, then click Next, then Finish.</li>
-<li>If Windows says it can't find the program, right-click your browser's existing icon, choose Properties, and check the Target box for its real install path — then adjust the command above to match.</li>
+<li>Right-click an empty spot on the Desktop, then choose <strong>New</strong> → <strong>Shortcut</strong>.</li>
+<li>Paste the command you copied (press <strong>Ctrl</strong> and <strong>V</strong>), then click <strong>Next</strong>.</li>
+<li>Type <strong>Comp HQ</strong> as the name, then click <strong>Finish</strong>.</li>
+<li>Double-click the new shortcut. Comp HQ opens in its own window.</li>
 </ol>
+<p>If Windows says it can't find the program, right-click your browser's own icon, choose <strong>Properties</strong>, and look at the <strong>Target</strong> box: that is the real place it is installed. Put that in place of the path at the start of the command. If the shortcut's icon comes out blank or plain, see way 4.</p>
+</section>
+
+<section class="setup-way" id="way-taskbar" aria-labelledby="way-taskbar-title">
+<h2 id="way-taskbar-title">3. Put it on the taskbar</h2>
+<ol>
+<li>Open Comp HQ from the Start menu (if you used way 1) or from the desktop shortcut (if you used way 2). Its icon appears on the taskbar along the bottom of the screen.</li>
+<li>Right-click that icon and choose <strong>Pin to taskbar</strong>.</li>
+</ol>
+<p>You can also right-click the desktop shortcut itself — on Windows 11 choose <strong>Show more options</strong> first — and choose <strong>Pin to taskbar</strong>.</p>
+</section>
+
+<section class="setup-way" id="way-icon" aria-labelledby="way-icon-title">
+<h2 id="way-icon-title">4. If Windows shows a blank icon</h2>
+<p>Now and then Windows draws a shortcut with a blank page instead of the Comp HQ icon. Download the icon and choose it yourself:</p>
+<p><a class="btn" id="download-icon" href="/settings/setup/icon">Download icon</a></p>
+<ol>
+<li>Click <strong>Download icon</strong>. A file called <strong>Comp HQ.ico</strong> is saved, usually in your <strong>Downloads</strong> folder.</li>
+<li>Right-click the shortcut and choose <strong>Properties</strong>. (On Windows 11, choose <strong>Show more options</strong> first.)</li>
+<li>On the <strong>Shortcut</strong> tab click <strong>Change Icon…</strong>, then <strong>Browse…</strong>, choose <strong>Comp HQ.ico</strong>, and click <strong>OK</strong> twice.</li>
+</ol>
+</section>
+
 <p id="copy-status" role="status" aria-live="polite"></p>
 <script src="/static/settings/copy.js"></script>
 {{end}}
