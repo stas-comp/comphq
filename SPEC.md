@@ -457,6 +457,50 @@ Phase 4 changes how the app *looks*, not what it does, with two exceptions: the 
 - **O4.3** Click a task to read it, press Edit, change something and save. Confirm the window is as easy to use as you hoped, and that closing it puts you back where you were.
 - **O4.4** Use the new card icons for a few minutes — move a job up, give one back, remove one — and confirm they're clear enough for your team without being explained.
 
+### Phase 5 — Steps inside a job, and looking like an app (v1.2)
+
+Phase 5 adds one feature (steps inside a job — the checklist of the owner's request 4) and finishes
+one that was half-built: Comp HQ opens in its own window today, but has never had an icon of its
+own. Nothing in Phases 1–4 changes meaning. The design lives in B10 and B11.
+
+**Steps inside a job**
+- **5.01** A job can carry a list of steps. The task window shows them under the description, headed **Steps**; a job with no steps shows an **Add a step** line and nothing else.
+- **5.02** A step is added by typing its words and pressing Enter or **Add**. The box clears and stays ready, so several steps can be typed one after another without reaching for the mouse.
+- **5.03** A step is ticked and unticked by pressing its box. A ticked step shows who ticked it and when, in the short form used everywhere else ("Jane, Sat 19 Sep").
+- **5.04** The heading carries the count — **3 of 7 done** — with a small bar beside it, and reads **All 7 done** when every step is ticked.
+- **5.05** A step's words can be changed in place, by anyone.
+- **5.06** A step can be removed, and an **Undo** appears straight away and puts it back where it was. A removed step is never permanently deleted (A3): it stays in the database and in the export.
+- **5.07** Steps can be put in order, by the same up and down icons used on cards (gate 4.11) and by dragging.
+- **5.08** Every one of 5.02–5.07 still works with JavaScript switched off, as an ordinary form that reloads the page (A2 priority 2 — stability beats polish).
+- **5.09** The job's own page at `/tasks/{id}` shows and edits the same steps the same way, so a refreshed window and a Calendar link still land somewhere whole (gate 4.27 stays true).
+- **5.10** A card on the Board, on My jobs and on Team carries a small **3/7** when the job has steps, and carries nothing at all when it hasn't. It turns to a tick when all are done.
+- **5.11** History records a step being added, renamed, removed and restored, and does **not** record ticks.
+- **5.12** Two people on two computers: ticking a step somebody else ticked a moment ago does not produce an error, and acting on a step somebody else removed says so plainly instead of failing. The screen picks up the other person's change within a minute, or straight away on clicking back into the window, through the existing change counter (B4 "Refresh without live sockets").
+- **5.13** A job holds up to **50** steps and a step holds up to **200** characters. Reaching either says so in plain words, and neither loses what was typed.
+- **5.14** **Settings → Export everything** includes `steps.csv` — job, step, done or not, who ticked it, when, and whether it was removed — opening straight in Excel like the other two.
+- **5.15** Steps survive an upgrade from 1.1.0 and a rollback back to 1.1.0: the rolled-back app ignores them, and upgrading again finds them all still there.
+- **5.16** Steps follow the design system: no raw browser control anywhere (gate 4.05), icon-only buttons carry a tooltip and a spoken name (4.11), and the accessibility check passes with a long list open.
+- **5.17** A job with 50 steps still opens within 1.5 seconds, and the Board with the test library loaded is no slower than it is at v1.1.0 (gate 4.53 unchanged).
+
+**Looking like an app**
+- **5.20** Comp HQ has its own icon: the stacked **COMP / HQ** wordmark, ink navy with the accent orange, drawn to read clearly down to 16 pixels. It is stored inside the app and never fetched from the internet (as with every font and icon, gates 4.01 and 4.12).
+- **5.21** It is supplied in every form Windows and the browsers ask for: a multi-size `.ico`, PNGs at 16, 32, 48, 64, 128, 192, 256 and 512, and a maskable 512 with safe margins.
+- **5.22** Every page links the icon, so it shows in the browser tab, in history and in bookmarks. At v1.1.0 no page links one at all, which is why desktop shortcuts come out blank.
+- **5.23** The manifest names Comp HQ, opens at the Briefing, asks for its own window, carries the navy as its window colour, and lists the icons of 5.21 — so an installed app takes the Comp HQ icon and colour rather than the browser's.
+- **5.24** An installed Comp HQ window shows no address bar, no tabs and no bookmarks bar.
+- **5.25** **Settings → Set up this computer** is rewritten to lead with the easiest route — installing Comp HQ as an app from the browser's own menu, in Edge or Chrome — then the command-line shortcut (as at v1.1.0, with its Copy button) for Brave and as a fallback, then pinning it to the taskbar, then a **Download icon** button and the three clicks that set the icon by hand if Windows ever shows a blank one. Each route names the browser it's for, and no route assumes the one before it worked.
+- **5.26** The README's "Setting up an office computer" section matches the new page, step for step, with a picture of the finished window.
+
+**Still true afterwards**
+- **5.30** Every gate from Phases 1 to 4 (1.01–4.54) still passes, unchanged, at the same thresholds.
+- **5.31** Every screen still passes the accessibility check and still works from a small laptop window (1024 × 700) up to a full HD screen, with no sideways scrolling that shouldn't be there.
+
+**👤 Owner checks — end of Phase 5**
+- **O5.1** On a real Saturday, add steps to two or three real jobs, tick some off, remove one and undo it. Confirm it's obvious enough that nobody needs telling how it works.
+- **O5.2** Look at the Board with those jobs on it. Confirm the small **3/7** is useful rather than clutter.
+- **O5.3** Set up one office computer from scratch, following only the new **Set up this computer** page. Confirm the icon on the desktop, in the Start menu and on the taskbar is the Comp HQ mark, and that the window has no address bar.
+- **O5.4** Alt-Tab between Comp HQ and something else. Confirm Comp HQ looks like its own program.
+
 ## A12. What's not included
 
 From the confirmed intent:
@@ -478,9 +522,11 @@ Decided while writing this spec (any of these could be added later if real use s
 - Attaching files other than images (such as PDFs) to articles.
 - Sending articles back out to Word, or keeping a Word file linked to its article. Import works one way; after that, the article is edited in Comp HQ. (Export everything still gives readable copies of every article.)
 - Importing old-style .doc files, PDFs or other formats. These are saved as .docx in Word first.
-- Comments or chat on tasks, sub-tasks, and checklists.
+- Comments or chat on tasks, and sub-tasks that are jobs in their own right. *(Checklists were on this list until v1.2, which adds them as **steps inside a job** — see A11 Phase 5 and B10.)*
 - Automatic "too busy" warnings, per-person workload limits, or a separate priority list for each person.
 - Restoring backups from inside the app. Restores are done with TrueNAS snapshots, following the README.
+- Several named lists of steps on one job, and reusable step templates for jobs that come round every year (v1.2, D-70 and D-72). Steps in the Saturday Briefing, and a "Removed steps" screen (D-73, D-74).
+- Giving a step its own person or its own due date. A step is a tick-box; if it needs an owner and a date, it is a job.
 
 ## A13. Your hands-on moments
 
@@ -583,7 +629,13 @@ Files are stored at `/data/images/<first 2 hex>/<sha256>.<ext>` and served at `/
 `task_id` · `person_id` (composite primary key)
 
 **task_activity**
-`id` · `task_id` · `person_id` · `action` (`created`|`moved`|`assigned`|`unassigned`|`due_changed`|`size_changed`|`edited`|`reopened`|`removed`|`restored`) · `detail` (short JSON) · `at`
+`id` · `task_id` · `person_id` · `action` (`created`|`moved`|`assigned`|`unassigned`|`due_changed`|`size_changed`|`edited`|`reopened`|`removed`|`restored`|`step_added`|`step_renamed`|`step_removed`|`step_restored`) · `detail` (short JSON) · `at`
+The four `step_*` actions arrive in v1.2. There is deliberately **no** action for ticking a step (D-71): a job with twenty steps would otherwise bury its own history, and who ticked what is carried on the step itself.
+
+**task_checklist_items** *(v1.2)*
+`id` · `task_id` → tasks · `text` (plain text, ≤ 200 characters) · `position` (integer, unique per task among non-removed rows) · `done_by` → people (nullable) · `done_at` (nullable) · `removed_at` (nullable) · `created_by` · `created_at` · `updated_by` · `updated_at`
+Ticked is `done_at IS NOT NULL`, which carries who and when in the same row and needs no separate flag. Removed is `removed_at IS NOT NULL`, the soft delete used everywhere else (A3). `position` is maintained by the move code the way `tasks.position` is, not by a constraint. Indexed on (`task_id`, `position`).
+Adding a table is rollback-safe on its own (B6): v1.1.0 never selects from it, so rolling back leaves the rows untouched and upgrading again finds them (gate 5.15).
 
 **events**
 `id` · `title` · `notes` · `start_date` · `end_date` (nullable) · `start_time` · `end_time` (nullable, `HH:MM`; null start means all day) · `recurrence` (`none`|`weekly`|`monthly`|`yearly`) · `until_date` (nullable) · `notice_days` (integer, 0 = not early; weeks stored as days ×7, displayed in weeks when divisible) · `removed_at` · `created_by` · `created_at` · `updated_by` · `updated_at`
@@ -654,6 +706,13 @@ Key/value store: `last_backup_at`, `last_backup_ok`, `last_backup_error`, `min_a
 - Moves use `POST /tasks/{id}/move` with `stage` and one of `before_id`, `after_id` or `to_bottom`. The server renumbers `position` for the affected stage in one transaction.
 - "Done more than 14 days" means `done_at < now − 14 days` in local time. Such tasks are excluded from the board query.
 - Reopening sets the stage to `todo`, puts the card at the bottom, and clears `done_at`.
+
+**Checklist steps** *(v1.2)*
+- A job holds at most **50** non-removed steps and a step at most **200** characters. Both limits are enforced in the store, not in a route, so nothing can get round them. Hitting one answers with the step text still in the box and a plain message ("A job can have up to 50 steps" / "A step can be up to 200 characters").
+- **Two people at once.** Ticking a step somebody else ticked a moment ago is not an error: it stays ticked, and keeps the *first* person's name and time. Unticking clears both. Renaming, removing, restoring or moving a step somebody else has already removed answers "Somebody else removed that step" and changes nothing. None of these produce a failure page.
+- Removing sets `removed_at` and closes the gap in `position`. **Undo** (the restore route) puts the step back at its old position, pushing later steps down if that position has since been taken. A removed step is never deleted from the database and always appears in `steps.csv`.
+- Every write to a step bumps the tasks change counter in the same transaction, so other computers pick it up through the existing refresh (see "Refresh without live sockets"). No new refresh machinery.
+- The Briefing does not read steps (D-73). A job with unfinished steps briefs exactly as it did at v1.1.0.
 
 **Team view**
 - Lanes: first an Unassigned lane (tasks that aren't removed, are in `todo` or `doing`, and have no assignees), then one lane per active person, in alphabetical order. Ideas and Done are not shown.
@@ -1040,9 +1099,148 @@ O4.1, adding one of the task window open.
 
 ### B9.10 Not in v1.1
 
-**Checklists** (the remainder of the owner's request 4) are **v1.2** and will be specified separately.
-They need storage of their own, so they are deliberately not started in Phase 4. The task window is
-built so that a checklist can later be added inside it without rearranging anything.
+**Checklists** (the remainder of the owner's request 4) are **v1.2**. They need storage of their own,
+so they are deliberately not started in Phase 4. The task window is built so that a checklist can
+later be added inside it without rearranging anything. **They are now specified, in B10** — as
+*steps inside a job*, which is what the app calls them on screen.
 
 Settings does not appear in the mockup. It inherits the shared parts of B9.5 and the new tokens, but
 its layout is unchanged.
+
+## B10. Steps inside a job (v1.2, gates 5.01–5.17)
+
+### B10.1 What it is, and what it deliberately isn't
+
+A job carries **one flat list of steps** — not Trello's several named lists (D-70). One list is
+quicker to read and much less to learn, and a job that genuinely needs "Before" and "On the day" is
+usually two jobs. A step is a tick-box with words on it: no person of its own, no date of its own,
+no notes (A12). There are no reusable templates in v1.2 (D-72).
+
+On screen the word is **Steps**, never "checklist" — it is what the owner's team would say, and it
+matches the plain vocabulary of the rest of the app (A2 priority 1).
+
+### B10.2 Storage and endpoints
+
+The `task_checklist_items` table of B3 and the behaviours of B4 "Checklist steps" are the whole
+data story. No other table changes; `task_activity` gains four action names.
+
+Six routes, all in the existing tasks section (B2 — sections stay independent), all `POST`:
+
+| Route | Does |
+|---|---|
+| `POST /tasks/{id}/steps` | add a step at the end |
+| `POST /tasks/{id}/steps/{stepID}/tick` | tick or untick (the form carries which) |
+| `POST /tasks/{id}/steps/{stepID}` | rename |
+| `POST /tasks/{id}/steps/{stepID}/remove` | remove |
+| `POST /tasks/{id}/steps/{stepID}/restore` | the Undo |
+| `POST /tasks/{id}/steps/{stepID}/move` | up or down |
+
+Each answers a **redirect back to the task page** when asked for a page, and a **fragment** when
+asked for one, exactly as `internal/tasks/details_handlers.go` already does for the task window.
+Each bumps the tasks change counter inside its own transaction (gate 5.12).
+
+### B10.3 One partial, two homes
+
+The list is **one template partial**, included by both the task window and the task page. One
+partial, two homes — that is what makes gate 5.09 a fact rather than an aspiration, and it means
+the no-JavaScript path is the same code rather than a second implementation of it.
+
+**Build the forms before the script.** The routes and the plain-form version come first and are
+tested with JavaScript off; the script is then layered over them, intercepting where it can. This is
+the order the task window was built in (B9.7), and it is what makes gate 5.08 true by construction
+rather than by retrofit. A2 priority 2 (stability) over priority 4 (design), as everywhere.
+
+### B10.4 On screen
+
+Under the description, headed **Steps**, with the count and a small bar: **3 of 7 done**, or
+**All 7 done** when every one is ticked. Each step is its box, its words, and — once ticked — who
+ticked it and when, in the short form used everywhere ("Jane, Sat 19 Sep"). Each carries the
+gate-4.11 icon buttons for move up, move down and remove, each with its tooltip and spoken name.
+
+**Add a step** sits at the foot: type, press Enter or **Add**, and the box clears and stays ready,
+so a list can be typed straight through without reaching for the mouse (gate 5.02). Renaming is in
+place. Removing shows **Undo** beside the heading until the next action or about ten seconds.
+Reordering uses the icons and the already-vendored drag library.
+
+There is **no mockup drawing for this**, as there was none for the task window. Build it from the
+mockup's existing parts (`.card`, `.btn`, `.mini`, the icon buttons) so it looks as though it had
+always been there. Owner check O5.1 is what stands in for a drawing.
+
+### B10.5 Everywhere else
+
+- **On a card** (Board, My jobs, Team): a small **3/7** when the job has steps, nothing at all when
+  it hasn't, a tick when all are done (gate 5.10). It is a count, not a bar — a bar at card size is
+  decoration that can't be read.
+- **In History:** added, renamed, removed, restored. Not ticks (D-71). Prove it with a test that
+  ticks ten steps and asserts History is unchanged.
+- **In the export:** `steps.csv` beside `tasks.csv` and `events.csv`, same plain column names, same
+  readable dates, removed steps included and marked (gate 5.14, B5).
+- **In the Briefing:** nothing (D-73).
+
+## B11. Looking like an app (v1.2, gates 5.20–5.26)
+
+### B11.1 What is already true, and what is missing
+
+Comp HQ has opened in its own window since v0.1.0: the Setup page hands out a `--app=` command, and
+a browser started that way shows no address bar, no tabs and no bookmarks bar. That half works.
+
+What is missing is the **icon**. No page in the app links one, and the `icon-192.png` and
+`icon-512.png` that the manifest names are plain orange squares left over from the first build. A
+browser and Windows therefore have nothing to show, which is why a shortcut comes out blank. This is
+the whole of the problem, and fixing it is most of B11.
+
+### B11.2 The icon
+
+One source of truth: the mark is drawn as **SVG**, and every raster size is rendered from it by a
+small tool under `tools/` at build time. Hand-exported PNGs drift out of step with each other; a
+renderer cannot.
+
+The mark is the stacked **COMP / HQ** wordmark of gate 4.13 — ink navy field, accent orange HQ. At
+16 and 32 pixels the two-line wordmark is unreadable, so those sizes drop to the **HQ** alone. The
+maskable 512 keeps the mark inside the safe circle, so Windows and Android can crop it without
+cutting letters.
+
+Sizes: a multi-size `.ico`, and PNGs at 16, 32, 48, 64, 128, 192, 256, 512, plus the maskable 512.
+Every one lives inside the app and is served from it; **no icon is ever fetched from the internet**,
+the same rule as the fonts and the section icons (gates 4.01 and 4.12).
+
+`layout.html` gains the links it has never had, and the app answers `/favicon.ico` directly, because
+some browsers ask for that address and nothing else.
+
+### B11.3 The manifest
+
+Name **Comp HQ**, start address `/` (which is the Briefing, A8 — an installed app should open where
+the app opens, not on a settings page), `display: standalone`, the ink navy as `theme_color`, the
+paper as `background_color`, and the full icon list of B11.2 including the maskable entry.
+
+### B11.4 What the Setup page says
+
+Three routes, in this order, each of which must work without the one before it having worked:
+
+1. **Edge or Chrome, from the browser's own menu** — "install this site as an app". Both do this for
+   a plain `http://` address, both create a Start-menu entry and a desktop icon, and both take the
+   icon from the page, which is why B11.2 has to land first. This is the route the page leads with:
+   it is one menu item, with nothing to paste.
+2. **The command shortcut** — the `--app=` command of v0.1.0, its Copy button, and New → Shortcut.
+   Kept for Brave, and as the fallback that is certain to give a window with no address bar.
+3. **If Windows still shows a blank icon** — a **Download icon** button serving `comphq.ico` as
+   `Comp HQ.ico`, then right-click the shortcut → Properties → Change Icon → Browse.
+
+**The exact menu wording in routes 1 and 2 is not to be taken from this spec.** Browser menus move.
+It is checked on the browsers actually installed on the office computers, at the end of the phase,
+and the page and README are corrected to match what is on the screen — with the browser versions and
+the date written into `PROGRESS.md` so the next person knows how stale the wording is.
+
+### B11.5 The padlock, and why it stays out
+
+Browsers keep their full app treatment — installing over a service worker, an offline screen of the
+app's own — for `https://` addresses. Comp HQ is reached at `http://<NAS IP>:8080`. A12 ruled the
+padlock out deliberately: on a private network it means a certificate installed and trusted on every
+office computer, which is fragile and easy to break, for three computers and no outside access.
+
+What that costs, stated plainly so nobody re-opens it without new information: no offline screen of
+our own (the browser's error page shows instead when the NAS is off), and the possibility that a
+future browser version shows a thin strip carrying the address in an installed window. What it does
+**not** cost: the app window, the icon, the taskbar entry, or anything the team does day to day.
+
+Revisit only if that strip actually appears, and then as its own small piece of work.
