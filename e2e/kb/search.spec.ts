@@ -140,7 +140,13 @@ test('gate 1.29: stemming and prefix matching find related words', async ({ page
   const stemTitle = uniqueName('Stemming article');
   await publishArticle(page, server.baseURL, category, stemTitle, `The ${stem} needs oiling.`);
 
-  const prefixWord = uniqueWord('toner');
+  // The prefix typed below is this word with its last three letters cut off. The
+  // stemmer rewrites a trailing "y" to "i" in what is typed but not in the
+  // middle of the indexed word, so a cut that happened to land after a "y"
+  // (one run in thirty-six) legitimately found nothing, and this test failed
+  // by chance, in the busy container run. A fixed ordinary ending before the
+  // cut keeps the prefix rule the only thing under test (D-79).
+  const prefixWord = uniqueWord('toner') + 'abcde';
   const prefixTitle = uniqueName('Prefix article');
   await publishArticle(page, server.baseURL, category, prefixTitle, `Buy more ${prefixWord} soon.`);
 
