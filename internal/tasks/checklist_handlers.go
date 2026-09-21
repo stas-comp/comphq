@@ -1,6 +1,7 @@
 package tasks
 
 import (
+	"database/sql"
 	"net/http"
 	"strconv"
 	"strings"
@@ -67,6 +68,9 @@ type stepsView struct {
 	UndoID   int64
 	UndoText string
 	InWindow bool
+	// Version is the change counter as it was when this list was read, so a
+	// script can tell later that somebody else has changed something.
+	Version int64
 	// The two limits, so the wording of a refusal can name them.
 	MaxSteps int
 	MaxChars int
@@ -87,11 +91,17 @@ func stateFromQuery(r *http.Request) stepsState {
 
 // buildStepsView reads a job's steps and lays them out with st applied.
 func (h *Handlers) buildStepsView(r *http.Request, taskID int64, today time.Time, inWindow bool, st stepsState) (stepsView, error) {
+	// The counter is read first: a change landing between the two reads then
+	// shows up as a newer counter next time, never as a missed change.
+	version, err := h.tasks.Version(r.Context())
+	if err != nil {
+		return stepsView{}, err
+	}
 	all, err := h.tasks.ListStepsWithRemoved(r.Context(), taskID, today)
 	if err != nil {
 		return stepsView{}, err
 	}
-	v := stepsView{TaskID: taskID, InWindow: inWindow, Notice: st.Notice, AddText: st.AddText, MaxSteps: MaxSteps, MaxChars: MaxStepChars}
+	v := stepsView{Version: version, TaskID: taskID, InWindow: inWindow, Notice: st.Notice, AddText: st.AddText, MaxSteps: MaxSteps, MaxChars: MaxStepChars}
 
 	var live []Step
 	for _, s := range all {
@@ -216,6 +226,29 @@ func (h *Handlers) stepDone(w http.ResponseWriter, r *http.Request, a stepAction
 		return
 	}
 	h.renderDetails(w, r, a.taskID, http.StatusOK, "", nil, nil, &st)
+}
+
+// handleStepsList is GET /tasks/{id}/steps: the list on its own, for the
+// script to swap in (a rename form, a cancel, another computer's change).
+// Asked for as a page it just goes to the task page.
+func (h *Handlers) handleStepsList(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil {
+		http.Error(w, "invalid id", http.StatusBadRequest)
+		return
+	}
+	if _, err := h.tasks.Get(r.Context(), id, app.Today(h.srv.TestMode)); err == sql.ErrNoRows {
+		http.NotFound(w, r)
+		return
+	} else if err != nil {
+		http.Error(w, "internal error", http.StatusInternalServerError)
+		return
+	}
+	if !wantsFragment(r) {
+		http.Redirect(w, r, "/tasks/"+strconv.FormatInt(id, 10)+"#steps", http.StatusFound)
+		return
+	}
+	h.renderSteps(w, r, id, http.StatusOK, stateFromQuery(r))
 }
 
 // renderSteps answers a fragment request with just the Steps section.

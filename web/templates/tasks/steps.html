@@ -5,7 +5,7 @@ markup, not a second copy. Every control is an ordinary form, so it works with
 no script (gate 5.08); steps.js only layers on top. Without script a step's
 box is ticked and then saved with its Update button, which only shows then. */}}
 {{define "tasks-steps"}}
-<section class="task-steps" id="steps" aria-labelledby="steps-heading" data-task-id="{{.TaskID}}">
+<section class="task-steps" id="steps" aria-labelledby="steps-heading" data-task-id="{{.TaskID}}" data-version="{{.Version}}">
 <div class="steps-head">
 <h2 id="steps-heading">Steps</h2>
 {{if .Total}}

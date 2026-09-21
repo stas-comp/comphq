@@ -36,7 +36,11 @@
     heading.textContent = named ? named.dataset.windowTitle : fallbackTitle
     dirty = false
     if (!dialog.open) dialog.showModal()
-    const first = body.querySelector('[autofocus], input:not([type="hidden"]), select, textarea')
+    // The Steps list has fields of its own; the keyboard lands on the window's
+    // own first field, or its heading, never on a step.
+    const first = Array.from(body.querySelectorAll('[autofocus], input:not([type="hidden"]), select, textarea')).find(
+      (el) => !el.closest('.task-steps'),
+    )
     if (first) first.focus()
     else heading.focus()
   }
@@ -107,9 +111,17 @@
     }
   })
 
-  // Anything typed makes the window "unsaved".
-  body.addEventListener('input', () => {
+  // Anything typed makes the window "unsaved" — except in the Steps list,
+  // whose steps are saved as they are used (steps.js), not by Save.
+  body.addEventListener('input', (event) => {
+    if (event.target instanceof Element && event.target.closest('.task-steps')) return
     dirty = true
+  })
+
+  // A step changed in the window changes the card behind it (its 3/7), so the
+  // Board, My jobs or Team refreshes in place, the same as after a save.
+  document.addEventListener('steps:changed', () => {
+    refreshPage().catch(() => {})
   })
 
   // A drag that starts inside the window (selecting text) and ends on the

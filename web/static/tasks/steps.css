@@ -144,3 +144,13 @@ a.mini {
   flex: 1;
   min-width: 0;
 }
+
+/* Dragging a step by its words (gate 5.07); the up and down buttons remain. */
+.step-body {
+  cursor: grab;
+}
+
+.step.sortable-ghost {
+  opacity: 0.45;
+  background: var(--color-accent-wash);
+}

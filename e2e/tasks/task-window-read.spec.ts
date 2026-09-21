@@ -48,7 +48,9 @@ test('gate 4.23: clicking a card opens the window to read: title, description as
   await expect(notes).toContainText('Print three sets per room.');
   await expect(notes).toContainText('Staple each set.');
   // Laid out as text, not sitting in a box: no form control, no border, no fill.
-  await expect(win(page).locator('textarea, input:not([type="hidden"])')).toHaveCount(0);
+  // The one place the reading face has controls is the Steps list (SPEC A11
+  // gates 5.01-5.03, D-76), so that section is left out of the count.
+  await expect(win(page).locator('.task-read :is(textarea, input:not([type="hidden"])):not(.task-steps *)')).toHaveCount(0);
   await expect(notes).toHaveCSS('border-top-width', '0px');
   await expect(notes).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
   expect(await notes.evaluate((el) => getComputedStyle(el).whiteSpace)).toBe('pre-line'); // its line breaks are kept

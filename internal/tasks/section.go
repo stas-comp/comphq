@@ -40,6 +40,7 @@ func Section(srv *app.Server) app.Section {
 			mux.HandleFunc("POST /tasks/{id}/reopen", h.handleReopenTask)
 			mux.HandleFunc("POST /tasks/{id}/remove", h.handleRemoveTask)
 			mux.HandleFunc("POST /tasks/{id}/restore", h.handleRestoreTask)
+			mux.HandleFunc("GET /tasks/{id}/steps", h.handleStepsList)
 			mux.HandleFunc("POST /tasks/{id}/steps", h.handleAddStep)
 			mux.HandleFunc("POST /tasks/{id}/steps/{stepID}", h.handleRenameStep)
 			mux.HandleFunc("POST /tasks/{id}/steps/{stepID}/tick", h.handleTickStep)

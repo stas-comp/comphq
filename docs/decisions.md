@@ -2,6 +2,10 @@
 
 Non-obvious choices made while building Comp HQ, in the format required by `PLAN.md` §2.4: one short paragraph each, headed `D-NN Title (task ID, date)`.
 
+## D-76 The reading window may hold controls, in its Steps list only (P5-03, 2026-09-21)
+
+Gate 4.23's test asserted that the task window's reading face contained no form control at all, as a way of proving the description is laid out as text and not sitting in a box. Phase 5 puts the Steps list in that same face (SPEC A11 gates 5.01–5.03: tick-boxes, an Add a step line), so the blanket assertion contradicted the spec. The test now excludes the `.task-steps` section from the count and keeps everything else it checked: the description still has no control, border or fill, and nothing else in the reading face may be a control. Listed under "Tests corrected" in the Phase 5 report.
+
 ## D-75 How the step store settles the edges SPEC leaves open (P5-01, 2026-09-21)
 
 SPEC B4 fixes the limits and the two-people cases but not every edge, so the store settles them once, here, and every route inherits it. A tick or untick that changes nothing (ticking what is already ticked, unticking what isn't) and a move that leaves a step where it already is are quiet successes that write nothing and do not bump the change counter, so two people pressing the same box never make the other computer refresh for nothing. Undo into a full list of 50 is refused like any other add, otherwise remove-add-undo would get round the limit. "Removing a step somebody else already removed" is the only case that answers "Somebody else removed that step"; undoing a step that is already back is a quiet success, since the person's intent is already true. The removed row keeps its old `position` (the live steps are renumbered around it), which is how Undo knows where to go. Moving accepts both "up/down" and an absolute position, because the drag in P5-03 needs the latter and the store is the one place the ordering is maintained. Step words are one line: newlines and tabs become spaces, and the 200-character limit counts characters, not bytes.
