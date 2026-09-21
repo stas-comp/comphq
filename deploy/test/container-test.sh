@@ -171,14 +171,26 @@ run_upgrade_rollback_test() {
   else
     log "  $prev_tag never seeded anything; skipping @verify-prev"
   fi
-  BASE_URL="http://127.0.0.1:8080" npx playwright test --project=smoke --grep "$seed_and_verify"
+  # The current build also seeds a job with real steps (gate 5.15), which the
+  # rollback below must leave untouched and the second upgrade must find.
+  BASE_URL="http://127.0.0.1:8080" npx playwright test --project=smoke --grep "$seed_and_verify|@steps-seed|@steps-verify"
   docker compose -f "$up_compose_current" -p "$up_project" down
 
   log "  phase 3: roll back to $prev_tag, verify"
   docker compose -f "$up_compose_prev" -p "$up_project" up -d
   wait_healthy "${up_project}-comphq-1"
   run_prev_smoke "$verify_only"
+  # The previous release has no idea steps exist: its own screens must still
+  # work with the rows sitting in the database (this is the current suite's
+  # test, pointed at the previous release's app).
+  BASE_URL="http://127.0.0.1:8080" npx playwright test --project=smoke --grep "@steps-rolledback"
   docker compose -f "$up_compose_prev" -p "$up_project" down
+
+  log "  phase 4: upgrade again, and every step is still there"
+  docker compose -f "$up_compose_current" -p "$up_project" up -d
+  wait_healthy "${up_project}-comphq-1"
+  BASE_URL="http://127.0.0.1:8080" npx playwright test --project=smoke --grep "$verify_only|@steps-verify"
+  docker compose -f "$up_compose_current" -p "$up_project" down
 
   # TODO(P1-34): once backups exist, assert a pre-update backup file
   # appears under the data folder's backups/pre-update/ whenever the
@@ -195,7 +207,7 @@ docker compose -f "$COMPOSE_FILE" -p "$PROJECT" up -d
 wait_healthy
 
 log "2b. seeding real content (article, image, history, a name) to prove it survives what follows"
-BASE_URL="http://127.0.0.1:8080" npx playwright test --project=smoke --grep '@seed|@names-seed'
+BASE_URL="http://127.0.0.1:8080" npx playwright test --project=smoke --grep '@seed|@names-seed|@steps-seed'
 
 log "3. restart: writing a marker and checksumming the data folder"
 # The directory is owned by uid 568 (so the container can write to it);
@@ -229,8 +241,8 @@ if [ ! -f "$MARKER" ] || [ "$(checksum_data_dir)" != "$CHECKSUM_BEFORE" ]; then
   exit 1
 fi
 
-log "4b. verifying the article, its image, its history, and the name all still open correctly"
-BASE_URL="http://127.0.0.1:8080" npx playwright test --project=smoke --grep '@verify(?!-prev)|@names-verify'
+log "4b. verifying the article, its image, its history, the name and a job's steps all still open correctly"
+BASE_URL="http://127.0.0.1:8080" npx playwright test --project=smoke --grep '@verify(?!-prev)|@names-verify|@steps-verify'
 
 docker compose -f "$COMPOSE_FILE" -p "$PROJECT" down
 

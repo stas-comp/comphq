@@ -338,6 +338,7 @@ func TestReadmeHasRequiredHeadings(t *testing.T) {
 		"## It won't open — what now?",
 		"## Moving your HelpScout articles",
 		"## Using Tasks",
+		"### Steps inside a job",
 		"## Using the Calendar",
 		"## Using the Saturday Briefing",
 		"## Entering your yearly events",
@@ -348,5 +349,30 @@ func TestReadmeHasRequiredHeadings(t *testing.T) {
 		if !strings.Contains(content, heading) {
 			t.Errorf("README.md is missing the required heading %q", heading)
 		}
+	}
+}
+
+// Every picture the README points at is really there (gate 5.26 puts one in
+// "Setting up an office computer"), so a moved or forgotten file shows up here
+// and not as a broken image on the owner's screen.
+func TestReadmeImagesExist(t *testing.T) {
+	root := repoRoot(t)
+	data, err := os.ReadFile(filepath.Join(root, "README.md"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	found := 0
+	for _, m := range regexp.MustCompile(`!\[[^\]]*\]\(([^)\s]+)\)`).FindAllStringSubmatch(string(data), -1) {
+		found++
+		if strings.Contains(m[1], "://") {
+			t.Errorf("README.md links the picture %s from the internet; keep it in the repository", m[1])
+			continue
+		}
+		if _, err := os.Stat(filepath.Join(root, filepath.FromSlash(m[1]))); err != nil {
+			t.Errorf("README.md shows %s, which doesn't exist", m[1])
+		}
+	}
+	if found == 0 {
+		t.Error("README.md has no pictures; the Setup section should show the finished window")
 	}
 }

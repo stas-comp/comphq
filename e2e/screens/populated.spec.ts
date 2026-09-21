@@ -49,6 +49,20 @@ async function addEvent(page: Page, baseURL: string, e: { title: string; start: 
   await ready(page);
 }
 
+// Adds steps to the job of that title as the signed-in person, and ticks the first `ticked`.
+async function addSteps(page: Page, baseURL: string, title: string, steps: string[], ticked: number): Promise<void> {
+  await page.goto(baseURL + '/tasks/board');
+  await ready(page);
+  const href = await page.locator('.task-card', { hasText: title }).locator('.task-card-title a').first().getAttribute('href');
+  const post = (path: string, form: Record<string, string>) =>
+    page.request.post(baseURL + path, { headers: { origin: baseURL }, form, maxRedirects: 0 });
+  for (const text of steps) await post(`${href}/steps`, { text });
+  await page.goto(baseURL + href!);
+  await ready(page);
+  const ids = await page.locator('.task-steps .step').evaluateAll((els) => els.map((el) => (el as HTMLElement).dataset.stepId!));
+  for (const id of ids.slice(0, ticked)) await post(`${href}/steps/${id}/tick`, { done: '1' });
+}
+
 const shot = (page: Page, name: string) => page.screenshot({ path: `reports/screens/${name}.png`, fullPage: true });
 
 test('@fresh screenshots: the screens in use, and the task window in each state', async ({ page, server, browser }) => {
@@ -77,6 +91,11 @@ test('@fresh screenshots: the screens in use, and the task window in each state'
     await addJob(page, base, job);
   }
 
+  // Steps on two of the jobs (v1.2), so the Board, My jobs and Team show the small
+  // 3/7 and the window shows the list: one part-done, one with every step ticked.
+  await addSteps(page, base, 'Print exam papers', ['Print the papers', 'Staple each set', 'Count the sets per room', 'Put the sets in the exam hall', 'Email the invigilators', 'Check the spare copies', 'Lock up the copier room'], 3);
+  await addSteps(page, base, 'Post September newsletter', ['Write the front page', 'Proofread', 'Post it'], 3);
+
   // The Board, and the task window over it.
   await page.goto(base + '/tasks/board');
   await ready(page);
@@ -93,6 +112,9 @@ test('@fresh screenshots: the screens in use, and the task window in each state'
   await page.locator('.task-card-title a', { hasText: 'Print exam papers' }).click();
   await expect(page.locator('#task-window').locator('.task-read')).toBeVisible();
   await page.screenshot({ path: 'reports/screens/task-window-reading.png' });
+  // The Steps list in the window (gate 5.01), scrolled into view.
+  await page.locator('#task-window .task-steps').scrollIntoViewIfNeeded();
+  await page.screenshot({ path: 'reports/screens/task-window-steps.png' });
   await page.locator('#task-window details.task-history summary').click();
   await page.screenshot({ path: 'reports/screens/task-window-reading-history.png' });
   await page.getByRole('button', { name: 'Edit' }).click();

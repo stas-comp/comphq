@@ -16,16 +16,34 @@ Replace `<NAS IP>` with your NAS's address (for example `http://192.168.1.50:808
 
 ## Setting up an office computer
 
-For the best experience, open Comp HQ in its own window (like a real app) instead of a browser tab, using a desktop shortcut.
+Comp HQ works best in a window of its own, with its own icon, like any other program — no address bar, no tabs. Do this once on each office computer. Open Comp HQ in Edge or Chrome, as above, then go to **Settings → Set up this computer**: that page lists the ways below, in the order to try them, and this section follows it step for step. If the first way doesn't work, the second doesn't depend on it.
 
-1. Open Comp HQ in Chrome or Brave, as above.
-2. Go to **Settings → Set up this computer**.
-3. Under your browser (Chrome or Brave), click **Copy** to copy the shortcut command.
-4. Right-click an empty spot on the Desktop, then choose **New → Shortcut**.
-5. Paste the copied command into the box, click **Next**, then **Finish**.
-6. Double-click the new shortcut. Comp HQ opens in its own window, with its own icon.
+![What fills Comp HQ's own window: the Board, with no address bar or tabs](docs/images/comphq-app-window.png)
 
-**If Windows says it can't find the program:** right-click your browser's existing icon (from the Start menu or Taskbar), choose **Properties**, and look at the **Target** box — that's the real install location. The Setup page in Comp HQ explains how to adjust the shortcut command to match.
+*This is what fills the window (the picture is a rendering of the window's contents, not a photograph of a Windows window). Around it, your window's title bar and the taskbar carry the Comp HQ icon — the navy square with an orange **HQ**.*
+
+**Way 1 — Install it as an app (Edge or Chrome).** This is the easiest: one menu item, and nothing to copy.
+
+- **In Microsoft Edge:** click the three dots **⋯** at the top right, choose **Apps**, then **Install this site as an app**, then click **Install**. If it asks whether to add a desktop shortcut or pin it, say yes.
+- **In Google Chrome:** click the three dots **⋮** at the top right, choose **Save and share**, then **Install page as app…**, then click **Install**. (On some versions it is called **Create shortcut…** instead — if so, tick **Open as window** before you go on.)
+
+Comp HQ then opens in its own window, with the Comp HQ icon, and it is in the Start menu.
+
+**Way 2 — Make a shortcut with a command (Chrome, Edge or Brave).** This works in any of the three, it is the way to do it in Brave, and it always gives a window with no address bar.
+
+1. On the Setup page, under your browser (**Google Chrome**, **Microsoft Edge** or **Brave**), click **Copy** to copy the command.
+2. Right-click an empty spot on the Desktop, then choose **New → Shortcut**.
+3. Paste the command (press **Ctrl** and **V**), then click **Next**.
+4. Type **Comp HQ** as the name, then click **Finish**.
+5. Double-click the new shortcut. Comp HQ opens in its own window.
+
+**If Windows says it can't find the program:** right-click your browser's existing icon (from the Start menu or Taskbar), choose **Properties**, and look at the **Target** box — that's the real install location. Put that in place of the path at the start of the command.
+
+**Way 3 — Put it on the taskbar.** Open Comp HQ from the Start menu (way 1) or the desktop shortcut (way 2). Its icon appears on the taskbar. Right-click that icon and choose **Pin to taskbar**. (You can also right-click the desktop shortcut itself — on Windows 11 choose **Show more options** first — and choose **Pin to taskbar**.)
+
+**Way 4 — If Windows shows a blank icon.** Now and then Windows draws a shortcut with a blank page instead of the Comp HQ icon. On the Setup page click **Download icon**: a file called **Comp HQ.ico** is saved, usually in your **Downloads** folder. Then right-click the shortcut and choose **Properties** (on Windows 11, **Show more options** first), click **Change Icon…**, then **Browse…**, choose **Comp HQ.ico**, and click **OK** twice.
+
+**The one thing this can't give you.** Browsers keep their full "app" treatment for addresses with the padlock (`https://`), and Comp HQ is reached at `http://<NAS IP>:8080`, which has no padlock — deliberately, because a padlock on a private network means installing a certificate on every office computer. What that costs you is small: you still get your own window with no address bar, the icon and a taskbar entry. What you don't get is a Comp HQ-branded "can't reach the NAS" screen when the NAS is off (the browser's own error page shows instead), and a future browser version might show a thin strip with the address in it. If that ever bothers you, the padlock can be added later as its own small piece of work.
 
 ## Installing on TrueNAS
 
@@ -160,6 +178,22 @@ The **Team** view has one column for each person, plus **Unassigned**, each show
 
 Any page that shows the same jobs on more than one computer refreshes itself within a minute, or straight away when you click back into the window.
 
+### Steps inside a job
+
+A job can carry a list of **Steps** you tick off — "Print exam papers", "Book the hall", "Email the parents". Open a job (click its title) and, under its description, there is a **Steps** heading. A job with no steps shows just an **Add a step** line.
+
+- **To add a step**, type it and press **Enter** (or **Add**). The box empties and stays ready, so you can type a whole list straight through without touching the mouse.
+- **To tick a step**, press its box. A ticked step shows who ticked it and when, like **Jane, Sat 19 Sep**. The heading counts along — **3 of 7 done**, with a small bar beside it — and reads **All 7 done** when every step is ticked. Press the box again to untick it.
+- **To change a step's words**, click them (or press **Rename**), type, and press **Enter**. **Escape** leaves it as it was.
+- **To put steps in order**, use the small **up and down arrows** on each step, or drag a step by its words.
+- **To remove a step**, press the **bin**. An **Undo** appears beside the **Steps** heading for about ten seconds and puts the step back exactly where it was. Nothing is ever permanently deleted: a removed step stays in the database and in the export, even after the Undo has gone.
+
+On the **Board**, **My jobs** and **Team**, a card whose job has steps carries a small **3/7** (a tick once every step is done); a card with no steps carries nothing. Anyone can add, tick, rename, reorder or remove a step. A job holds up to **50** steps and a step up to **200** characters; reaching either says so, and keeps what you typed. If two people work on the same list at once, ticking a step someone else just ticked changes nothing (it keeps the first person's name), and touching a step someone else has removed tells you so plainly. Each screen picks up the other person's change within a minute, or straight away when you click back into the window.
+
+The **History** of a job records a step being added, renamed, removed or restored, but not every tick — each ticked step shows who ticked it right on the step. Steps are not in the Saturday Briefing. **Export everything** includes them as `steps.csv`.
+
+Without JavaScript (for example if a browser blocks it) every one of these still works as an ordinary form that reloads the page: a step's box is ticked and then saved with its **Update** button.
+
 ## Using the Calendar
 
 Click **Calendar**. It opens on this month, weeks starting on Monday, with **Saturday** — office day — picked out in orange and its column shaded, and today's date in a dark box. Use **Previous**, **Next** and **Today** to move around, or **List** for the next twelve weeks in date order. Jobs with a due date appear on their day as outlined boxes with a small empty square (red when overdue); events are solid dark blue, a shade lighter on the later days of an event that lasts several days. A key under the grid explains them. Click a job to open it.
@@ -223,9 +257,10 @@ Everything you're asked to do yourself, start to finish, and where to find the s
 | Once, after the first release | Switch the Comp HQ download to "public" on GitHub. | The build agent gives you the exact click-by-click steps when the first release is ready. |
 | Optional, during Phase 1 | Add 1–3 real Word documents for testing. | "Word samples" above. |
 | Once, end of Phase 1 | Install Comp HQ on TrueNAS, with automatic snapshots. | "Installing on TrueNAS" above. |
-| Once per office computer | Create the desktop shortcut and pick a name. | "Setting up an office computer" above. |
+| Once per office computer | Install Comp HQ as an app (or make the shortcut), check its icon, and pick a name. | "Setting up an office computer" above. |
 | Once, end of Phase 1 | Copy your HelpScout articles into Comp HQ. | "Moving your HelpScout articles" above. |
 | End of Phase 2 | Enter your yearly events, and move your active Trello cards. | "Entering your yearly events" and "Moving your Trello cards" above. |
 | End of Phase 3 | Look at the Briefing on a real Saturday (or a practice run), then a final look-and-feel check of the whole app. | "Using the Saturday Briefing" above. |
-| End of each phase (3 times) | Check what's been built so far. | Walked through live with the build agent at each phase's close; nothing to prepare. |
+| End of Phase 5 | Add steps to two or three real jobs on a Saturday and tick some off; look at the Board with the small counts; set up one office computer from scratch with the new Setup page, and check the icon and the window. | "Steps inside a job" and "Setting up an office computer" above. |
+| End of each phase | Check what's been built so far. | Walked through live with the build agent at each phase's close; nothing to prepare. |
 | Each future update | Change the version number in TrueNAS. | "Updating" above. |
