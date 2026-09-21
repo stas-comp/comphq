@@ -328,6 +328,19 @@ func (s *Store) activityText(ctx context.Context, action, detail, actorName stri
 			return "", err
 		}
 		return actorName + " changed the size to " + sizeLabels[d.Size], nil
+	case "step_added", "step_removed", "step_restored":
+		var d stepDetail
+		if err := json.Unmarshal([]byte(detail), &d); err != nil {
+			return "", err
+		}
+		verb := map[string]string{"step_added": "added", "step_removed": "removed", "step_restored": "restored"}[action]
+		return actorName + " " + verb + " the step “" + d.Text + "”", nil
+	case "step_renamed":
+		var d stepDetail
+		if err := json.Unmarshal([]byte(detail), &d); err != nil {
+			return "", err
+		}
+		return actorName + " renamed the step “" + d.From + "” to “" + d.Text + "”", nil
 	case "assigned", "unassigned":
 		var d personDetail
 		if err := json.Unmarshal([]byte(detail), &d); err != nil {
