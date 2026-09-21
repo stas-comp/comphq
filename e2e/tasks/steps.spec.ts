@@ -7,6 +7,7 @@ import { openNewTask, openTaskPage } from '../helpers/tasks';
 import { uniqueName } from '../helpers/unique-name';
 
 type Page = import('@playwright/test').Page;
+type Locator = import('@playwright/test').Locator;
 
 // Steps inside a job, with script (PLAN P5-03, gates 5.01-5.07, 5.09, 5.12,
 // 5.16). Every gate is proved twice: once in the task window over the Board
@@ -61,6 +62,43 @@ async function typeSteps(page: Page, ...texts: string[]): Promise<void> {
     await page.keyboard.press('Enter');
   }
   await expect(words(page)).toHaveText([...before, ...texts]);
+}
+
+/**
+ * Drags with a real mouse. A synthetic mouse only starts SortableJS's drag if
+ * the button has been held and moved a little first, and on a busy machine the
+ * first try can be too quick, so the gesture waits for the drag to be seen
+ * (steps.js marks it on <body>) and, if it wasn't, lets go and tries again.
+ */
+async function dragOnto(page: Page, source: Locator, target: Locator): Promise<void> {
+  for (let attempt = 0; attempt < 3; attempt++) {
+    await source.scrollIntoViewIfNeeded();
+    const from = (await source.boundingBox())!;
+    const to = (await target.boundingBox())!;
+    const x = from.x + 20;
+    const y = from.y + from.height / 2;
+    await page.mouse.move(x, y);
+    await page.mouse.down();
+    await page.mouse.move(x, y + 8, { steps: 5 });
+    const started = await page
+      .waitForFunction(() => document.body.dataset.refreshBusy === '1', null, { timeout: 2000 })
+      .then(() => true)
+      .catch(() => false);
+    if (!started) {
+      await page.mouse.up();
+      continue;
+    }
+    // Real pauses between waypoints, not just intermediate coordinates:
+    // SortableJS works out where the dragged row is over from timers and
+    // animation frames (the same lesson as the Board's drag, D-41).
+    await page.mouse.move(x, y + (to.y - from.y) / 2, { steps: 10 });
+    await page.waitForTimeout(100);
+    await page.mouse.move(x, to.y + to.height * 0.8, { steps: 10 });
+    await page.waitForTimeout(150);
+    await page.mouse.up();
+    return;
+  }
+  throw new Error('the drag never started');
 }
 
 for (const home of homes) {
@@ -226,18 +264,7 @@ for (const home of homes) {
       const { title } = await openJob(page, server.baseURL, home);
       await typeSteps(page, 'One', 'Two', 'Three');
 
-      const source = rowOf(page, 'One').locator('.step-body');
-      const target = rowOf(page, 'Three');
-      await source.scrollIntoViewIfNeeded();
-      const from = (await source.boundingBox())!;
-      const to = (await target.boundingBox())!;
-      const x = from.x + 20;
-      const y = from.y + from.height / 2;
-      await page.mouse.move(x, y);
-      await page.mouse.down();
-      await page.mouse.move(x, y + 8, { steps: 4 });
-      await page.mouse.move(x, to.y + to.height * 0.8, { steps: 12 });
-      await page.mouse.up();
+      await dragOnto(page, rowOf(page, 'One').locator('.step-body'), rowOf(page, 'Three'));
       await expect(words(page)).toHaveText(['Two', 'Three', 'One']);
       // What the server holds is what the screen shows.
       await page.reload();
