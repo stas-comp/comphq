@@ -62,6 +62,7 @@ type detailsPageData struct {
 	People     []personOption
 	Activity   []Activity
 	Message    string
+	Steps      stepsView
 }
 
 // handleTaskDetails serves a task's own page, unchanged (SPEC gate 4.27:
@@ -74,14 +75,15 @@ func (h *Handlers) handleTaskDetails(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "invalid id", http.StatusBadRequest)
 		return
 	}
-	h.renderDetails(w, r, id, http.StatusOK, "", nil, nil)
+	h.renderDetails(w, r, id, http.StatusOK, "", nil, nil, nil)
 }
 
 // renderDetails draws the task page, or — for the window — its reading or
 // editing fragment. typed and typedPeople, when given, are what a refused
 // save had entered, so the form comes back with it instead of the stored
-// values.
-func (h *Handlers) renderDetails(w http.ResponseWriter, r *http.Request, id int64, status int, message string, typed *UpdateInput, typedPeople []int64) {
+// values. steps, when given, is the state of the Steps section after a
+// refused step action; nil reads it from the query (a rename form, an Undo).
+func (h *Handlers) renderDetails(w http.ResponseWriter, r *http.Request, id int64, status int, message string, typed *UpdateInput, typedPeople []int64, steps *stepsState) {
 	today := app.Today(h.srv.TestMode)
 	task, err := h.tasks.Get(r.Context(), id, today)
 	if err == sql.ErrNoRows {
@@ -120,6 +122,16 @@ func (h *Handlers) renderDetails(w http.ResponseWriter, r *http.Request, id int6
 		dueLabel = format.Date(due)
 	}
 
+	state := stateFromQuery(r)
+	if steps != nil {
+		state = *steps
+	}
+	stepsData, err := h.buildStepsView(r, id, today, wantsFragment(r), state)
+	if err != nil {
+		http.Error(w, "internal error", http.StatusInternalServerError)
+		return
+	}
+
 	data := detailsPageData{
 		ID: task.ID, Title: task.Title, Notes: task.Notes, Size: task.Size, Stage: task.Stage, DueDate: format.DayFirst(task.DueDate),
 		InWindow:  wantsFragment(r),
@@ -129,6 +141,7 @@ func (h *Handlers) renderDetails(w http.ResponseWriter, r *http.Request, id int6
 		People:    buildPersonOptions(activePeople, task.Assignees),
 		Activity:  activity,
 		Message:   message,
+		Steps:     stepsData,
 	}
 	if typed != nil {
 		data.Title, data.Notes, data.Size, data.Stage, data.DueDate = typed.Title, typed.Notes, typed.Size, typed.Stage, format.DayFirst(typed.DueDate)
@@ -199,9 +212,9 @@ func (h *Handlers) handleUpdateTask(w http.ResponseWriter, r *http.Request) {
 		}
 		http.Redirect(w, r, "/tasks/"+strconv.FormatInt(id, 10), http.StatusFound)
 	case ErrEmptyTitle:
-		h.renderDetails(w, r, id, refusedStatus, "Please type a title.", &input, personIDs)
+		h.renderDetails(w, r, id, refusedStatus, "Please type a title.", &input, personIDs, nil)
 	case ErrInvalidDate:
-		h.renderDetails(w, r, id, refusedStatus, invalidDateMessage, &input, personIDs)
+		h.renderDetails(w, r, id, refusedStatus, invalidDateMessage, &input, personIDs, nil)
 	case ErrTaskNotFound:
 		http.NotFound(w, r)
 	case ErrInvalidSize, ErrInvalidStage:

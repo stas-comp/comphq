@@ -45,6 +45,8 @@ editing face (fragment). Same field ids in both. */}}
 
 {{template "tasks-details-form" .}}
 
+{{template "tasks-steps" .Steps}}
+
 <form method="post" action="/tasks/{{.ID}}/remove" class="task-remove-form">
 <button class="btn" type="submit">Remove task</button>
 </form>

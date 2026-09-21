@@ -1,0 +1,146 @@
+/* Steps inside a job (SPEC B10, gates 5.01-5.16). No mockup drawing exists for
+   this; it is built from the mockup's own parts (the card look, .field, .btn,
+   .mini and the icon buttons) so it looks as though it had always been there.
+   Colours and spacing come only from theme.css tokens. */
+.task-steps {
+  margin: var(--space-4) 0;
+  max-width: 40rem;
+}
+
+.steps-head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+
+.steps-head h2 {
+  margin: 0;
+}
+
+.steps-count {
+  font: 500 13px var(--font-mono);
+  color: var(--color-text-muted);
+}
+
+.steps-bar {
+  appearance: none;
+  width: 96px;
+  height: 8px;
+  border: 0;
+  border-radius: 4px;
+  overflow: hidden;
+  background: var(--color-paper-muted);
+}
+
+.steps-bar::-webkit-progress-bar {
+  background: var(--color-paper-muted);
+}
+
+.steps-bar::-webkit-progress-value {
+  background: var(--color-signal-orange);
+}
+
+.steps-bar::-moz-progress-bar {
+  background: var(--color-signal-orange);
+}
+
+.steps-undo {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-left: auto;
+  font-size: 14px;
+}
+
+.steps-notice {
+  margin: 0 0 var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-danger-soft);
+  border: 1px solid var(--color-danger-outline);
+  border-radius: 8px;
+  color: var(--color-danger-ink);
+}
+
+.steps-list {
+  list-style: none;
+  margin: 0 0 var(--space-2);
+  padding: 0;
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+}
+
+.step {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+}
+
+.step + .step {
+  border-top: 1px solid var(--color-border);
+}
+
+.step-tick {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.step-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.step-words {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
+.step.done .step-words {
+  color: var(--color-text-muted);
+  text-decoration: line-through;
+}
+
+.step-by {
+  display: block;
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+.step-rename {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.step-rename .field {
+  flex: 1;
+  min-width: 0;
+}
+
+a.mini {
+  display: inline-block;
+  text-decoration: none;
+}
+
+.step-actions {
+  display: inline-flex;
+  flex: none;
+  gap: var(--space-1);
+}
+
+.step-add {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.step-add .field {
+  flex: 1;
+  min-width: 0;
+}

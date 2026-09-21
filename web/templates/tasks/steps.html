@@ -1,0 +1,83 @@
+{{/* Steps inside a job (SPEC B10, gates 5.01-5.09): one list, drawn here and
+nowhere else. The task's own page includes it, and so does the task window, so
+the two can never disagree (gate 5.09) and the plain-form path is the same
+markup, not a second copy. Every control is an ordinary form, so it works with
+no script (gate 5.08); steps.js only layers on top. Without script a step's
+box is ticked and then saved with its Update button, which only shows then. */}}
+{{define "tasks-steps"}}
+<section class="task-steps" id="steps" aria-labelledby="steps-heading" data-task-id="{{.TaskID}}">
+<div class="steps-head">
+<h2 id="steps-heading">Steps</h2>
+{{if .Total}}
+<span class="steps-count">{{if .AllDone}}All {{.Total}} done{{else}}{{.DoneCount}} of {{.Total}} done{{end}}</span>
+<progress class="steps-bar" value="{{.DoneCount}}" max="{{.Total}}" aria-hidden="true"></progress>
+{{end}}
+{{if .UndoID}}
+<form method="post" action="/tasks/{{.TaskID}}/steps/{{.UndoID}}/restore" class="steps-undo">
+{{if .InWindow}}<input type="hidden" name="fragment" value="1">{{end}}
+<span class="steps-undo-text">Removed “{{.UndoText}}”</span>
+<button class="mini go" type="submit">Undo</button>
+</form>
+{{end}}
+</div>
+
+{{if .Notice}}<p class="message steps-notice" role="alert">{{template "tasks-steps-notice" .}}</p>{{end}}
+
+{{$taskID := .TaskID}}{{$inWindow := .InWindow}}
+{{if .Steps}}
+<ol class="steps-list">
+{{range .Steps}}
+<li class="step{{if .Done}} done{{end}}" id="step-{{.ID}}" data-step-id="{{.ID}}">
+<form method="post" action="/tasks/{{$taskID}}/steps/{{.ID}}/tick" class="inline-form step-tick">
+{{if $inWindow}}<input type="hidden" name="fragment" value="1">{{end}}
+<input type="hidden" name="done" value="0">
+<input class="check" type="checkbox" name="done" value="1" id="step-check-{{.ID}}"{{if .Done}} checked{{end}} title="{{if .Done}}Untick{{else}}Tick{{end}} {{.Text}}" aria-label="{{.Text}}">
+<noscript><button class="mini quiet" type="submit">Update</button></noscript>
+</form>
+{{if .Renaming}}
+<form method="post" action="/tasks/{{$taskID}}/steps/{{.ID}}" class="step-rename">
+{{if $inWindow}}<input type="hidden" name="fragment" value="1">{{end}}
+<label class="visually-hidden" for="step-text-{{.ID}}">New words for the step “{{.Text}}”</label>
+<input class="field" type="text" id="step-text-{{.ID}}" name="text" value="{{.RenameText}}" autocomplete="off" required>
+<button class="mini go" type="submit">Save</button>
+<a class="mini quiet" href="/tasks/{{$taskID}}#step-{{.ID}}" data-hook="step-cancel-rename">Cancel</a>
+</form>
+{{else}}
+<span class="step-body">
+<span class="step-words">{{.Text}}</span>
+{{if .Done}}<span class="step-by">{{.DoneBy}}, {{.DoneDate}}</span>{{end}}
+</span>
+<a class="mini quiet step-rename-link" href="/tasks/{{$taskID}}?rename_step={{.ID}}#step-{{.ID}}" data-hook="step-rename">Rename<span class="visually-hidden"> the step “{{.Text}}”</span></a>
+{{end}}
+<span class="step-actions">
+<form method="post" action="/tasks/{{$taskID}}/steps/{{.ID}}/move" class="inline-form">
+{{if $inWindow}}<input type="hidden" name="fragment" value="1">{{end}}
+<input type="hidden" name="direction" value="up">
+{{template "part-icon-button" .MoveUp}}
+</form>
+<form method="post" action="/tasks/{{$taskID}}/steps/{{.ID}}/move" class="inline-form">
+{{if $inWindow}}<input type="hidden" name="fragment" value="1">{{end}}
+<input type="hidden" name="direction" value="down">
+{{template "part-icon-button" .MoveDown}}
+</form>
+<form method="post" action="/tasks/{{$taskID}}/steps/{{.ID}}/remove" class="inline-form">
+{{if $inWindow}}<input type="hidden" name="fragment" value="1">{{end}}
+{{template "part-icon-button" .Remove}}
+</form>
+</span>
+</li>
+{{end}}
+</ol>
+{{end}}
+
+<form method="post" action="/tasks/{{.TaskID}}/steps" class="step-add">
+{{if .InWindow}}<input type="hidden" name="fragment" value="1">{{end}}
+<label class="visually-hidden" for="step-add-{{.TaskID}}">Add a step</label>
+<input class="field" type="text" id="step-add-{{.TaskID}}" name="text" value="{{.AddText}}" placeholder="Add a step" autocomplete="off">
+<button class="btn" type="submit">Add</button>
+</form>
+</section>
+{{end}}
+
+{{/* What a refused step action says, in words. */}}
+{{define "tasks-steps-notice"}}{{if eq .Notice "empty"}}Type what the step is first.{{else if eq .Notice "too-long"}}A step can be up to {{.MaxChars}} characters.{{else if eq .Notice "too-many"}}A job can have up to {{.MaxSteps}} steps.{{else if eq .Notice "removed"}}Somebody else removed that step.{{else if eq .Notice "gone"}}That step isn't there any more.{{end}}{{end}}
