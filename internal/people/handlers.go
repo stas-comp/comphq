@@ -42,7 +42,7 @@ func FromContext(ctx context.Context) (Person, bool) {
 // exemptPrefixes are routes the identity middleware never gates: the
 // picker itself (or it could never be reached), health/static assets, and
 // test-only harness routes.
-var exemptPrefixes = []string{"/who", "/healthz", "/static/", "/__test/"}
+var exemptPrefixes = []string{"/who", "/healthz", "/static/", "/favicon.ico", "/__test/"}
 
 func isExempt(path string) bool {
 	for _, p := range exemptPrefixes {

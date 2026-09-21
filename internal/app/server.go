@@ -90,6 +90,7 @@ func (s *Server) Routes() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", s.handleHealthz)
 	mux.Handle("GET /static/", http.StripPrefix("/static/", s.static))
+	mux.HandleFunc("GET /favicon.ico", s.handleFavicon)
 	if s.TestMode {
 		mux.HandleFunc("GET /__test/editor", s.handleTestEditor)
 		mux.HandleFunc("GET /__test/parts", s.handleTestParts)

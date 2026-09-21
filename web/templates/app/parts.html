@@ -13,6 +13,21 @@ WorkloadLine and WorkloadLabel. Draws nothing when there is no workload. */}}
 {{define "part-workload"}}{{if .WorkloadLine}}<div class="workload" role="img" aria-label="{{.WorkloadLabel}}">{{range .Workload}}<span class="workload-group">{{range .Blocks}}<span class="workload-block"></span>{{end}}</span>{{end}}</div>
 <p class="workload-line">{{.WorkloadLine}}</p>{{end}}{{end}}
 
+{{/* What goes in every page's <head> to give Comp HQ its face (SPEC B11, gates
+5.22 and 5.23): the tab and history icon, the icon a desktop shortcut and the
+taskbar take, the manifest an "install as an app" reads, and the navy the window
+frame is painted. Until v1.2 no page linked an icon at all, which is why a
+shortcut came out blank. Every address is the app's own; nothing is fetched
+from the internet. */}}
+{{define "app-head-icons"}}<link rel="icon" href="/static/theme/icons/comphq.ico" sizes="16x16 32x32 48x48 64x64 128x128 256x256">
+<link rel="icon" type="image/png" sizes="16x16" href="/static/theme/icons/icon-16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/static/theme/icons/icon-32.png">
+<link rel="icon" type="image/png" sizes="48x48" href="/static/theme/icons/icon-48.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/static/theme/icons/icon-192.png">
+<link rel="apple-touch-icon" href="/static/theme/icons/icon-192.png">
+<link rel="manifest" href="/static/app/manifest.webmanifest">
+<meta name="theme-color" content="#141b2d">{{end}}
+
 {{/* One of the icon-only buttons (gate 4.11: the four card actions, and the window's close). Takes an app.IconButton
 built with app.NewIconButton: its Label is both the hover title and the
 spoken name. The only place an icon-only button is written. */}}
