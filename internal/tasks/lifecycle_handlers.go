@@ -22,6 +22,9 @@ type simpleCardView struct {
 	DueLabel  string
 	IsIdea    bool
 	Assignees []assigneeView
+	// StepsTotal and StepsDone are the job's live steps, for the small 3/7.
+	StepsTotal int
+	StepsDone  int
 }
 
 func newSimpleCardView(t Task, meID int64, today time.Time) simpleCardView {
@@ -37,6 +40,7 @@ func newSimpleCardView(t Task, meID int64, today time.Time) simpleCardView {
 	return simpleCardView{
 		ID: t.ID, Title: t.Title, SizeLabel: sizeLabels[t.Size], DueDate: t.DueDate, DueLabel: shortDueLabel(t.DueDate, today),
 		IsIdea: t.Stage == StageIdea, Assignees: views,
+		StepsTotal: t.StepsTotal, StepsDone: t.StepsDone,
 	}
 }
 

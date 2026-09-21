@@ -78,6 +78,9 @@ type LaneTask struct {
 	DueDate  string
 	DueLabel string
 	AlsoOn   string
+	// StepsTotal and StepsDone are the job's live steps, for the small 3/7.
+	StepsTotal int
+	StepsDone  int
 }
 
 // MoveUp and MoveDown are the two icon-only move buttons of an Up next
@@ -238,7 +241,10 @@ func laneTask(t Task, personID int64) LaneTask {
 			others = append(others, a.Name)
 		}
 	}
-	return LaneTask{ID: t.ID, Title: t.Title, SizeLabel: sizeLabels[t.Size], DueDate: t.DueDate, AlsoOn: strings.Join(others, ", ")}
+	return LaneTask{
+		ID: t.ID, Title: t.Title, SizeLabel: sizeLabels[t.Size], DueDate: t.DueDate, AlsoOn: strings.Join(others, ", "),
+		StepsTotal: t.StepsTotal, StepsDone: t.StepsDone,
+	}
 }
 
 // belongsToLane reports whether a task shows in personID's lane (0 for

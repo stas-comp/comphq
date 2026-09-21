@@ -3,6 +3,7 @@ package tasks
 import (
 	"context"
 	"database/sql"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -681,5 +682,93 @@ func TestMigrationAddsTheTableAndLeavesTheOldSchemaReadable(t *testing.T) {
 	var idx int
 	if err := sqlDB.QueryRow(`SELECT COUNT(*) FROM sqlite_master WHERE type = 'index' AND name = 'task_checklist_items_task'`).Scan(&idx); err != nil || idx != 1 {
 		t.Errorf("index task_checklist_items_task missing (n=%d, err=%v)", idx, err)
+	}
+}
+
+// Gate 5.10's groundwork: the Board, Team and My jobs queries carry each
+// job's live step counts, and a job with no steps carries none.
+func TestListsCarryLiveStepCounts(t *testing.T) {
+	f := newStepFixture(t)
+	ctx := context.Background()
+	bare := createNamed(t, f.store, ctx, f.sam, "No steps here", StageTodo)
+
+	one := f.add(t, "One")
+	two := f.add(t, "Two")
+	f.add(t, "Three")
+	if err := f.store.SetStepDone(ctx, f.task.ID, one.ID, true, f.sam, fixedNow); err != nil {
+		t.Fatal(err)
+	}
+	if err := f.store.SetStepDone(ctx, f.task.ID, two.ID, true, f.sam, fixedNow); err != nil {
+		t.Fatal(err)
+	}
+	// A removed step is not counted, whether it was ticked or not.
+	if err := f.store.RemoveStep(ctx, f.task.ID, two.ID, f.sam, fixedNow); err != nil {
+		t.Fatal(err)
+	}
+
+	byTitle := func(tasks []Task) map[string]Task {
+		m := map[string]Task{}
+		for _, tk := range tasks {
+			m[tk.Title] = tk
+		}
+		return m
+	}
+	board, err := f.store.ListBoard(ctx, fixedNow, BoardFilter{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	team, err := f.store.ListForTeamView(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for name, tasks := range map[string][]Task{"ListBoard": board, "ListForTeamView": team} {
+		m := byTitle(tasks)
+		if got := m["Concert"]; got.StepsTotal != 2 || got.StepsDone != 1 {
+			t.Errorf("%s: Concert has %d/%d steps, want 1/2", name, got.StepsDone, got.StepsTotal)
+		}
+		if got := m[bare.Title]; got.StepsTotal != 0 || got.StepsDone != 0 {
+			t.Errorf("%s: a job with no steps has %d/%d, want 0/0", name, got.StepsDone, got.StepsTotal)
+		}
+	}
+}
+
+// D-73: the Briefing does not read steps, so a job with unfinished steps
+// briefs exactly as it did at v1.1.0 — the same rows, the same order.
+func TestBriefingIsUnchangedByStepsOnAJob(t *testing.T) {
+	f := newStepFixture(t)
+	ctx := context.Background()
+	due := time.Date(2026, 9, 25, 0, 0, 0, 0, time.UTC)
+	if err := f.store.Update(ctx, f.task.ID, UpdateInput{
+		Title: "Concert", Size: "M", Stage: StageTodo, DueDate: "2026-09-22", PersonIDs: []int64{f.sam},
+	}, f.sam, fixedNow); err != nil {
+		t.Fatal(err)
+	}
+	other := createNamed(t, f.store, ctx, f.sam, "Other job", StageTodo)
+	if err := f.store.Update(ctx, other.ID, UpdateInput{Title: "Other job", Size: "M", Stage: StageTodo, DueDate: "2026-09-24"}, f.sam, fixedNow); err != nil {
+		t.Fatal(err)
+	}
+
+	before, err := f.store.BriefingTasks(ctx, due)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(before) != 2 {
+		t.Fatalf("briefing before has %d jobs, want 2", len(before))
+	}
+
+	for i := 0; i < 5; i++ {
+		f.add(t, "A step that is not finished")
+	}
+	st := f.add(t, "A step that is")
+	if err := f.store.SetStepDone(ctx, f.task.ID, st.ID, true, f.alex, fixedNow); err != nil {
+		t.Fatal(err)
+	}
+
+	after, err := f.store.BriefingTasks(ctx, due)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(before, after) {
+		t.Errorf("steps changed the Briefing:\nbefore %+v\nafter  %+v", before, after)
 	}
 }

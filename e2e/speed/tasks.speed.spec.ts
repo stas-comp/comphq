@@ -13,6 +13,9 @@ type Page = import('@playwright/test').Page;
 const READY_LIMIT_MS = 1500;
 const SAMPLE_SIZE = 5;
 
+// The job e2e/seed gives exactly 50 steps (seedSteps).
+const FIFTY_STEPS_TITLE = 'The fifty steps job';
+
 function median(values: number[]): number {
   const sorted = [...values].sort((a, b) => a - b);
   return sorted[Math.floor(sorted.length / 2)];
@@ -64,6 +67,42 @@ test.describe('Tasks speed (SPEC gates 2.21, 2.31, 2.38)', () => {
       const ms = await medianNavigationMs(page, server.baseURL + path);
       assertUnderLimit(label, ms, READY_LIMIT_MS);
     }
+  });
+
+  // SPEC gate 5.17: a job holding a full 50 steps still opens within the
+  // budget, on its own page and in the window; and the Board, which now draws
+  // a small 3/7 on the jobs that have steps, stays within the same budget the
+  // 'every Tasks page' test above holds it to (gate 4.53 unchanged).
+  test('a job with 50 steps opens within budget, on its page and in the window', async ({ page, server }) => {
+    await signInAsNewPerson(page, server.baseURL, '/tasks/board');
+    await page.goto(server.baseURL + '/tasks/board?q=' + encodeURIComponent(FIFTY_STEPS_TITLE));
+    await ready(page);
+    const href = await page.locator('.task-card', { hasText: FIFTY_STEPS_TITLE }).locator('.task-card-title a').first().getAttribute('href');
+    if (!href) throw new Error('the seeded 50-step job is missing');
+
+    const pageMs = await medianNavigationMs(page, server.baseURL + href);
+    await expect(page.locator('.task-steps .step')).toHaveCount(50);
+    assertUnderLimit('a job page with 50 steps', pageMs, READY_LIMIT_MS);
+
+    await page.goto(server.baseURL + '/tasks/board?q=' + encodeURIComponent(FIFTY_STEPS_TITLE));
+    await ready(page);
+    const times: number[] = [];
+    for (let i = 0; i < SAMPLE_SIZE; i++) {
+      const start = Date.now();
+      await page.locator('.task-card', { hasText: FIFTY_STEPS_TITLE }).locator('.task-card-title a').first().click();
+      await expect(page.locator('#task-window .task-steps .step')).toHaveCount(50);
+      times.push(Date.now() - start);
+      await page.keyboard.press('Escape');
+      await expect(page.locator('#task-window')).toBeHidden();
+    }
+    assertUnderLimit('the window with 50 steps', median(times), READY_LIMIT_MS);
+  });
+
+  test('the Board draws its 3/7 badges on the seeded library and passes the standard checks', async ({ page, server }) => {
+    await signInAsNewPerson(page, server.baseURL, '/tasks/board');
+    await ready(page);
+    expect(await page.locator('.task-card .step-badge').count(), 'seeded jobs with steps show a badge').toBeGreaterThan(0);
+    await axeCheck(page);
   });
 
   // SPEC gate 2.31: Team, with the real 2,000-task/10-person library,

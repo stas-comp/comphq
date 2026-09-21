@@ -88,6 +88,10 @@ type cardView struct {
 	PrevID      int64
 	NextID      int64
 	OtherStages []stageOption
+	// StepsTotal and StepsDone are the job's live steps, for the small 3/7
+	// (gate 5.10); StepsTotal is 0 when the job has none.
+	StepsTotal int
+	StepsDone  int
 }
 
 // MoveUp and MoveDown are the card's two icon-only move buttons (gate
@@ -139,6 +143,7 @@ func newCardView(t Task, meID int64, today time.Time) cardView {
 		DueDate: t.DueDate, DueLabel: dueLabel, Overdue: t.Overdue, Done: t.Stage == StageDone,
 		Assignees: views, OnIt: meID != 0 && onJob[meID], MeID: meID,
 		OtherStages: otherStages,
+		StepsTotal:  t.StepsTotal, StepsDone: t.StepsDone,
 	}
 }
 

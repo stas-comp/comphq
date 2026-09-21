@@ -154,3 +154,22 @@ a.mini {
   opacity: 0.45;
   background: var(--color-accent-wash);
 }
+
+/* The count on a card: mono, quiet, like the panel head's count. */
+.step-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font: 500 13px var(--font-mono);
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.step-badge.done {
+  color: var(--color-ink-navy);
+}
+
+.step-badge .icon {
+  width: 14px;
+  height: 14px;
+}

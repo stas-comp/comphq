@@ -2,6 +2,7 @@ package tasks
 
 import (
 	"context"
+	"database/sql"
 	"strings"
 	"time"
 
@@ -87,4 +88,45 @@ func exportDateTimePtr(s *string) string {
 		return ""
 	}
 	return exportDateTime(*s)
+}
+
+// StepsCSV builds steps.csv (SPEC B5, gate 5.14): every step of every job,
+// removed steps included and marked, so nothing a person ever wrote in
+// Comp HQ is missing from Export everything. It satisfies the same
+// one-method interface as the task and event stores.
+type StepsCSV struct {
+	DB *sql.DB
+}
+
+// ExportRows returns a header row in plain English, then one row per step:
+// jobs in creation order, and within a job its live steps in their order
+// followed by the removed ones. Dates are written the way SPEC A3 writes
+// them everywhere ("Sat 19 Sep 2026, 14:30").
+func (c StepsCSV) ExportRows(ctx context.Context) ([][]string, error) {
+	rows, err := c.DB.QueryContext(ctx, `
+		SELECT t.title, i.text, i.done_at, COALESCE(p.name, ''), i.removed_at
+		FROM task_checklist_items i
+		JOIN tasks t ON t.id = i.task_id
+		LEFT JOIN people p ON p.id = i.done_by
+		ORDER BY t.id, (i.removed_at IS NOT NULL), i.position, i.id
+	`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	out := [][]string{{"Job", "Step", "Done", "Ticked by", "Ticked", "Removed"}}
+	for rows.Next() {
+		var job, text, tickedBy string
+		var doneAt, removedAt *string
+		if err := rows.Scan(&job, &text, &doneAt, &tickedBy, &removedAt); err != nil {
+			return nil, err
+		}
+		done := "No"
+		if doneAt != nil {
+			done = "Yes"
+		}
+		out = append(out, []string{job, text, done, tickedBy, exportDateTimePtr(doneAt), exportDateTimePtr(removedAt)})
+	}
+	return out, rows.Err()
 }

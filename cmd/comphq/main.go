@@ -81,7 +81,7 @@ func run() error {
 	srv.Registry().Add(kb.Section(srv))
 	srv.Registry().Add(tasks.Section(srv))
 	srv.Registry().Add(calendar.Section(srv, taskDeadlines{store: &tasks.Store{DB: srv.DB}}))
-	srv.Registry().Add(settings.Section(srv, &tasks.Store{DB: srv.DB}, &calendar.Store{DB: srv.DB}))
+	srv.Registry().Add(settings.Section(srv, &tasks.Store{DB: srv.DB}, &calendar.Store{DB: srv.DB}, &tasks.StepsCSV{DB: srv.DB}))
 
 	sectionMigrations := make(map[string][]db.Migration)
 	pending := false

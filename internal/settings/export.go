@@ -77,7 +77,7 @@ func (h *Handlers) handleExport(w http.ResponseWriter, r *http.Request) {
 	for _, f := range []struct {
 		name string
 		src  CSVSource
-	}{{"tasks.csv", h.tasks}, {"events.csv", h.events}} {
+	}{{"tasks.csv", h.tasks}, {"events.csv", h.events}, {"steps.csv", h.steps}} {
 		csvRows, err := f.src.ExportRows(ctx)
 		if err != nil {
 			return

@@ -43,6 +43,7 @@
 </div>
 <div class="task-card-row">
 <span class="task-card-size">{{template "part-size" .SizeLabel}}</span>
+{{template "tasks-step-badge" .}}
 <div class="task-card-actions">
 <form method="post" action="/tasks/{{.ID}}/move" class="inline-form">
 <input type="hidden" name="stage" value="{{.Stage}}">

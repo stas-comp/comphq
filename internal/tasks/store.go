@@ -38,6 +38,10 @@ type Task struct {
 	DueDate   string // "YYYY-MM-DD", empty if unset
 	Assignees []Assignee
 	Overdue   bool
+	// StepsTotal and StepsDone count the job's live steps, for the small
+	// 3/7 on a card (gate 5.10). Set by ListBoard only.
+	StepsTotal int
+	StepsDone  int
 }
 
 // Assignee is one person assigned to a task, as shown on its card. A
@@ -425,8 +429,13 @@ func (s *Store) ListBoard(ctx context.Context, today time.Time, filter BoardFilt
 	if err != nil {
 		return nil, err
 	}
+	stepCounts, err := s.stepCounts(ctx, ids)
+	if err != nil {
+		return nil, err
+	}
 	for i := range tasks {
 		tasks[i].Assignees = assigneesByTask[tasks[i].ID]
+		tasks[i].StepsDone, tasks[i].StepsTotal = stepCounts[tasks[i].ID].done, stepCounts[tasks[i].ID].total
 	}
 	return tasks, nil
 }

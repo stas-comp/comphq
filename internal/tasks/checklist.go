@@ -208,6 +208,42 @@ func (s *Store) listSteps(ctx context.Context, taskID int64, withRemoved bool, t
 	return steps, rows.Err()
 }
 
+// stepCount is how many live steps a job has and how many of them are ticked.
+type stepCount struct{ total, done int }
+
+// stepCounts returns the live-step counts for each of taskIDs that has any
+// (a job with no steps has no entry), in one query, for the cards' 3/7.
+func (s *Store) stepCounts(ctx context.Context, taskIDs []int64) (map[int64]stepCount, error) {
+	result := make(map[int64]stepCount, len(taskIDs))
+	if len(taskIDs) == 0 {
+		return result, nil
+	}
+	placeholders := strings.TrimSuffix(strings.Repeat("?,", len(taskIDs)), ",")
+	args := make([]any, len(taskIDs))
+	for i, id := range taskIDs {
+		args[i] = id
+	}
+	rows, err := s.DB.QueryContext(ctx, `
+		SELECT task_id, COUNT(*), COALESCE(SUM(done_at IS NOT NULL), 0)
+		FROM task_checklist_items
+		WHERE removed_at IS NULL AND task_id IN (`+placeholders+`)
+		GROUP BY task_id
+	`, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var id int64
+		var c stepCount
+		if err := rows.Scan(&id, &c.total, &c.done); err != nil {
+			return nil, err
+		}
+		result[id] = c
+	}
+	return result, rows.Err()
+}
+
 // AddStep adds a step at the end of a job's list and records "step_added".
 func (s *Store) AddStep(ctx context.Context, taskID int64, text string, actorID int64, now time.Time) (Step, error) {
 	text, err := cleanStepText(text)

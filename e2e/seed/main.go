@@ -206,6 +206,7 @@ func seedTasks(ctx context.Context, sqlDB *sql.DB, personStore *people.Store, rn
 
 	var doneAgedIDs []int64
 	var removableIDs []int64
+	var liveIDs []int64
 
 	for i := 0; i < taskCount; i++ {
 		bucket := i % 100
@@ -261,7 +262,13 @@ func seedTasks(ctx context.Context, sqlDB *sql.DB, personStore *people.Store, rn
 			removableIDs = append(removableIDs, task.ID)
 		case agesOff:
 			doneAgedIDs = append(doneAgedIDs, task.ID)
+		default:
+			liveIDs = append(liveIDs, task.ID)
 		}
+	}
+
+	if err := seedSteps(ctx, store, liveIDs, creator, now); err != nil {
+		return fmt.Errorf("seed steps: %w", err)
 	}
 
 	if err := backdateDone(sqlDB, doneAgedIDs, now.AddDate(0, 0, -20)); err != nil {
@@ -316,6 +323,47 @@ func removeTasks(sqlDB *sql.DB, ids []int64, at time.Time) error {
 // Contract", not a wall of Lorem Ipsum.
 func taskTitle(rng *rand.Rand, index int) string {
 	return fmt.Sprintf("%s (%d)", titleCase(pickWords(rng, 2+rng.Intn(3))), index+1)
+}
+
+// FiftyStepsTitle is the job the speed tests open to prove a full list of
+// steps still loads in time (SPEC gate 5.17). It is created in To do with
+// exactly tasks.MaxSteps steps, about a third of them ticked.
+const FiftyStepsTitle = "The fifty steps job"
+
+// seedSteps gives about one live job in eight a short list of steps, some
+// ticked, so the Board, My jobs and Team draw their small 3/7 at the real
+// library's scale (gate 5.10, gate 5.17's "no slower than today"), and adds
+// one job holding a full 50. It draws from its own generator, so it never
+// disturbs the sequence the titles above were generated from.
+func seedSteps(ctx context.Context, store *tasks.Store, liveIDs []int64, actor int64, now time.Time) error {
+	rng := rand.New(rand.NewSource(20260921))
+	addSteps := func(taskID int64, n int) error {
+		for s := 0; s < n; s++ {
+			step, err := store.AddStep(ctx, taskID, sentence(rng, 3+rng.Intn(5)), actor, now)
+			if err != nil {
+				return err
+			}
+			if rng.Intn(3) == 0 {
+				if err := store.SetStepDone(ctx, taskID, step.ID, true, actor, now); err != nil {
+					return err
+				}
+			}
+		}
+		return nil
+	}
+	for i, id := range liveIDs {
+		if i%8 != 0 {
+			continue
+		}
+		if err := addSteps(id, 1+rng.Intn(8)); err != nil {
+			return err
+		}
+	}
+	big, err := store.Create(ctx, tasks.CreateInput{Title: FiftyStepsTitle, Stage: tasks.StageTodo}, actor, now)
+	if err != nil {
+		return err
+	}
+	return addSteps(big.ID, tasks.MaxSteps)
 }
 
 // seedImages generates count small, genuinely distinct PNGs (varying

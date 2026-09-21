@@ -13,7 +13,7 @@ import (
 )
 
 // CSVSource is the one method Settings needs from Tasks and Calendar to
-// build tasks.csv and events.csv (SPEC B2: settings depends on the other
+// build tasks.csv, events.csv and steps.csv (SPEC B2: settings depends on the other
 // sections' export interfaces, not their internals). Both stores satisfy
 // it directly, since it deals only in plain text rows.
 type CSVSource interface {
@@ -23,18 +23,20 @@ type CSVSource interface {
 type Handlers struct {
 	tasks    CSVSource
 	events   CSVSource
+	steps    CSVSource
 	srv      *app.Server
 	people   *people.Store
 	articles *kb.ArticleStore
 	images   *images.Store
 }
 
-func Section(srv *app.Server, tasksCSV, eventsCSV CSVSource) app.Section {
+func Section(srv *app.Server, tasksCSV, eventsCSV, stepsCSV CSVSource) app.Section {
 	imagesStore := &images.Store{DB: srv.DB, DataDir: srv.DataDir}
 	h := &Handlers{
 		srv:      srv,
 		tasks:    tasksCSV,
 		events:   eventsCSV,
+		steps:    stepsCSV,
 		people:   srv.PeopleStore(),
 		articles: &kb.ArticleStore{DB: srv.DB, Images: imagesStore},
 		images:   imagesStore,

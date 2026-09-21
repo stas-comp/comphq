@@ -81,3 +81,9 @@ box is ticked and then saved with its Update button, which only shows then. */}}
 
 {{/* What a refused step action says, in words. */}}
 {{define "tasks-steps-notice"}}{{if eq .Notice "empty"}}Type what the step is first.{{else if eq .Notice "too-long"}}A step can be up to {{.MaxChars}} characters.{{else if eq .Notice "too-many"}}A job can have up to {{.MaxSteps}} steps.{{else if eq .Notice "removed"}}Somebody else removed that step.{{else if eq .Notice "gone"}}That step isn't there any more.{{end}}{{end}}
+
+{{/* The small count on a card (gate 5.10): 3/7 while there are steps to do, a
+tick when all are done, and nothing at all for a job with no steps. It is a
+count and not a bar (B10.5): a bar at card size is decoration that can't be
+read. The words are for a screen reader and for the tooltip. */}}
+{{define "tasks-step-badge"}}{{if .StepsTotal}}{{if eq .StepsDone .StepsTotal}}<span class="step-badge done" title="All {{.StepsTotal}} steps done"><span class="icon icon-check" aria-hidden="true"></span><span class="visually-hidden">All {{.StepsTotal}} steps done</span></span>{{else}}<span class="step-badge" title="{{.StepsDone}} of {{.StepsTotal}} steps done"><span aria-hidden="true">{{.StepsDone}}/{{.StepsTotal}}</span><span class="visually-hidden">{{.StepsDone}} of {{.StepsTotal}} steps done</span></span>{{end}}{{end}}{{end}}

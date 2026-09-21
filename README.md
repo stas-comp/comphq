@@ -207,7 +207,7 @@ As with HelpScout, this is one way and one time. Only move cards that are still 
 
 ## Keeping a copy of your tasks and events
 
-**Settings → Export everything** now also includes two spreadsheets, `tasks.csv` and `events.csv`, that open straight in Excel with clear column names and readable dates (removed items are included and marked). The zip's own `index.html` is still the place to read your articles offline.
+**Settings → Export everything** now also includes three spreadsheets, `tasks.csv`, `events.csv` and `steps.csv` (every step of every job: who ticked it and when, and whether it was removed), that open straight in Excel with clear column names and readable dates (removed items are included and marked). The zip's own `index.html` is still the place to read your articles offline.
 
 ## Word samples
 
