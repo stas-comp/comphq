@@ -428,6 +428,11 @@ func TestIconsAreOneSetOfLineDrawings(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, e := range entries {
+		// comphq.svg is the app's own mark, not one of the interface's line
+		// icons (SPEC B11.2, gate 5.20); it has its own tests in icons_test.go.
+		if e.Name() == "comphq.svg" {
+			continue
+		}
 		if strings.HasSuffix(e.Name(), ".svg") && !slicesContains(expectedIcons, strings.TrimSuffix(e.Name(), ".svg")) {
 			t.Errorf("icons/%s isn't in the icon set; add it to B9.4's list (and this test) on purpose", e.Name())
 		}
