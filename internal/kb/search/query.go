@@ -43,7 +43,15 @@ func buildFromTokens(tokens []string, lastWordAlternatives []string) string {
 		}
 		parts[i] = last
 	}
-	return strings.Join(parts, " ")
+	// A plain space between terms is an implicit AND in FTS5 — but only
+	// between two terms. A quoted term immediately followed by a
+	// parenthesised group (the expansion's own "(... OR ...)") isn't
+	// valid FTS5 syntax without spelling the AND out (found the hard
+	// way: "NEAR" ("OR"* OR "order") is a syntax error, "NEAR" AND
+	// ("OR"* OR "order") isn't). AND is FTS5's documented default
+	// combination anyway, so spelling it out for every join is exactly
+	// as forgiving as the old bare-space joins were, and never wrong.
+	return strings.Join(parts, " AND ")
 }
 
 // BuildQuery turns raw search-box input into an FTS5 MATCH expression:

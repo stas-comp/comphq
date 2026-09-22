@@ -19,6 +19,37 @@ func indexWordsRow(t *testing.T, sqlDB *sql.DB, articleID int64, blockID int, ti
 	}
 }
 
+// A regression test for a real bug this feature introduced, found only
+// in CI (Linux), never locally, and only when the shared worker's
+// accumulated content happened to give the last word a real expansion:
+// FTS5 accepts a quoted term followed by whitespace then another quoted
+// term as an implicit AND, but not a quoted term immediately followed by
+// a parenthesised group — "NEAR" ("OR"* OR "order") is a syntax error;
+// "NEAR" AND ("OR"* OR "order") isn't. Multi-word queries whose last
+// word expands (gate 1.32's own symbol-fuzzing test types "NEAR AND OR"
+// as part of its input, and "or" already has real expansions from other
+// tests' seeded content) used to hit this every time.
+func TestSearchMultiWordQueryWithExpandedLastWordDoesNotSyntaxError(t *testing.T) {
+	sqlDB := openTestDB(t)
+	indexRow(t, sqlDB, 1, 0, "Ordering guide", "")
+	indexRow(t, sqlDB, 1, 1, "", "Please place the order soon.")
+	indexWordsRow(t, sqlDB, 1, 0, "Ordering guide", "")
+	indexWordsRow(t, sqlDB, 1, 1, "", "Please place the order soon.")
+
+	// "NEAR" and "AND" are themselves FTS5 operator words, quoted here
+	// exactly as gate 1.32's own fuzzing does; "or" has a real expansion
+	// ("order") from the rows indexed above.
+	if _, err := Search(sqlDB, "NEAR AND OR", 20); err != nil {
+		t.Errorf("Search(%q): %v", "NEAR AND OR", err)
+	}
+	if _, err := HighlightBlock(sqlDB, 1, 1, "NEAR AND OR"); err != nil {
+		t.Errorf("HighlightBlock(%q): %v", "NEAR AND OR", err)
+	}
+	if _, err := HighlightMatches(sqlDB, 1, "NEAR AND OR"); err != nil {
+		t.Errorf("HighlightMatches(%q): %v", "NEAR AND OR", err)
+	}
+}
+
 // SPEC gate 6.30's own five words: a half-typed last word finds the
 // whole words it's the start of, even though kb_search's stemmer alone
 // would miss every one of them (the fault B12.5 describes).
