@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"html/template"
+	"log"
 	"net/http"
 	"net/url"
 
@@ -57,6 +58,7 @@ func (h *Handlers) handleSearchJSON(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query().Get("q")
 	results, err := h.searchResults(query)
 	if err != nil {
+		log.Printf("search.json %q: %v", query, err)
 		http.Error(w, "internal error", http.StatusInternalServerError)
 		return
 	}
@@ -75,6 +77,7 @@ func (h *Handlers) handleSearchResultsPage(w http.ResponseWriter, r *http.Reques
 	query := r.URL.Query().Get("q")
 	results, err := h.searchResults(query)
 	if err != nil {
+		log.Printf("search results page %q: %v", query, err)
 		http.Error(w, "internal error", http.StatusInternalServerError)
 		return
 	}
