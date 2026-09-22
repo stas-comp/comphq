@@ -43,6 +43,20 @@
   background: var(--color-card);
   padding: 6px 6px 8px;
   overflow: hidden;
+  position: relative;
+  cursor: pointer;
+}
+
+/* Gate 6.22: a blank part of the day shows it can be clicked. The mark
+   sits in the corner, away from the day number and any chips. */
+.calendar-day:hover::after {
+  content: "+";
+  position: absolute;
+  top: 4px;
+  right: 6px;
+  font: 800 15px var(--font-display);
+  color: var(--color-text-muted);
+  pointer-events: none;
 }
 
 .calendar-day-saturday {

@@ -503,6 +503,9 @@ type dayCell struct {
 	IsToday    bool
 	IsSaturday bool
 	Chips      []chipView
+	// AriaLabel is the day number link's spoken name (gate 6.23): "Add
+	// an event on Tuesday 22 September".
+	AriaLabel string
 }
 
 type monthPageData struct {
@@ -583,6 +586,10 @@ func (h *Handlers) handleMonth(w http.ResponseWriter, r *http.Request) {
 		week := make([]dayCell, 0, 7)
 		for i := 0; i < 7; i++ {
 			dateStr := cursor.Format(dateLayout)
+			ariaLabel := "Add an event on " + cursor.Format("Monday 2 January")
+			if dateStr == todayStr {
+				ariaLabel += " (today)"
+			}
 			week = append(week, dayCell{
 				Date:       dateStr,
 				Day:        cursor.Day(),
@@ -590,6 +597,7 @@ func (h *Handlers) handleMonth(w http.ResponseWriter, r *http.Request) {
 				IsToday:    dateStr == todayStr,
 				IsSaturday: cursor.Weekday() == time.Saturday,
 				Chips:      byDate[dateStr],
+				AriaLabel:  ariaLabel,
 			})
 			cursor = cursor.AddDate(0, 0, 1)
 		}
