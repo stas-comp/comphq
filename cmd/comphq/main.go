@@ -123,6 +123,12 @@ func run() error {
 		}
 	}
 
+	// SPEC B12.5, gate 6.34: kb_search_words isn't written by v1.2, so this
+	// is what keeps it right after a rollback and an upgrade again.
+	if err := kb.RebuildSearchWords(sqlDB); err != nil {
+		return fmt.Errorf("rebuild search word list: %w", err)
+	}
+
 	if cfg.TestMode {
 		// Hundreds of existing tests render pages without caring about
 		// backups; a fresh test server's app_meta has no last_backup_at

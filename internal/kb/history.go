@@ -188,6 +188,9 @@ func (s *ArticleStore) setStatus(ctx context.Context, articleID, personID int64,
 		if _, err := tx.ExecContext(ctx, `DELETE FROM kb_search WHERE article_id = ?`, articleID); err != nil {
 			return err
 		}
+		if _, err := tx.ExecContext(ctx, `DELETE FROM kb_search_words WHERE article_id = ?`, articleID); err != nil {
+			return err
+		}
 	} else if err := rewriteSearchRows(ctx, tx, articleID, title, bodyHTML); err != nil {
 		return err
 	}

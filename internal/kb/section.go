@@ -3,11 +3,20 @@
 package kb
 
 import (
+	"database/sql"
 	"net/http"
 
 	"github.com/stas-comp/comphq/internal/app"
 	"github.com/stas-comp/comphq/internal/kb/images"
+	"github.com/stas-comp/comphq/internal/kb/search"
 )
+
+// RebuildSearchWords refills kb_search_words from kb_search (SPEC B12.5,
+// gate 6.34): main.go calls this once at every start-up, after
+// migrations, the same way it calls Section for routes.
+func RebuildSearchWords(db *sql.DB) error {
+	return search.RebuildVocabulary(db)
+}
 
 type Handlers struct {
 	srv        *app.Server

@@ -14,6 +14,23 @@ const (
 	markEnd   = ""
 )
 
+// RebuildVocabulary empties and refills kb_search_words from kb_search
+// (SPEC B12.5, D-85). Run once at every start-up, after migrations: v1.2
+// never writes kb_search_words, so this is what keeps it right after a
+// rollback to v1.2 and an upgrade again (gate 6.34) — articles published
+// or edited while rolled back are picked up from kb_search, which v1.2
+// does maintain, the next time this runs.
+func RebuildVocabulary(db *sql.DB) error {
+	if _, err := db.Exec(`DELETE FROM kb_search_words`); err != nil {
+		return err
+	}
+	_, err := db.Exec(`
+		INSERT INTO kb_search_words (title, body, article_id, block_id)
+		SELECT title, body, article_id, block_id FROM kb_search
+	`)
+	return err
+}
+
 // Result is one article's best-matching block, ready to render.
 type Result struct {
 	ArticleID int64
@@ -27,7 +44,10 @@ type Result struct {
 // BuildQuery rejects (too short) returns no results and no error, matching
 // gate 1.32 ("empty or 1-character input never causes an error").
 func Search(db *sql.DB, raw string, limit int) ([]Result, error) {
-	query, ok := BuildQuery(raw)
+	query, ok, err := buildQueryExpanded(db, raw)
+	if err != nil {
+		return nil, err
+	}
 	if !ok {
 		return nil, nil
 	}
@@ -76,7 +96,10 @@ func Search(db *sql.DB, raw string, limit int) ([]Result, error) {
 // result linked to (SPEC B4: "Matched words come from the server via
 // highlight() on that block").
 func HighlightBlock(db *sql.DB, articleID int64, blockID int, raw string) (string, error) {
-	query, ok := BuildQuery(raw)
+	query, ok, err := buildQueryExpanded(db, raw)
+	if err != nil {
+		return "", err
+	}
 	if !ok {
 		return "", nil
 	}
@@ -90,7 +113,7 @@ func HighlightBlock(db *sql.DB, articleID int64, blockID int, raw string) (strin
 	}
 
 	var highlighted string
-	err := db.QueryRow(`
+	err = db.QueryRow(`
 		SELECT highlight(kb_search, ?, ?, ?)
 		FROM kb_search
 		WHERE kb_search MATCH ? AND article_id = ? AND block_id = ?
@@ -114,7 +137,10 @@ func HighlightBlock(db *sql.DB, articleID int64, blockID int, raw string) (strin
 // no auto-pick-the-column mode, and the title lives in a different column
 // than body blocks (SPEC B3).
 func HighlightMatches(db *sql.DB, articleID int64, raw string) (map[int]string, error) {
-	query, ok := BuildQuery(raw)
+	query, ok, err := buildQueryExpanded(db, raw)
+	if err != nil {
+		return nil, err
+	}
 	if !ok {
 		return nil, nil
 	}
@@ -122,7 +148,7 @@ func HighlightMatches(db *sql.DB, articleID int64, raw string) (map[int]string, 
 	out := make(map[int]string)
 
 	var titleHighlight sql.NullString
-	err := db.QueryRow(`
+	err = db.QueryRow(`
 		SELECT highlight(kb_search, 0, ?, ?)
 		FROM kb_search
 		WHERE kb_search MATCH ? AND article_id = ? AND block_id = 0

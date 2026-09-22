@@ -110,4 +110,21 @@ test.describe('Knowledge Base speed (SPEC gate 1.33)', () => {
     }
     assertUnderLimit('search.json p95', p95(times), SEARCH_JSON_P95_LIMIT_MS);
   });
+
+  // SPEC gate 6.35: a two-letter last word is the widest possible
+  // half-typed-word expansion (B12.5's own vocabulary lookup, capped at
+  // 30 matches, most common first) — still within the same budget as any
+  // other query against the test library.
+  test('search.json p95 latency with a two-letter last word stays within budget', async ({ page, server }) => {
+    await signInAsNewPerson(page, server.baseURL, '/kb');
+
+    const times: number[] = [];
+    for (let i = 0; i < 50; i++) {
+      const start = Date.now();
+      const res = await page.request.get(server.baseURL + '/kb/search.json?q=' + encodeURIComponent('pa'));
+      expect(res.ok()).toBe(true);
+      times.push(Date.now() - start);
+    }
+    assertUnderLimit('search.json p95 (two-letter word)', p95(times), SEARCH_JSON_P95_LIMIT_MS);
+  });
 });

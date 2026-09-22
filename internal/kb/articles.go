@@ -143,22 +143,28 @@ func rewriteSearchRows(ctx context.Context, tx *sql.Tx, articleID int64, title, 
 // kb_search rows in the same transaction as the change that caused them
 // to need updating (SPEC B4: "the same transaction as the article save").
 // Block 0 always holds the title; blocks 1..n hold each body block's text.
+// kb_search_words (SPEC B12.5, D-85: the half-typed-word lookup's
+// unstemmed vocabulary) is rewritten alongside it, in the same
+// transaction, every time — "one rule, two places" only for parsing; for
+// storage there is exactly one place these two tables are ever written.
 func rewriteSearchRowsFromBlocks(ctx context.Context, tx *sql.Tx, articleID int64, title string, blockTexts map[int]string) error {
-	if _, err := tx.ExecContext(ctx, `DELETE FROM kb_search WHERE article_id = ?`, articleID); err != nil {
-		return err
-	}
-	if _, err := tx.ExecContext(ctx,
-		`INSERT INTO kb_search (title, body, article_id, block_id) VALUES (?, '', ?, 0)`,
-		title, articleID,
-	); err != nil {
-		return err
-	}
-	for blockID, text := range blockTexts {
+	for _, table := range [2]string{"kb_search", "kb_search_words"} {
+		if _, err := tx.ExecContext(ctx, `DELETE FROM `+table+` WHERE article_id = ?`, articleID); err != nil {
+			return err
+		}
 		if _, err := tx.ExecContext(ctx,
-			`INSERT INTO kb_search (title, body, article_id, block_id) VALUES ('', ?, ?, ?)`,
-			text, articleID, blockID,
+			`INSERT INTO `+table+` (title, body, article_id, block_id) VALUES (?, '', ?, 0)`,
+			title, articleID,
 		); err != nil {
 			return err
+		}
+		for blockID, text := range blockTexts {
+			if _, err := tx.ExecContext(ctx,
+				`INSERT INTO `+table+` (title, body, article_id, block_id) VALUES ('', ?, ?, ?)`,
+				text, articleID, blockID,
+			); err != nil {
+				return err
+			}
 		}
 	}
 	return nil

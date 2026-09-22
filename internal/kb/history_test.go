@@ -182,6 +182,17 @@ func TestArchiveRemovesFromCategoryAndSearchListsInArchived(t *testing.T) {
 		t.Errorf("search rows after archive = %d, want 0", searchCount)
 	}
 
+	// SPEC gate 6.33, B12.5: kb_search_words is written wherever kb_search
+	// is, so archiving removes an article from the half-typed-word lookup
+	// too, not just whole-word search.
+	var searchWordsCount int
+	if err := sqlDB.QueryRow(`SELECT COUNT(*) FROM kb_search_words WHERE article_id = ?`, article.ID).Scan(&searchWordsCount); err != nil {
+		t.Fatal(err)
+	}
+	if searchWordsCount != 0 {
+		t.Errorf("kb_search_words rows after archive = %d, want 0", searchWordsCount)
+	}
+
 	archived, err := store.ListArchived()
 	if err != nil {
 		t.Fatalf("ListArchived: %v", err)
@@ -231,6 +242,14 @@ func TestUnarchiveRestoresCategoryAndSearch(t *testing.T) {
 	}
 	if searchCount == 0 {
 		t.Error("search rows after unarchive = 0, want them re-added")
+	}
+
+	var searchWordsCount int
+	if err := sqlDB.QueryRow(`SELECT COUNT(*) FROM kb_search_words WHERE article_id = ?`, article.ID).Scan(&searchWordsCount); err != nil {
+		t.Fatal(err)
+	}
+	if searchWordsCount == 0 {
+		t.Error("kb_search_words rows after unarchive = 0, want them re-added (gate 6.33)")
 	}
 
 	archived, err := store.ListArchived()

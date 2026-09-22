@@ -182,14 +182,16 @@ run_upgrade_rollback_test() {
   run_prev_smoke "$verify_only"
   # The previous release has no idea steps exist: its own screens must still
   # work with the rows sitting in the database (this is the current suite's
-  # test, pointed at the previous release's app).
-  BASE_URL="http://127.0.0.1:8080" npx playwright test --project=smoke --grep "@steps-rolledback"
+  # test, pointed at the previous release's app). It also publishes an
+  # article while rolled back (gate 6.34, SPEC B12.5): v1.2.0 writes
+  # kb_search but has never heard of kb_search_words.
+  BASE_URL="http://127.0.0.1:8080" npx playwright test --project=smoke --grep "@steps-rolledback|@search-seed-rolledback"
   docker compose -f "$up_compose_prev" -p "$up_project" down
 
-  log "  phase 4: upgrade again, and every step is still there"
+  log "  phase 4: upgrade again, and every step and half-typed search word is still there"
   docker compose -f "$up_compose_current" -p "$up_project" up -d
   wait_healthy "${up_project}-comphq-1"
-  BASE_URL="http://127.0.0.1:8080" npx playwright test --project=smoke --grep "$verify_only|@steps-verify"
+  BASE_URL="http://127.0.0.1:8080" npx playwright test --project=smoke --grep "$verify_only|@steps-verify|@search-verify-upgraded"
   docker compose -f "$up_compose_current" -p "$up_project" down
 
   # TODO(P1-34): once backups exist, assert a pre-update backup file
