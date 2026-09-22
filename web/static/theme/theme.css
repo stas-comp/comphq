@@ -334,6 +334,148 @@ select.field[multiple] {
   font-variant-numeric: tabular-nums;
 }
 
+/* The calendar mark (gate 6.10, D-81): decoration only, so it's added by
+   datepicker.js marking <body> once it has run, not by CSS alone — with
+   JavaScript off the box stays exactly the plain v1.2 field (gate 6.17).
+   An <input> can't take a ::after, hence background-image rather than the
+   .icon mask technique; currentColor inside it still resolves against
+   this element's own colour. */
+body.has-datepicker .field-date {
+  padding-right: 34px;
+  background-image: url("/static/theme/icons/calendar.svg");
+  background-repeat: no-repeat;
+  background-position: right 9px center;
+  background-size: 18px 18px;
+  color: var(--color-ink-text);
+}
+
+/* The date calendar popover (SPEC B9.5, B12.2, D-81): built from the same
+   card, border and shadow as the task window, and the Calendar page's own
+   Saturday wash and today chip, so it looks as if it had always been
+   there. datepicker.js positions it with inline top/left (position:
+   fixed, set there so it also works appended inside an open <dialog>). */
+.datepicker {
+  width: 17.5rem;
+  padding: 10px;
+  background: var(--color-card);
+  border: 1.5px solid var(--color-ink-navy);
+  border-radius: 10px;
+  box-shadow: var(--shadow-raised);
+  z-index: 30;
+}
+
+.datepicker-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.datepicker-month {
+  flex: 1;
+  text-align: center;
+  font: 800 14px var(--font-display);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-ink-navy);
+}
+
+.datepicker-nav {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 1.5px solid var(--color-border-strong);
+  border-radius: 6px;
+  background: var(--color-card);
+  color: var(--color-ink-navy);
+  font-size: 16px;
+  line-height: 1;
+}
+
+.datepicker-nav:hover {
+  background: var(--color-accent-wash);
+}
+
+.datepicker-grid {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.datepicker-grid th {
+  padding: 2px 0 6px;
+  font: 700 11px var(--font-display);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.datepicker-day {
+  width: 14.28%;
+  padding: 0;
+  text-align: center;
+  font: 500 13px var(--font-mono);
+  color: var(--color-ink-text);
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.datepicker-grid td.datepicker-day {
+  padding: 5px 0;
+}
+
+.datepicker-day:hover {
+  background: var(--color-accent-wash);
+}
+
+.datepicker-day:focus-visible {
+  outline: 2px solid var(--color-ink-navy);
+  outline-offset: -2px;
+}
+
+.datepicker-saturday-col {
+  background: var(--color-accent-wash);
+}
+
+.datepicker-outside {
+  color: var(--color-text-muted);
+  background: var(--color-day-out);
+}
+
+.datepicker-today {
+  font-weight: 800;
+  box-shadow: inset 0 0 0 1.5px var(--color-ink-navy);
+}
+
+.datepicker-selected {
+  background: var(--color-ink-navy);
+  color: var(--color-white);
+  font-weight: 800;
+}
+
+.datepicker-foot {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.datepicker-foot button {
+  flex: 1;
+  padding: 6px 4px;
+  border: 1.5px solid var(--color-border-strong);
+  border-radius: 6px;
+  background: var(--color-card);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-ink-navy);
+}
+
+.datepicker-foot button:hover {
+  background: var(--color-accent-wash);
+}
+
 .check {
   width: 18px;
   height: 18px;

@@ -26,6 +26,7 @@ type frameData struct {
 	Nav              []navItemData
 	BodyContent      template.HTML
 	ShowBackupBanner bool
+	Today            string
 }
 
 type navItemData struct {
@@ -95,6 +96,11 @@ func (s *Server) RenderFrame(w http.ResponseWriter, r *http.Request, status int,
 		Nav:              navItems,
 		BodyContent:      template.HTML(body.String()), //nolint:gosec // body comes from our own sanitised/static templates, not user input
 		ShowBackupBanner: showBackupBanner,
+		// SPEC B12.2 (P6-03): the date calendar's Today and This Saturday
+		// buttons, and its "follows typing" nearest-year rule (D-82), need
+		// the same idea of "today" the server itself uses — honouring
+		// COMPHQ_TEST_TODAY in test mode — not the browser's own clock.
+		Today: Today(s.TestMode).Format("2006-01-02"),
 	}
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")

@@ -17,7 +17,7 @@
 <link rel="stylesheet" href="/static/briefing/briefing.css">
 {{template "app-head-icons"}}
 </head>
-<body data-ready>
+<body data-ready data-today="{{.Today}}">
 <div class="frame">
 <aside class="sidebar">
 <div class="wordmark"><small>Comp</small>
@@ -60,6 +60,7 @@
 <script src="/static/kb/messages.js"></script>
 <script src="/static/kb/search.js"></script>
 <script src="/static/app/refresh.js"></script>
+<script src="/static/app/datepicker.js"></script>
 </body>
 </html>
 {{end}}
