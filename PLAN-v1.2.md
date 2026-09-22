@@ -460,7 +460,8 @@ The task format, the definition of done and the progress log are `PLAN.md` §2.2
   O5.1 is the check that matters most; and that the app-icon routes were confirmed on real office
   browsers on a named date, with the wording that was seen.
 - **Done when:** the release exists, the report is written, S10 is sent, and the owner has confirmed
-  O5.1–O5.4.
+  O5.1–O5.4. **v1.3 (everyday fixes: the frame, dates, Sunday first, search) is now specified — SPEC
+  A11 Phase 6 and B12 — and planned in `PLAN-v1.3.md`.**
 
 ---
 

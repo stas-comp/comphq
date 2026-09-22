@@ -2,6 +2,30 @@
 
 Non-obvious choices made while building Comp HQ, in the format required by `PLAN.md` §2.4: one short paragraph each, headed `D-NN Title (task ID, date)`.
 
+## D-85 The half-typed word is looked up in a second, unstemmed word list, rebuilt at every start (P6-00, 2026-09-22)
+
+`kb_search` uses the Porter stemmer, which is what lets "printers" find "printer" (gate 1.29). FTS5 stems the query too, including a prefix, and a stemmed half-word is often not the start of anything: "pay" becomes "pai" and misses "payment", and a probe on 2026-09-22 found "happin", "busin", "generat" and "voluntee" miss "happiness", "business", "generation" and "volunteer" in the same way. D-79 fixed only the test's random word; this fixes search. Of the options (drop stemming and lose gate 1.29; a second FTS table queried and merged separately, which splits ranking, snippets and highlighting across two tables; or expanding the half-typed word into the whole words it could be and querying the one table as now), the expansion keeps every existing behaviour where it is. The whole words come from an `fts5vocab` over a new `unicode61`-only table, `kb_search_words`, written wherever `kb_search` is written. The table is rebuilt from `kb_search` at every start-up, because 1.2.0 doesn't know it exists: after a rollback, articles edited on 1.2.0 would otherwise be missing from it after the next upgrade (gate 6.34). The expansion is capped at 30 words, most common first, so a two-letter prefix can't build a huge query (gate 6.35). SPEC B12.5 has the detail.
+
+## D-84 A blank day starts an event, not a job (P6-00, 2026-09-22)
+
+The owner asked for events. Offering a choice ("Event or job?") on every blank-day click adds a step to the common case, and jobs already have one home with its own add button. A job's due date still shows on its day and still opens the job.
+
+## D-83 Weeks start on Sunday, and the Briefing is untouched (P6-00, 2026-09-22)
+
+The owner asked for Sunday first, which replaces "weeks start Monday" in gate 2.12 (and D-61's calendar-drawing note); gate 6.20 is the new wording, and the tests asserting Monday-first are corrected to it, not deleted. It applies wherever Comp HQ draws a week: the month grid and the date calendar. The Saturday Briefing never used a week start. Its "this week" is today to Friday, and its Saturday is today or the coming one (B4), so it doesn't change, and a test pins that. A side effect the owner will like is that Saturday, the office day, becomes the last column, where a row ends.
+
+## D-82 A date typed without a year means the nearest such date to today (P6-00, 2026-09-22)
+
+"This year" is simplest to say but wrong at the turn of the year: in late December, a due date of 5/1 means the coming January. "The next one from today" is wrong the other way, when recording something that already happened. Nearest-to-today handles both, and it's what a person means nine times in ten. The box shows the full date as soon as it's left (with JavaScript), so the chosen year is visible before saving. Without JavaScript the server applies the same rule, so the saved result is identical. Everything D-61 refuses is still refused.
+
+## D-81 Comp HQ draws its own date calendar, opened from the box itself (P6-00, 2026-09-22)
+
+D-61 rejected `<input type="date">` because the browser draws it month-first on the office computers. That is still true, so the calendar is our own: a small month grid in one shared script with no new library (a vendored picker brings its own look and locale rules, the problem D-61 solved). It opens when the box is clicked or tabbed into, rather than from a separate icon button, so gate 4.11's four icon-only buttons stay four. A calendar mark drawn inside the box is decoration, not a control. The typed box stays the real field: the script only writes into it, so with JavaScript off every date box works exactly as it did at v1.2 (gate 6.17).
+
+## D-80 The sidebar and top bar stay put; the backup warning doesn't (P6-00, 2026-09-22)
+
+The owner didn't find Settings on the Board because the sidebar scrolled away with a long page. Both the sidebar and the top bar (search, and "You: *name*") now stay in place while the page scrolls. The sidebar is exactly one window tall and scrolls on its own if the window is shorter than its contents, so Settings can always be reached. The top bar gets a scroll margin so that search's scroll-to-passage (gate 1.28) lands below it, not under it. The red backup warning stays above the top bar and scrolls away: it only needs to be seen, and a permanent red band would take screen space on a small laptop for days at a time.
+
 ## D-79 Gate 1.29's prefix half no longer fails one run in thirty-six (P5-08, 2026-09-21)
 
 The full run for Phase 5 failed once in the container job on `gate 1.29: stemming and prefix matching find related words`, the test that had already flaked twice before (fixed once in D-58). Traced this time rather than re-run: the test types its random word minus the last three letters, and when the cut falls straight after a "y" the search finds nothing, because the stemmer turns a trailing "y" into "i" in what is typed but leaves the "y" alone in the middle of the indexed word (checked directly: `"tonerabcy"*` matches nothing, `"tonerabcx"*` and `"tonerabcs"*` do). The random word is now followed by a fixed `abcde`, so the cut always lands on a plain letter and the prefix rule is the only thing under test; no assertion changed. The same quirk means the live search will not offer "payment" for a typed "pay" until the whole word is typed. That is a search-quality matter, not a Phase 5 one, so it is left as it is and flagged for later.

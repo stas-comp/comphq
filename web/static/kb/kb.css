@@ -388,6 +388,15 @@
   text-decoration: none;
 }
 
+/* Gate 6.03: a search result's block, once scrolled to, lands below the
+   sticky top bar rather than under it (SPEC B12.1). `--topbar-height` is
+   set once, in frame.css. Every element `[data-b]` marks (P1-18) is a
+   possible fragment/scroll target, including the title, which sits
+   outside .kb-article-body. */
+[data-b] {
+  scroll-margin-top: var(--topbar-height);
+}
+
 /* Opening a result outlines the paragraph that matched (gate 4.42; the
    mockup's `.hit`), with a "Clear highlights" link. */
 .kb-highlighted,

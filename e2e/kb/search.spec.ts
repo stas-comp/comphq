@@ -74,6 +74,12 @@ test('gate 1.28: search result scrolls to and highlights the matching passage', 
   await expect(target).toHaveClass(/kb-highlighted/);
   await expect(target.locator('mark')).toHaveText(word);
   await expect(target).toBeInViewport();
+
+  // SPEC gate 6.03: the block lands below the sticky top bar, not under
+  // it (frame.css's scroll-margin-top, P6-01).
+  const targetBox = (await target.boundingBox())!;
+  const topbarBox = (await page.locator('.topbar').boundingBox())!;
+  expect(targetBox.y).toBeGreaterThanOrEqual(topbarBox.y + topbarBox.height);
 });
 
 // SPEC gate 1.26: up to 20 results, most relevant first, a title match

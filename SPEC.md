@@ -109,6 +109,7 @@ Everything is stored on the NAS. It works with no internet connection, costs not
 **What it looks and feels like**
 - A bold dark sidebar on the left holds the Comp HQ wordmark and the sections: Briefing, Knowledge Base, Tasks, Calendar, and Settings at the bottom. The current section is lit up in the accent colour.
 - A slim bar across the top holds the search box (always there) and "You: Sam · Change".
+- *(v1.3)* The sidebar and the top bar stay in place while the page scrolls, so every section, Settings and the search box are always in view, however long the page (gates 6.01–6.05, B12.1).
 - The name picker is a full screen reading **"Who's using this computer?"**, with each name as a large button in alphabetical order, and a smaller **"My name isn't here"** link underneath.
 
 ## A5. Knowledge Base
@@ -158,7 +159,7 @@ Everything is stored on the NAS. It works with no internet connection, costs not
 ## A7. Calendar
 
 **What a staff member can do**
-- A staff member can view a month at a time (weeks start Monday, with **Saturdays highlighted**), or a list of the next 12 weeks.
+- A staff member can view a month at a time (weeks start **Sunday** since v1.3, with **Saturdays highlighted**), or a list of the next 12 weeks.
 - A staff member can add an event with: title, date, optional end date (for events lasting several days), all-day or a start time (and optional end time), notes, how it repeats (never, weekly, monthly, yearly) with an optional "until" date, and **how far ahead it should appear in the Saturday Briefing** (for example "6 weeks").
 - A staff member can change **just one occurrence** of a repeating event (for example, move this year's concert) without affecting other years, or change the whole series.
 - A staff member can cancel just one occurrence.
@@ -167,7 +168,7 @@ Everything is stored on the NAS. It works with no internet connection, costs not
 
 **What it looks and feels like**
 - A clean month grid. Events are solid accent-coloured chips. Task deadlines are outlined chips with a tick-box icon, so the two are never confused.
-- Clicking a day starts a new event on that date. Clicking a repeating event asks **"Change just this one"** or **"Change all"**.
+- Clicking a day (since v1.3, anywhere empty in its box, not only its number) starts a new event on that date. Every date box in the app opens a small day-first calendar to pick from, and typing still works. Clicking a repeating event asks **"Change just this one"** or **"Change all"**.
 
 ## A8. Saturday Briefing
 
@@ -309,7 +310,7 @@ Each gate is a pass/fail statement. The build agent checks every gate itself wit
 - **2.11** A removed person no longer appears when assigning, but still shows on their old tasks, marked "(removed)".
 
 **Calendar**
-- **2.12** The Calendar opens on this month: weeks start Monday, Saturdays are highlighted, and today is marked. It has Previous, Next and Today buttons. The List view shows the next 12 weeks in date order.
+- **2.12** The Calendar opens on this month: weeks start Monday *(replaced by gate 6.20 in v1.3: weeks start Sunday; D-83)*, Saturdays are highlighted, and today is marked. It has Previous, Next and Today buttons. The List view shows the next 12 weeks in date order.
 - **2.13** An event can be added with a title (required), date, optional end date, all-day or start time with optional end time, notes, repeats (Never / Weekly / Monthly / Yearly) with optional "until" date, and "Show in briefing ahead" (not early, or a number of days or weeks; the default is 1 week).
 - **2.14** Weekly events repeat on the same weekday. Monthly events repeat on the same date, and an event on the 31st shows on the last day of shorter months. Yearly events repeat on the same date, and 29 February shows on 28 February in other years. Nothing appears after the "until" date.
 - **2.15** A yearly Christmas concert on Sat 12 Dec 2026, moved with "Change just this one" to Sat 19 Dec 2026, shows on 19 Dec 2026 and still shows on 12 Dec 2027.
@@ -501,6 +502,53 @@ own. Nothing in Phases 1–4 changes meaning. The design lives in B10 and B11.
 - **O5.3** Set up one office computer from scratch, following only the new **Set up this computer** page. Confirm the icon on the desktop, in the Start menu and on the taskbar is the Comp HQ mark, and that the window has no address bar.
 - **O5.4** Alt-Tab between Comp HQ and something else. Confirm Comp HQ looks like its own program.
 
+### Phase 6 — Easier dates, a sidebar that stays put, Sunday first, and search that keeps up (v1.3)
+
+Phase 6 is a set of everyday fixes the owner asked for after v1.2. Nothing in Phases 1–5 changes meaning except the three words of gate 2.12 that gate 6.20 replaces (D-83). The design is in B12.
+
+**The sidebar and top bar stay put**
+- **6.01** On every page, the sidebar stays in place while the page scrolls. With the test library loaded, scrolled to the very bottom of the Board in a 1024 × 700 window, every section link, **Settings** and the version number are on screen.
+- **6.02** The top bar (the search box and "You: *name* · Change") also stays at the top while the page scrolls, and the live search results still open over the page, fully visible.
+- **6.03** Nothing ends up hidden under the top bar. A search result's highlighted passage (gate 1.28) scrolls into view *below* the bar, not behind it. The task window, the list of names on a card, the Undo on steps and drag-and-drop on the Board and Team all still work as before.
+- **6.04** If a window is too short to show the whole sidebar, the sidebar scrolls on its own, so Settings can always be reached. The page itself still never scrolls sideways (gate 5.31).
+- **6.05** The backup warning, when shown, sits above the top bar and scrolls away with the page (D-80).
+
+**A calendar for every date**
+- **6.10** Every date box in the app opens a small calendar when clicked or tabbed into: a job's due date (in the add-a-task window and when editing), an event's date, end date and "until" date, and the dates of a "just this one" change. A small calendar mark inside the right-hand end of each date box shows the calendar is there.
+- **6.11** The calendar shows one month, starting on **Sunday**, with Saturday's column shaded as on the Calendar page. Today is marked, the date already in the box is marked, and there are previous and next month controls.
+- **6.12** Picking a day fills the box as day/month/year (**25/09/2026**) and closes the calendar.
+- **6.13** The calendar has a **Today** button and a **This Saturday** button. This Saturday is today on a Saturday, and otherwise the coming Saturday: the same Saturday the Briefing is about.
+- **6.14** Typing still works exactly as before. While you type, the calendar follows: typing 25/12/2026 moves it to December with the 25th marked. Clicking elsewhere or pressing Escape closes it and leaves what was typed alone.
+- **6.15** An empty end date or "until" date opens on the month of the start date, not on today's month.
+- **6.16** It works from the keyboard alone. The arrow keys move a day or a week, Page Up and Page Down move a month, Enter picks, and Escape closes and returns to the box. A screen reader hears the month's name and each day's full date ("Friday 25 September 2026"). The accessibility check passes with the calendar open.
+- **6.17** With JavaScript switched off, every date box is exactly the typed box of v1.2, and still works.
+- **6.18** A date can be typed without its year: **25/9**, **25.9** or **25-9** means the 25 September nearest to today (D-82). With JavaScript, the box shows the full date as soon as you move on. Without it, the saved date is the same, because the server applies the same rule. On 22 September 2026: 25/9 → 25/09/2026, 1/7 → 01/07/2026. On 20 December 2026: 5/1 → 05/01/2027.
+- **6.19** Everything D-61 refused is still refused, with the same plain message. That includes an American-order date such as **9/25/2026**, and a short date that is not a real day, such as **31/9**.
+
+**The Calendar**
+- **6.20** The month view starts the week on **Sunday** (Sun, Mon … Sat). Saturday is the last column and is still highlighted. Previous, Next, Today and the greyed days from the months on either side work as before. *(This replaces "weeks start Monday" in gate 2.12. Nothing else in 2.12 changes.)*
+- **6.21** Clicking anywhere empty in a day's box opens a new event with that date filled in. This includes the greyed days from the months on either side. Clicking an event or a job due in the box still opens that event or job, as before.
+- **6.22** A day's box shows that it can be clicked: the pointer changes, and a small **+** appears in the box on hover.
+- **6.23** From the keyboard, the day number is still a link that does the same thing, and its spoken name says what it does: "Add an event on Tuesday 22 September".
+
+**Search keeps up with typing**
+- **6.30** A half-typed last word finds the articles containing words it's the start of. "pay" finds an article containing "payment", and "busin", "generat", "voluntee" and "happin" find "business", "generation", "volunteer" and "happiness". This holds in the live results and on the full results page.
+- **6.31** Finished words still find their relatives exactly as before. "printers" finds "printer" and "ton" finds "toner" (gate 1.29, unchanged), and a match in the title still ranks above a match in the text (gate 1.26).
+- **6.32** The word a half-typed word found is highlighted in the result's passage and on the article page, as any other match is (gates 1.27 and 1.28).
+- **6.33** Publishing, editing and archiving an article are reflected in the very next search for half-typed words too (gates 1.30 and 1.31).
+- **6.34** Search survives an upgrade from 1.2.0 and a rollback back to 1.2.0. The rolled-back app searches as 1.2.0 did. On upgrading again, a half-typed word finds an article that was published or edited *while* rolled back.
+- **6.35** With the test library loaded, search still answers within 1 second (gate 4.53, unchanged), including for a two-letter last word.
+
+**Still true afterwards**
+- **6.40** Every gate from Phases 1 to 5 (1.01–5.31) still passes, unchanged, at the same thresholds. The one exception is the three words of gate 2.12 that gate 6.20 replaces, and D-83 records it.
+- **6.41** Every screen still passes the accessibility check and still works from 1024 × 700 up to full HD, with no sideways scrolling that shouldn't be there.
+
+**👤 Owner checks — end of Phase 6**
+- **O6.1** Open the Board and scroll to the bottom. Confirm Settings is in view the whole time, and that nothing on the page looks cut off under the top bar.
+- **O6.2** Add a job with a due date picked from the calendar, then another by typing just **25/9**. Confirm both feel natural, and that This Saturday picks the Saturday you expect.
+- **O6.3** On the Calendar, click an empty part of a day and add an event. Confirm Sunday-first looks right to you and that Saturday still stands out.
+- **O6.4** In the search box, slowly type a word from one of your articles. Confirm results appear before you finish the word.
+
 ## A12. What's not included
 
 From the confirmed intent:
@@ -527,6 +575,7 @@ Decided while writing this spec (any of these could be added later if real use s
 - Restoring backups from inside the app. Restores are done with TrueNAS snapshots, following the README.
 - Several named lists of steps on one job, and reusable step templates for jobs that come round every year (v1.2, D-70 and D-72). Steps in the Saturday Briefing, and a "Removed steps" screen (D-73, D-74).
 - Giving a step its own person or its own due date. A step is a tick-box; if it needs an owner and a date, it is a job.
+- A confirmation before removing a name, and a Removed people list to bring one back (considered for v1.3; the owner left it for later). A blank Calendar day offering "add a job" as well as an event (D-84).
 
 ## A13. Your hands-on moments
 
@@ -663,6 +712,10 @@ Key/value store: `last_backup_at`, `last_backup_ok`, `last_backup_error`, `min_a
 - Snippet: `snippet()` on the best block, using private-use Unicode characters as markers. HTML-escape the text, then replace the markers with `<mark>`.
 - Result link: `/kb/articles/<id>?q=<query>#b-<block>`. On the article page, the server marks the target block, and a small script scrolls it into view, adds a highlight class, and wraps the matched words within it in `<mark>`. Matched words come from the server via `highlight()` on that block, passed as a data attribute. A "Clear highlights" control removes them.
 - Live results: debounce at 250 ms. Pressing Enter goes to a full results page at `/kb/search?q=` with the same content.
+- *(v1.3)* The half-typed last word: before `BuildQuery`'s output reaches MATCH, the last word is looked up in the unstemmed vocabulary of `kb_search_words` and becomes `("word"* OR "whole1" OR … )` with at most 30 whole words, most common first. Finished words are unchanged. `kb_search_words` is written wherever `kb_search` is, and rebuilt from `kb_search` at every start-up (D-85, B12.5).
+
+**Dates typed without a year** *(v1.3)*
+- Every date field also accepts `d/m`, `d.m` and `d-m`. The year is whichever of last year, this year and next year puts the date nearest to today (`app.Today`, so test mode's fixed date applies). A day that doesn't exist in that year (29/2) is tried in the other two before being refused. Everything D-61 refuses is still refused, with the same message (D-82, gates 6.18–6.19).
 
 **Images**
 - Upload: `POST /kb/images`. Limit 20 MB. Type is decided by content sniffing, and only JPEG, PNG, GIF and WebP are accepted (**no SVG**). Store under the SHA-256 name (duplicates collapse to one file).
@@ -1008,7 +1061,7 @@ mockup's own class names are a reasonable starting point:
 Styled form controls (gate 4.05) belong here too, and are shared by the board and the task window. The
 date field must show day-first; a native `<input type=date>` follows the computer's locale and
 currently shows `mm/dd/yyyy`, which is wrong for this office — fix it however is simplest and most
-stable, and note what you chose in `docs/decisions.md`.
+stable, and note what you chose in `docs/decisions.md`. *(Done: D-61, a typed box. v1.3 adds a day-first calendar over it, drawn by Comp HQ, not the browser. See B12.2.)*
 
 ### B9.6 Assigning from a card (gate 4.20)
 
@@ -1244,3 +1297,99 @@ future browser version shows a thin strip carrying the address in an installed w
 **not** cost: the app window, the icon, the taskbar entry, or anything the team does day to day.
 
 Revisit only if that strip actually appears, and then as its own small piece of work.
+
+## B12. Everyday fixes (v1.3, gates 6.01–6.41)
+
+Phase 6 changes no data and adds no section. It touches the shared frame, the shared date field, the
+Calendar's month grid, and search. `PLAN-v1.3.md` §4 names the files.
+
+### B12.1 The frame stays put (gates 6.01–6.05)
+
+Up to v1.2, `.frame` is a flex row of `.sidebar` and `.main-column`, and the whole page scrolls, so a
+long page carries the sidebar's foot (Settings, the version) off the bottom of the window. The fix
+is CSS in `frame.css` only:
+
+- `.sidebar`: `position: sticky; top: 0; height: 100vh; overflow-y: auto`. It's exactly one window
+  tall and scrolls on its own when the window is shorter than its contents (6.04).
+- `.topbar`: `position: sticky; top: 0`, keeping its paper background and bottom rule. Its z-index
+  sits above page content and below every overlay: the task window, the live search panel, a card's
+  name menu, drag ghosts, the steps Undo and the date calendar.
+- The bar's height is one custom property. Anything the app scrolls to (article blocks for gate
+  1.28, fragment targets) uses it as `scroll-margin-top`, so it lands below the bar.
+- The backup banner keeps its place above the top bar and scrolls away (D-80).
+
+### B12.2 The date calendar (gates 6.10–6.19)
+
+The typed box of D-61 stays the real form field. One shared script (`web/static/app/datepicker.js`)
+adds a calendar to every `input.field-date`, delegated from the document so boxes inside the task
+window are covered too. No library.
+
+- **Opens** on click or focus, below the box, or above it when there's no room below. It never
+  takes focus while the person is typing. Down arrow moves focus into the grid.
+- **Shows** one month, **Sunday first** (D-83): Saturday's column in the Calendar's Saturday wash,
+  today marked as on the Calendar, the box's current date marked as selected. It has previous and next
+  month controls, and **Today** and **This Saturday** buttons (This Saturday is B4's Briefing
+  Saturday: today if it's Saturday, otherwise the coming one).
+- **Follows typing:** whenever the box parses (by B4's rules, including a date without its year),
+  the grid moves to that month and marks the day.
+- **Pairs:** a box with `data-date-after="<id>"` opens, when empty, on the month of the box it names
+  (event end and "until" follow the start date).
+- **Leaving the box** rewrites a parseable value to the full `dd/mm/yyyy`, so the chosen year is
+  visible before saving. An unparseable value is left exactly as typed for the server to refuse.
+- **Keyboard and screen readers:** a dialog-like popover holding a grid. Arrows move by a day or a
+  week, Page Up and Page Down by a month, Home and End to the week's ends, Enter picks, and Escape
+  closes and returns focus to the box. The month heading is a live region, each day's accessible
+  name is its full date ("Friday 25 September 2026"), and the picked day carries `aria-selected`.
+- **The calendar mark** inside the box's right-hand end is a background image from the icon set
+  (`calendar`), decoration only. Gate 4.11's four icon-only buttons stay four (D-81).
+- **Without JavaScript** nothing is added, and the box is v1.2's box (6.17).
+
+### B12.3 Sunday first (gate 6.20)
+
+The month grid starts on the Sunday on or before the 1st and ends on the Saturday on or after the
+last day. Headings read Sun … Sat. Saturday is marked per day, as now, so its shading follows it to
+the last column. The date calendar uses the same rule. The Briefing and every B4 Briefing rule are
+unchanged, and a test pins a Briefing to its v1.2 output.
+
+### B12.4 A blank day adds an event (gates 6.21–6.23)
+
+A click on a month-grid day cell whose target isn't inside a link follows that cell's day-number
+link to `/calendar/new?date=<day>`, which already fills in the date. The cell shows a pointer and a
+small **+** on hover. The day-number link's accessible name becomes "Add an event on *Weekday D
+Month*". Without JavaScript the day number still does the job.
+
+### B12.5 Search: the half-typed word (gates 6.30–6.35)
+
+**The fault.** `kb_search` is `porter unicode61`. FTS5 stems a prefix query as it stems any term,
+and a stemmed half-word is often not the start of the stemmed whole word: `pay` → `pai`, which is not
+a prefix of `payment`. The same happens for `happin`, `busin`, `generat` and `voluntee` (probe,
+2026-09-22). Finished words are fine.
+
+**The fix** (D-85):
+
+- `migrations/kb/0005_search_words.sql`: `kb_search_words`, FTS5 over `title` and `body` with
+  `tokenize = 'unicode61'` (no stemmer), plus `kb_search_words_vocab`, an `fts5vocab` table of type
+  `row` over it. Add-only, so rollback-safe.
+- Every write to `kb_search` (publish, edit, archive, restore) makes the same write to
+  `kb_search_words` in the same transaction.
+- **At every start-up**, after migrations, `kb_search_words` is emptied and refilled from
+  `kb_search`. v1.2.0 never writes it, so this is what keeps it right after a rollback and an
+  upgrade again (6.34).
+- The last word `w` of the query is expanded: `SELECT term FROM kb_search_words_vocab WHERE term >= w
+  AND term < w || char(0x10FFFF) ORDER BY cnt DESC LIMIT 30`. The last MATCH term becomes
+  `("w"* OR "t1" OR "t2" …)`, each whole word quoted exactly as B4 quotes words. These go through
+  `kb_search`'s stemmer as any other word does, so ranking, `snippet()` and `highlight()` work
+  unchanged, and the found word is highlighted (6.32).
+- The expansion only adds whole words from the database's own vocabulary. Raw input still never
+  reaches MATCH. The 2-character minimum of gate 1.26 is unchanged.
+
+Another approach is allowed if it passes 6.30–6.35 and is recorded in `docs/decisions.md`. The
+rebuild at start-up (or an equivalent guarantee for 6.34) is not optional.
+
+### B12.6 How Phase 6 gates are checked
+
+As B7, per gate: 6.01–6.05 by E2E at 1024 × 700 and 1920 × 1080 with the test library; 6.10–6.17 by
+E2E on every date box, keyboard-only, and axe with the calendar open; 6.18–6.19 by a table of
+`format` unit tests and a no-JavaScript E2E; 6.20 by grid unit tests and the corrected Calendar
+E2E; 6.21–6.23 by E2E and axe; 6.30–6.33 by `search` unit and integration tests and E2E; 6.34 by the
+container test's rollback step; 6.35 by the speed suite; 6.40–6.41 by the full suite.

@@ -1,7 +1,23 @@
 /* Layout for the shared frame: dark sidebar, top bar, main content
    (SPEC A4, A10, gates 4.13, 4.14). Drawn as docs/design/mockup.html draws
    `.side`, `.mark`, `.nav`, `.top` and `.you`; colours, fonts and the
-   shared parts come from theme.css. */
+   shared parts come from theme.css.
+
+   SPEC B12.1 (v1.3, gates 6.01-6.05): the sidebar and top bar stay in
+   view while the page scrolls, so Settings and the version number (the
+   sidebar's foot) are always reachable, and the search box and "You:
+   name * Change" are always at hand. `--topbar-height` is the one place
+   the bar's height is named; anything the app scrolls to (article
+   blocks, fragment targets) uses it as scroll-margin-top so it lands
+   below the bar, not under it. */
+
+:root {
+  /* The bar's rendered height (padding plus its tallest row, the "You:
+     name" line) measures ~71.5px; a few px of headroom keeps
+     scroll-margin-top clear of it even if a font metric shifts slightly
+     between Windows (dev) and Linux (CI). */
+  --topbar-height: 76px;
+}
 
 .frame {
   display: flex;
@@ -17,6 +33,13 @@
   flex-direction: column;
   padding: 22px 14px 16px;
   gap: 4px;
+  /* Gate 6.01, 6.04: exactly one window tall, pinned to the viewport;
+     scrolls on its own if the window is shorter than its contents, so
+     Settings can always be reached. */
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
 }
 
 .sidebar nav {
@@ -103,8 +126,19 @@
   align-items: center;
   gap: 16px;
   padding: 14px 32px;
+  min-height: var(--topbar-height);
   border-bottom: 1px solid var(--color-border);
   background: var(--color-paper);
+  /* Gate 6.02, 6.05: stays at the top while the page scrolls, above
+     ordinary page content and the backup banner (D-80, which precedes
+     it in the markup and simply scrolls away first), but below every
+     overlay (the task window is a native <dialog>, always above; the
+     live search panel is nested inside the bar itself; a card's
+     people-menu-panel and the date calendar (P6-03) use a higher
+     z-index than this). */
+  position: sticky;
+  top: 0;
+  z-index: 5;
 }
 
 .topbar .search {
