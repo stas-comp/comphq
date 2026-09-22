@@ -298,16 +298,16 @@ func (h *Handlers) handleCreateTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	today := app.Today(h.srv.TestMode)
 	input := CreateInput{
 		Title:     r.FormValue("title"),
 		Notes:     r.FormValue("notes"),
 		Size:      r.FormValue("size"),
 		Stage:     r.FormValue("stage"),
-		DueDate:   format.NormaliseDate(r.FormValue("due_date")),
+		DueDate:   format.NormaliseDate(r.FormValue("due_date"), today),
 		PersonIDs: personIDs,
 	}
 
-	today := app.Today(h.srv.TestMode)
 	_, err = h.tasks.Create(r.Context(), input, person.ID, today)
 	// From the task window the form posts as a fragment: a saved task answers
 	// 204 (the window closes and the board is refreshed), a refused one

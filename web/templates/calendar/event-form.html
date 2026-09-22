@@ -5,10 +5,10 @@
 <input class="field" type="text" id="event-title" name="title" value="{{.Title}}" required>
 
 <label for="event-start-date">Date</label>
-<input class="field field-date" type="text" inputmode="numeric" autocomplete="off" placeholder="dd/mm/yyyy" id="event-start-date" name="start_date" value="{{.StartDate}}" required>
+<input class="field field-date" type="text" inputmode="numeric" autocomplete="off" placeholder="dd/mm/yyyy or dd/mm" id="event-start-date" name="start_date" value="{{.StartDate}}" required>
 
 <label for="event-end-date">End date (optional, for an event lasting several days)</label>
-<input class="field field-date" type="text" inputmode="numeric" autocomplete="off" placeholder="dd/mm/yyyy" id="event-end-date" name="end_date" value="{{.EndDate}}">
+<input class="field field-date" type="text" inputmode="numeric" autocomplete="off" placeholder="dd/mm/yyyy or dd/mm" id="event-end-date" name="end_date" value="{{.EndDate}}">
 
 <label for="event-start-time">Start time (leave blank for an all-day event)</label>
 <input class="field" type="time" id="event-start-time" name="start_time" value="{{.StartTime}}">
@@ -26,7 +26,7 @@
 </select>
 
 <label for="event-until-date">Until (optional, for a repeating event)</label>
-<input class="field field-date" type="text" inputmode="numeric" autocomplete="off" placeholder="dd/mm/yyyy" id="event-until-date" name="until_date" value="{{.UntilDate}}">
+<input class="field field-date" type="text" inputmode="numeric" autocomplete="off" placeholder="dd/mm/yyyy or dd/mm" id="event-until-date" name="until_date" value="{{.UntilDate}}">
 
 <fieldset class="calendar-notice-field">
 <legend>Show in briefing ahead</legend>

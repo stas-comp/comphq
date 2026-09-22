@@ -7,10 +7,10 @@
 <input type="hidden" name="original_date" value="{{.OriginalDate}}">
 
 <label for="occurrence-start-date">Date</label>
-<input class="field field-date" type="text" inputmode="numeric" autocomplete="off" placeholder="dd/mm/yyyy" id="occurrence-start-date" name="start_date" value="{{.StartDate}}" required>
+<input class="field field-date" type="text" inputmode="numeric" autocomplete="off" placeholder="dd/mm/yyyy or dd/mm" id="occurrence-start-date" name="start_date" value="{{.StartDate}}" required>
 
 <label for="occurrence-end-date">End date (optional, for an event lasting several days)</label>
-<input class="field field-date" type="text" inputmode="numeric" autocomplete="off" placeholder="dd/mm/yyyy" id="occurrence-end-date" name="end_date" value="{{.EndDate}}">
+<input class="field field-date" type="text" inputmode="numeric" autocomplete="off" placeholder="dd/mm/yyyy or dd/mm" id="occurrence-end-date" name="end_date" value="{{.EndDate}}">
 
 <label for="occurrence-start-time">Start time (leave blank for an all-day event)</label>
 <input class="field" type="time" id="occurrence-start-time" name="start_time" value="{{.StartTime}}">

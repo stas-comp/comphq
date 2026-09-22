@@ -188,12 +188,13 @@ func (h *Handlers) handleUpdateTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	today := app.Today(h.srv.TestMode)
 	input := UpdateInput{
 		Title:     r.FormValue("title"),
 		Notes:     r.FormValue("notes"),
 		Size:      r.FormValue("size"),
 		Stage:     r.FormValue("stage"),
-		DueDate:   format.NormaliseDate(r.FormValue("due_date")),
+		DueDate:   format.NormaliseDate(r.FormValue("due_date"), today),
 		PersonIDs: personIDs,
 	}
 
@@ -203,7 +204,6 @@ func (h *Handlers) handleUpdateTask(w http.ResponseWriter, r *http.Request) {
 	if wantsFragment(r) {
 		refusedStatus = http.StatusUnprocessableEntity
 	}
-	today := app.Today(h.srv.TestMode)
 	switch err := h.tasks.Update(r.Context(), id, input, person.ID, today); err {
 	case nil:
 		if wantsFragment(r) {

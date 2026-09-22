@@ -21,7 +21,7 @@ test('a task due date typed day first is saved and shown day first', async ({ pa
   await expect(card).toHaveCount(1);
   await openTaskPage(page, title);
   await expect(page.locator('#details-due-date')).toHaveValue('05/11/2026');
-  await expect(page.locator('#details-due-date')).toHaveAttribute('placeholder', 'dd/mm/yyyy');
+  await expect(page.locator('#details-due-date')).toHaveAttribute('placeholder', 'dd/mm/yyyy or dd/mm');
 
   // Edit it, still day first.
   await page.fill('#details-due-date', '06-11-2026');

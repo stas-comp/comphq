@@ -79,17 +79,17 @@ type eventFormData struct {
 	UpdatedAt     string
 }
 
-func inputFromForm(r *http.Request) Input {
+func inputFromForm(r *http.Request, today time.Time) Input {
 	amount, _ := strconv.Atoi(r.FormValue("notice_amount"))
 	return Input{
 		Title:      r.FormValue("title"),
 		Notes:      r.FormValue("notes"),
-		StartDate:  format.NormaliseDate(r.FormValue("start_date")),
-		EndDate:    format.NormaliseDate(r.FormValue("end_date")),
+		StartDate:  format.NormaliseDate(r.FormValue("start_date"), today),
+		EndDate:    format.NormaliseDate(r.FormValue("end_date"), today),
 		StartTime:  r.FormValue("start_time"),
 		EndTime:    r.FormValue("end_time"),
 		Recurrence: r.FormValue("recurrence"),
-		UntilDate:  format.NormaliseDate(r.FormValue("until_date")),
+		UntilDate:  format.NormaliseDate(r.FormValue("until_date"), today),
 		NoticeDays: noticeDaysFrom(amount, r.FormValue("notice_unit")),
 	}
 }
@@ -153,8 +153,8 @@ func (h *Handlers) handleCreateEvent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	input := inputFromForm(r)
 	today := app.Today(h.srv.TestMode)
+	input := inputFromForm(r, today)
 	event, err := h.store.Create(r.Context(), input, person.ID, today)
 	switch err {
 	case nil:
@@ -253,8 +253,8 @@ func (h *Handlers) handleUpdateEvent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	input := inputFromForm(r)
 	today := app.Today(h.srv.TestMode)
+	input := inputFromForm(r, today)
 	switch err := h.store.Update(r.Context(), id, input, person.ID, today); err {
 	case nil:
 		http.Redirect(w, r, fmt.Sprintf("/calendar/events/%d", id), http.StatusFound)
@@ -343,14 +343,14 @@ func (h *Handlers) handleSetOccurrence(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	today := app.Today(h.srv.TestMode)
 	originalDate := r.FormValue("original_date")
 	input := Input{
-		StartDate: format.NormaliseDate(r.FormValue("start_date")),
-		EndDate:   format.NormaliseDate(r.FormValue("end_date")),
+		StartDate: format.NormaliseDate(r.FormValue("start_date"), today),
+		EndDate:   format.NormaliseDate(r.FormValue("end_date"), today),
 		StartTime: r.FormValue("start_time"),
 		EndTime:   r.FormValue("end_time"),
 	}
-	today := app.Today(h.srv.TestMode)
 	err = h.store.SetMovedException(r.Context(), id, originalDate, input.StartDate, input.EndDate, input.StartTime, input.EndTime, person.ID, today)
 	switch err {
 	case nil:

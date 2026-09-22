@@ -85,6 +85,40 @@ func newTestServerWithDueTasks(t *testing.T, dueTasks DueTasksSource) (*httptest
 	return ts, sqlDB
 }
 
+// newTestServerWithToday is newTestServer with COMPHQ_TEST_TODAY pinned
+// (SPEC B4, gate 6.18): the real clock would make a yearless date's
+// "nearest year" assertion depend on whatever day the suite happens to
+// run.
+func newTestServerWithToday(t *testing.T, today string) (*httptest.Server, *sql.DB) {
+	t.Helper()
+	t.Setenv("COMPHQ_TEST_TODAY", today)
+	sqlDB, err := db.Open(":memory:")
+	if err != nil {
+		t.Fatalf("Open: %v", err)
+	}
+	t.Cleanup(func() { sqlDB.Close() })
+
+	for _, section := range []string{"app", "people", "calendar"} {
+		migrations, err := db.LoadMigrations(comphq.Migrations, section)
+		if err != nil {
+			t.Fatalf("LoadMigrations(%s): %v", section, err)
+		}
+		if err := db.RunMigrations(sqlDB, "test", migrations); err != nil {
+			t.Fatalf("RunMigrations(%s): %v", section, err)
+		}
+	}
+
+	srv, err := app.NewServer(sqlDB, "test", t.TempDir(), true)
+	if err != nil {
+		t.Fatalf("NewServer: %v", err)
+	}
+	srv.Registry().Add(Section(srv, fakeDueTasksSource{}))
+
+	ts := httptest.NewServer(srv.Routes())
+	t.Cleanup(ts.Close)
+	return ts, sqlDB
+}
+
 func postForm(t *testing.T, client *http.Client, ts *httptest.Server, path string, form url.Values) *http.Response {
 	t.Helper()
 	req, err := http.NewRequest(http.MethodPost, ts.URL+path, strings.NewReader(form.Encode()))
@@ -137,6 +171,32 @@ func TestCreateEventHTTPRedisplaysEveryField(t *testing.T) {
 		if !strings.Contains(body, want) {
 			t.Errorf("details page missing %q; got:\n%s", want, body)
 		}
+	}
+}
+
+// TestCreateEventHTTPStartDateWithoutYear covers gate 6.18 end to end over
+// HTTP: a start date typed without its year is stored as the ISO date
+// nearest to today (D-82), pinned here to 22 September 2026 so "1/7"
+// unambiguously means the July just gone, not next July.
+func TestCreateEventHTTPStartDateWithoutYear(t *testing.T) {
+	ts, sqlDB := newTestServerWithToday(t, "2026-09-22")
+	client := &http.Client{Jar: mustCookieJar(t)}
+	signIn(t, client, ts, "Sam")
+
+	resp := postForm(t, client, ts, "/calendar/events", url.Values{
+		"title": {"Yearless start date event"}, "start_date": {"1/7"},
+	})
+	resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("status = %d, want 200", resp.StatusCode)
+	}
+
+	var stored string
+	if err := sqlDB.QueryRow(`SELECT start_date FROM events WHERE title = ?`, "Yearless start date event").Scan(&stored); err != nil {
+		t.Fatalf("query stored start_date: %v", err)
+	}
+	if stored != "2026-07-01" {
+		t.Errorf("stored start_date = %q, want 2026-07-01", stored)
 	}
 }
 

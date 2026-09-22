@@ -58,11 +58,59 @@ func ValidISODate(s string) bool {
 	return err == nil
 }
 
-// NormaliseDate turns a typed date into the stored ISO form when it can,
-// and otherwise returns the text unchanged, so the code that validates a
-// date sees exactly what was typed and refuses it as it always has.
-func NormaliseDate(s string) string {
+// dayFirstNoYearRe matches a date typed without its year ("25/9", "25.9",
+// "25-9"): day and month only, the same separators as dayFirstRe.
+var dayFirstNoYearRe = regexp.MustCompile(`^(\d{1,2})[/.-](\d{1,2})$`)
+
+// ParseDayFirstNear reads everything ParseDayFirst does, plus a date typed
+// without its year (SPEC B12.2, D-82): "25/9" means the 25 September
+// nearest to today. It tries the day and month in last year, this year and
+// next year, and keeps whichever real date is closest to today (ties are
+// impossible: candidates are exactly a year apart, never an even number of
+// days). A day that doesn't exist in one of those years (29 February) is
+// simply not a candidate, so 29/2 still resolves to the nearest real leap
+// year rather than being refused outright.
+func ParseDayFirstNear(s string, today time.Time) (iso string, ok bool) {
+	s = strings.TrimSpace(s)
 	if iso, ok := ParseDayFirst(s); ok {
+		return iso, ok
+	}
+	m := dayFirstNoYearRe.FindStringSubmatch(s)
+	if m == nil {
+		return "", false
+	}
+	day, month := m[1], m[2]
+
+	var best time.Time
+	var bestDiff time.Duration
+	found := false
+	for _, year := range [3]int{today.Year() - 1, today.Year(), today.Year() + 1} {
+		t, err := time.Parse("2006-01-02", fmt.Sprintf("%04d-%02s-%02s", year, month, day))
+		if err != nil {
+			continue // not a real day in this year (29 February)
+		}
+		diff := t.Sub(today)
+		if diff < 0 {
+			diff = -diff
+		}
+		if !found || diff < bestDiff {
+			best, bestDiff, found = t, diff, true
+		}
+	}
+	if !found {
+		return "", false
+	}
+	return best.Format("2006-01-02"), true
+}
+
+// NormaliseDate turns a typed date — including one without its year,
+// SPEC B12.2 — into the stored ISO form when it can, and otherwise returns
+// the text unchanged, so the code that validates a date sees exactly what
+// was typed and refuses it as it always has. today decides which year a
+// yearless date means (D-82); callers pass app.Today(...), so test mode's
+// fixed date is honoured everywhere a date is typed.
+func NormaliseDate(s string, today time.Time) string {
+	if iso, ok := ParseDayFirstNear(s, today); ok {
 		return iso
 	}
 	return strings.TrimSpace(s)

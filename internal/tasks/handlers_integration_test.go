@@ -68,6 +68,40 @@ func newTestServer(t *testing.T) (*httptest.Server, *sql.DB) {
 	return ts, sqlDB
 }
 
+// newTestServerWithToday is newTestServer with COMPHQ_TEST_TODAY pinned
+// (SPEC B4, gate 6.18): the real clock would make a yearless date's
+// "nearest year" assertion depend on whatever day the suite happens to
+// run.
+func newTestServerWithToday(t *testing.T, today string) (*httptest.Server, *sql.DB) {
+	t.Helper()
+	t.Setenv("COMPHQ_TEST_TODAY", today)
+	sqlDB, err := db.Open(":memory:")
+	if err != nil {
+		t.Fatalf("Open: %v", err)
+	}
+	t.Cleanup(func() { sqlDB.Close() })
+
+	for _, section := range []string{"app", "people", "tasks"} {
+		migrations, err := db.LoadMigrations(comphq.Migrations, section)
+		if err != nil {
+			t.Fatalf("LoadMigrations(%s): %v", section, err)
+		}
+		if err := db.RunMigrations(sqlDB, "test", migrations); err != nil {
+			t.Fatalf("RunMigrations(%s): %v", section, err)
+		}
+	}
+
+	srv, err := app.NewServer(sqlDB, "test", t.TempDir(), true)
+	if err != nil {
+		t.Fatalf("NewServer: %v", err)
+	}
+	srv.Registry().Add(Section(srv))
+
+	ts := httptest.NewServer(srv.Routes())
+	t.Cleanup(ts.Close)
+	return ts, sqlDB
+}
+
 func postForm(t *testing.T, client *http.Client, ts *httptest.Server, path string, form url.Values) *http.Response {
 	t.Helper()
 	req, err := http.NewRequest(http.MethodPost, ts.URL+path, strings.NewReader(form.Encode()))
@@ -163,6 +197,33 @@ func TestCreateTaskHTTPWithStageDueDateAndPeople(t *testing.T) {
 	}
 	if !strings.Contains(body, "Sam") || !strings.Contains(body, "Alex") {
 		t.Errorf("board missing both assignees' names (as avatar title attributes); got:\n%s", body)
+	}
+}
+
+// TestCreateTaskHTTPDueDateWithoutYear covers gate 6.18 end to end over
+// HTTP: a due date typed without its year is stored as the ISO date
+// nearest to today (D-82), pinned here to 22 September 2026 so "25/9"
+// unambiguously means this year.
+func TestCreateTaskHTTPDueDateWithoutYear(t *testing.T) {
+	ts, sqlDB := newTestServerWithToday(t, "2026-09-22")
+	client := &http.Client{Jar: mustCookieJar(t)}
+	signIn(t, client, ts, "Sam")
+
+	resp := postForm(t, client, ts, "/tasks", url.Values{
+		"title":    {"Yearless due date task"},
+		"due_date": {"25/9"},
+	})
+	resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("status = %d, want 200", resp.StatusCode)
+	}
+
+	var stored string
+	if err := sqlDB.QueryRow(`SELECT due_date FROM tasks WHERE title = ?`, "Yearless due date task").Scan(&stored); err != nil {
+		t.Fatalf("query stored due_date: %v", err)
+	}
+	if stored != "2026-09-25" {
+		t.Errorf("stored due_date = %q, want 2026-09-25", stored)
 	}
 }
 
