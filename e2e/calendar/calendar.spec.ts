@@ -19,18 +19,23 @@ async function addEvent(page: Page, baseURL: string, fields: Record<string, stri
   await ready(page);
 }
 
-// SPEC gate 2.12: weeks start Monday, Saturdays are highlighted, today
-// is marked, and Previous/Next/Today navigate. COMPHQ_TEST_TODAY is
-// PLAN.md's own fixed reference date for this gate.
+// SPEC gate 2.12/6.20: weeks start Sunday (D-83, corrected from Monday —
+// gate 6.20 replaces gate 2.12's original wording, nothing else in 2.12
+// changes), Saturdays are highlighted, today is marked, and
+// Previous/Next/Today navigate. COMPHQ_TEST_TODAY is PLAN.md's own fixed
+// reference date for this gate.
 testToday.describe('gate 2.12: month view', () => {
   testToday.use({ today: '2026-09-16' });
 
-  testToday('@fresh Saturdays highlighted, today marked, and navigation works', async ({ page, server }) => {
+  testToday('@fresh gate 6.20: Saturdays highlighted, today marked, and navigation works', async ({ page, server }) => {
     await signInAsNewPerson(page, server.baseURL, '/calendar');
     await ready(page);
 
     await expect(page.locator('h1')).toHaveText('September 2026');
     await expect(page.locator('.calendar-day-today')).toHaveAttribute('data-date', '2026-09-16');
+
+    // Gate 6.20: the grid starts on Sunday.
+    await expect(page.locator('.calendar-grid thead th')).toHaveText(['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']);
 
     // Every Saturday in the visible grid is highlighted, and no other
     // day is (a real check, not just "at least one").

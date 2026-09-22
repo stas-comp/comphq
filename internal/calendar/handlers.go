@@ -514,15 +514,16 @@ type monthPageData struct {
 	Weeks       [][]dayCell
 }
 
-// mondayOnOrBefore/sundayOnOrAfter build the Monday-first grid (SPEC
-// gate 2.12), which can spill into the adjacent month at either end.
-func mondayOnOrBefore(d time.Time) time.Time {
-	offset := (int(d.Weekday()) + 6) % 7
+// sundayOnOrBefore/saturdayOnOrAfter build the Sunday-first grid (SPEC
+// gate 6.20, D-83; replaces gate 2.12's Monday-first rule), which can
+// spill into the adjacent month at either end.
+func sundayOnOrBefore(d time.Time) time.Time {
+	offset := int(d.Weekday())
 	return d.AddDate(0, 0, -offset)
 }
 
-func sundayOnOrAfter(d time.Time) time.Time {
-	offset := (7 - int(d.Weekday())) % 7
+func saturdayOnOrAfter(d time.Time) time.Time {
+	offset := (6 - int(d.Weekday()) + 7) % 7
 	return d.AddDate(0, 0, offset)
 }
 
@@ -539,8 +540,8 @@ func (h *Handlers) handleMonth(w http.ResponseWriter, r *http.Request) {
 
 	firstOfMonth := time.Date(year, month, 1, 0, 0, 0, 0, time.UTC)
 	lastOfMonth := firstOfMonth.AddDate(0, 1, -1)
-	gridStart := mondayOnOrBefore(firstOfMonth)
-	gridEnd := sundayOnOrAfter(lastOfMonth)
+	gridStart := sundayOnOrBefore(firstOfMonth)
+	gridEnd := saturdayOnOrAfter(lastOfMonth)
 
 	occs, err := h.store.Occurrences(r.Context(), gridStart, gridEnd)
 	if err != nil {

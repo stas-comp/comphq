@@ -82,7 +82,9 @@ test('gate 4.38: the controls are the mockup ones — Previous, Today and Next s
   await expect(page.locator('.tools h1')).toHaveText(heading);
 });
 
-test('gate 4.33: Saturday is unmistakable — a solid accent heading and an accent-wash column', async ({ page, server, mockup }) => {
+// SPEC gate 6.20 (D-83): corrected from Monday-first to Sunday-first —
+// Saturday is now the grid's seventh (last) column, not the sixth.
+test('gate 4.33, 6.20: Saturday is unmistakable — a solid accent heading and an accent-wash column, and is the last (Sunday-first) column', async ({ page, server, mockup }) => {
   await seeded(page, server.baseURL);
   await page.goto(server.baseURL + MONTH);
   await ready(page);
@@ -92,7 +94,8 @@ test('gate 4.33: Saturday is unmistakable — a solid accent heading and an acce
   await expect(page.locator('.calendar-saturday-heading')).toHaveCSS('color', 'rgb(20, 27, 45)');
   await expectMatchesMockup(mockup, page, { mockup: '.cal-grid', screen: 'calendar', app: '.calendar-grid' }, ['border-top-width', 'border-top-style', 'border-top-color', 'border-left-width', 'border-left-color']);
 
-  // Every Saturday cell is the wash; the cells under Saturday are all in the sixth column.
+  // Every Saturday cell is the wash; the cells under Saturday are all in the
+  // seventh (last) column, Sunday first (gate 6.20, D-83).
   // (A Saturday that falls outside the month takes the outside shade, as in the mockup.)
   const sats = page.locator('.calendar-day-saturday:not(.calendar-day-outside)');
   const cells = await sats.count();
@@ -101,7 +104,7 @@ test('gate 4.33: Saturday is unmistakable — a solid accent heading and an acce
     await expect(sats.nth(i)).toHaveCSS('background-color', 'rgb(255, 243, 234)');
   }
   const col = await sats.first().evaluate((td) => (td as HTMLTableCellElement).cellIndex);
-  expect(col).toBe(5); // Monday first: Saturday is the sixth
+  expect(col).toBe(6); // Sunday first (gate 6.20): Saturday is the seventh
 });
 
 test('gate 4.34: ordinary days, Saturdays and days outside the month are three clearly different shades', async ({ page, server, mockup }) => {

@@ -15,6 +15,23 @@ func day(t *testing.T, s string) time.Time {
 	return d
 }
 
+// SPEC gate 6.20, D-83: the Calendar's month grid moving to Sunday-first
+// (P6-04) changes nothing about the Briefing, which was always built
+// around Saturday itself, not around where a week starts ("this week"
+// still runs from today to Friday). Pinned to the exact date PLAN-v1.3.md
+// names: the Briefing for Sat 26 Sep 2026 is exactly what v1.2 produced.
+func TestBriefingForSat26Sep2026UnchangedByTheSundayFirstCalendar(t *testing.T) {
+	got := Build(Input{Today: day(t, "2026-09-26")})
+	want := Briefing{
+		Saturday: day(t, "2026-09-26"),
+		Friday:   day(t, "2026-10-02"),
+		IsToday:  true,
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("Build(Sat 26 Sep 2026) = %+v, want %+v", got, want)
+	}
+}
+
 // SPEC A8: the briefing is for today if it's Saturday, else the coming
 // Saturday; the Friday after it closes the window.
 func TestSaturdayAndFridayForEveryWeekday(t *testing.T) {
