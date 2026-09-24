@@ -150,6 +150,8 @@ For each article in HelpScout (there should be fewer than 20):
 4. Type the title, click into the content area, and paste (Ctrl+V). Formatting, tables and pictures come across automatically.
 5. Click **Publish**.
 
+**Searching.** The search box at the top finds words as you type them, even half-typed: typing **pay** finds articles that say "payment". The sidebar and the search box stay in place as you scroll.
+
 Once you've moved everything, go to **Settings → Content check**. It should show 0 — if anything's listed, open it, look for a red dashed box (something that didn't come across cleanly), fix or remove it, and publish again.
 
 ## Using Tasks
@@ -162,7 +164,7 @@ Click **Tasks** in the left-hand list. Across the top there's a switch: **My job
 - If two people go for the same job at the same moment, the second person is told who got there first, and nothing changes for them.
 - **Start** moves a job to In progress, **Done** finishes it, and **Give back** takes you off a job you can't do — it returns to Up for grabs if nobody else is on it.
 
-The **Board** shows every job in four columns: **Ideas → To do → In progress → Done**. Press **+ Add task** (top right) to add a job: a window opens where you type the title and, if you like, a description, size, starting column, due date and people, then press **Add task**. Dates are typed day first, like **25/09/2026**. In **To do**, the top of the column is the most important, and each card there carries its priority number.
+The **Board** shows every job in four columns: **Ideas → To do → In progress → Done**. Press **+ Add task** (top right) to add a job: a window opens where you type the title and, if you like, a description, size, starting column, due date and people, then press **Add task**. Dates are typed day first, like **25/09/2026** — or just **25/9**, and Comp HQ picks the nearest year (in September 2026, 25/9 means 25 September 2026; 3/1 means 3 January 2027). Click a date box and a small calendar opens under it: press a day, **Today** or **This Saturday** to fill the box, or ignore it and keep typing. Every date box in Comp HQ works this way. In **To do**, the top of the column is the most important, and each card there carries its priority number.
 
 Every card has three small icons, each with a tooltip that names the job:
 
@@ -196,9 +198,9 @@ Without JavaScript (for example if a browser blocks it) every one of these still
 
 ## Using the Calendar
 
-Click **Calendar**. It opens on this month, weeks starting on Monday, with **Saturday** — office day — picked out in orange and its column shaded, and today's date in a dark box. Use **Previous**, **Next** and **Today** to move around, or **List** for the next twelve weeks in date order. Jobs with a due date appear on their day as outlined boxes with a small empty square (red when overdue); events are solid dark blue, a shade lighter on the later days of an event that lasts several days. A key under the grid explains them. Click a job to open it.
+Click **Calendar**. It opens on this month, weeks starting on Sunday, with **Saturday** — office day — picked out in orange and its column shaded, and today's date in a dark box. Use **Previous**, **Next** and **Today** to move around, or **List** for the next twelve weeks in date order. Jobs with a due date appear on their day as outlined boxes with a small empty square (red when overdue); events are solid dark blue, a shade lighter on the later days of an event that lasts several days. A key under the grid explains them. Click a job to open it.
 
-- **To add an event**, click a day's number (or **Add event**). Give it a title and a date. You can also give it an end date (for something lasting several days), a start and end time (leave the start blank for an all-day event), notes, how often it **Repeats** (Never, Weekly, Monthly or Yearly, with an optional **Until** date), and **Show in briefing ahead** — how many days or weeks before it should start appearing in the Saturday Briefing.
+- **To add an event**, click any blank part of a day (or its number, or **Add event**) and the form opens with that date filled in. Give it a title and a date. You can also give it an end date (for something lasting several days), a start and end time (leave the start blank for an all-day event), notes, how often it **Repeats** (Never, Weekly, Monthly or Yearly, with an optional **Until** date), and **Show in briefing ahead** — how many days or weeks before it should start appearing in the Saturday Briefing.
 - Weekly events fall on the same weekday. Monthly ones fall on the same date, and an event on the 31st shows on the last day of shorter months. Yearly ones fall on the same date, and 29 February shows on 28 February in other years.
 - **To change a repeating event**, click any of its dates. You're asked **Change just this one** or **Change all**. *Just this one* only offers a new date and time — for example, moving this year's concert a week — or **Cancel just this one**; every other date is untouched. *Change all* edits the whole series, including its title and notes, everywhere. A date you moved on its own keeps its own date but takes on any new title.
 - **Remove event** (at the bottom of an event) hides the whole event. **Removed events**, linked at the top, lists them and lets you **Restore** one.

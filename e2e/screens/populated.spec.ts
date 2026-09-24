@@ -29,7 +29,10 @@ async function addJob(page: Page, baseURL: string, job: Job): Promise<void> {
   await page.fill('#new-task-title', job.title);
   await page.selectOption('#new-task-stage', job.stage);
   if (job.size) await page.selectOption('#new-task-size', job.size);
-  if (job.due) await page.fill('#new-task-due-date', job.due);
+  if (job.due) {
+    await page.fill('#new-task-due-date', job.due);
+    await page.keyboard.press('Escape'); // close the date calendar (v1.3)
+  }
   if (job.notes) await page.fill('#new-task-notes', job.notes);
   if (job.people?.length) await page.selectOption('#new-task-people', job.people.map((label) => ({ label })));
   await page.click('.add-task-form button[type="submit"]');
@@ -42,6 +45,8 @@ async function addEvent(page: Page, baseURL: string, e: { title: string; start: 
   await page.fill('#event-title', e.title);
   await page.fill('#event-start-date', e.start);
   if (e.end) await page.fill('#event-end-date', e.end);
+  // Filling a date box opens the date calendar (v1.3); close it so it doesn't cover Save.
+  await page.keyboard.press('Escape');
   if (e.time) await page.fill('#event-start-time', e.time);
   if (e.endTime) await page.fill('#event-end-time', e.endTime);
   if (e.notes) await page.fill('#event-notes', e.notes);
@@ -100,10 +105,20 @@ test('@fresh screenshots: the screens in use, and the task window in each state'
   await page.goto(base + '/tasks/board');
   await ready(page);
   await shot(page, 'tasks-board-populated');
+  // v1.3: the Board scrolled right to the bottom, sidebar and top bar still in view (gate 6.01, 6.41).
+  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+  await page.screenshot({ path: 'reports/screens/tasks-board-scrolled.png' });
+  await page.evaluate(() => window.scrollTo(0, 0));
   await page.getByRole('link', { name: '+ Add task' }).click();
   await expect(page.locator('#task-window')).toBeVisible();
   await page.locator('#new-task-title').fill('Order more staples');
   await page.locator('#new-task-notes').fill('The small ones, two boxes.');
+  // v1.3: the date calendar open in the task window (gate 6.41).
+  await page.locator('#new-task-due-date').click();
+  await expect(page.locator('.datepicker')).toBeVisible();
+  await page.screenshot({ path: 'reports/screens/task-window-datepicker.png' });
+  await page.keyboard.press('Escape');
+  await expect(page.locator('.datepicker')).toBeHidden();
   await page.screenshot({ path: 'reports/screens/task-window-new.png' });
   page.once('dialog', (d) => d.accept());
   await page.keyboard.press('Escape');
@@ -152,6 +167,7 @@ test('@fresh screenshots: the screens in use, and the task window in each state'
   await page.goto(base + '/calendar?month=2026-09');
   await ready(page);
   await shot(page, 'calendar-populated');
+  await page.screenshot({ path: 'reports/screens/calendar-month-sunday-first.png' });
 
   // The Knowledge Base: an article, its search results, and the editor after an import.
   await page.goto(base + '/kb/categories');
