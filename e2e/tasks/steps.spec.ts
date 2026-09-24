@@ -232,9 +232,11 @@ for (const home of homes) {
 
       await steps(page).getByRole('button', { name: 'Remove One' }).click();
       await expect(steps(page).locator('.steps-undo')).toHaveCount(1);
-      await page.clock.runFor(9_000);
+      // 5s then 6s (not 9s then 2s): the clock keeps some real-time footing, so a slow runner
+      // ate the old 1s margin before the "still there" check ran (D-86). Same two assertions.
+      await page.clock.runFor(5_000);
       await expect(steps(page).locator('.steps-undo')).toHaveCount(1);
-      await page.clock.runFor(2_000);
+      await page.clock.runFor(6_000);
       await expect(steps(page).locator('.steps-undo')).toHaveCount(0);
 
       await steps(page).getByRole('button', { name: 'Remove Two' }).click();
