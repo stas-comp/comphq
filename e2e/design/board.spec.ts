@@ -144,7 +144,10 @@ test('gate 4.16: a card is the mockup card, with a large accent priority number 
   await expectMatchesMockup(mockup, page, { mockup: '.col .card', screen: 'board', app: '.task-column[data-stage="idea"] .task-card' }, [...BOX.slice(0, 5), 'padding', 'display', 'row-gap']);
   await expectMatchesMockup(mockup, page, { mockup: '.col .card h3', screen: 'board', app: '.task-column[data-stage="idea"] .task-card-title' }, [...TEXT, 'line-height']);
   await expectMatchesMockup(mockup, page, { mockup: '.col.todo .card .rank', screen: 'board', app: '.task-column[data-stage="todo"] .rank' }, [...TEXT, 'line-height']);
-  await expectMatchesMockup(mockup, page, { mockup: '.col.todo .card .date', screen: 'board', app: '.task-column[data-stage="todo"] .task-card-due' }, [...TEXT, 'font-variant-numeric']);
+  // This test's own card's date, not the column's first one: on the shared
+  // server another test's overdue card (red) can be first. todo1 is due in 2027.
+  await todo1.locator('.task-card-due').evaluate((el) => el.setAttribute('data-own-due', ''));
+  await expectMatchesMockup(mockup, page, { mockup: '.col.todo .card .date', screen: 'board', app: '[data-own-due]' }, [...TEXT, 'font-variant-numeric']);
 
   await expect(page.locator('.task-column:not([data-stage="todo"]) .rank')).toHaveCount(0);
   const ranks = await page.locator('.task-column[data-stage="todo"] .task-card').evaluateAll((cards) => cards.map((c) => c.querySelector('.rank')?.textContent));
