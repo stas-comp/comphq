@@ -204,7 +204,10 @@ test('gate 2.29: reordering a lane\'s Up next changes only the moved task\'s pos
   const a2 = uniqueName('A2');
   await addTask(page, a2, 'todo', nameA);
 
-  const beforeOrder = await columnOrder(page, 'todo');
+  // Only this test's own four cards are compared (the server is shared
+  // with tests running at the same time).
+  const mine = [other1, a1, other2, a2];
+  const beforeOrder = (await columnOrder(page, 'todo')).filter((t) => mine.includes(t));
 
   await page.goto(server.baseURL + '/tasks/team');
   await ready(page);
@@ -214,7 +217,7 @@ test('gate 2.29: reordering a lane\'s Up next changes only the moved task\'s pos
 
   await page.goto(server.baseURL + '/tasks/board');
   await ready(page);
-  const afterOrder = await columnOrder(page, 'todo');
+  const afterOrder = (await columnOrder(page, 'todo')).filter((t) => mine.includes(t));
 
   // "Directly above the job it was placed next to" (gate 2.29) means
   // removing a2 from wherever it was and reinserting it immediately

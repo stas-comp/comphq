@@ -257,10 +257,18 @@ test('gate 2.04: Move up and Move down reorder cards, visible in a second contex
 
   expect(relativeOrder(await columnOrder(page, stage), [a, b, c])).toEqual([a, b, c]);
 
-  // Move C up one slot: swaps with B -> [A, C, B].
+  // Move C up one slot at a time until it passes B -> [A, C, B]. The
+  // server is shared with tests running at the same time, so a card
+  // from another test can sit between B and C; each press must still
+  // move C up by exactly one place in the column.
   const cardC = page.locator('.task-card', { hasText: c });
-  await cardC.getByRole('button', { name: `Move ${c} up` }).click(); // an icon-only button, named for the task (gate 4.11)
-  await ready(page);
+  for (let presses = 0; presses < 5; presses++) {
+    const before = (await columnOrder(page, stage)).indexOf(c);
+    await cardC.getByRole('button', { name: `Move ${c} up` }).click(); // an icon-only button, named for the task (gate 4.11)
+    await ready(page);
+    expect((await columnOrder(page, stage)).indexOf(c)).toBe(before - 1);
+    if (relativeOrder(await columnOrder(page, stage), [a, b, c]).join() === [a, c, b].join()) break;
+  }
   expect(relativeOrder(await columnOrder(page, stage), [a, b, c])).toEqual([a, c, b]);
 
   const otherContext = await browser.newContext();

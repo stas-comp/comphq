@@ -222,7 +222,12 @@ test('gate 2.34: take by button keeps the job\'s place in the shared priority or
   const after1 = uniqueName('After1');
   await addTask(page, after1, 'todo');
 
-  const beforeOrder = await columnOrder(page, 'todo');
+  // Only this test's own three cards are compared: the server is shared
+  // with tests running at the same time, and one of theirs can land in
+  // the To do column between the two reads.
+  const mine = [before1, grabbed, after1];
+  const beforeOrder = (await columnOrder(page, 'todo')).filter((t) => mine.includes(t));
+  expect(beforeOrder).toEqual(mine);
 
   await page.goto(server.baseURL + '/tasks');
   await ready(page);
@@ -232,7 +237,7 @@ test('gate 2.34: take by button keeps the job\'s place in the shared priority or
 
   await page.goto(server.baseURL + '/tasks/board');
   await ready(page);
-  const afterOrder = await columnOrder(page, 'todo');
+  const afterOrder = (await columnOrder(page, 'todo')).filter((t) => mine.includes(t));
   expect(afterOrder).toEqual(beforeOrder);
 });
 
