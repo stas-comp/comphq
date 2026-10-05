@@ -121,6 +121,8 @@ Everything is stored on the NAS. It works with no internet connection, costs not
 - A staff member can paste screenshots or drag in photos. Images are saved on the NAS.
 - A staff member can paste content from a web page or Word document and keep the basic formatting (headings, bold, lists, links, tables). Odd fonts, colours and sizes are removed so everything matches. Pictures come across from web pages. Pictures in pasted Word content often can't (Word doesn't hand them to the browser), so the editor marks them and suggests Import from Word.
 - A staff member can **Import from Word**: choose a Word document (.docx), or drag one onto the editor. It appears in the editor with its headings, bold and italic, lists, links, tables and pictures, ready to check and publish. Pictures are saved on the NAS. Anything that can't come across, such as a chart, is marked in place so it can be fixed. Importing into an existing article keeps the old version in its history.
+- *(v1.4)* A staff member can put the articles in a category in order, by dragging or with move up and move down. Editing an article no longer moves it to the top.
+- *(v1.4)* Import from Word brings over every picture a web page can show: floating pictures, grouped pictures and pictures from other programs included. Pictures in old Windows drawing formats (EMF, WMF) are marked with a tip saying how to bring them over by hand.
 - A staff member can edit any article, see its history (who changed it and when), view an older version, and restore it.
 - A staff member can archive an article, which hides it from browsing and search. They can also see all archived articles and restore any of them.
 - A staff member can search from any page and see the matching passage with their search words highlighted. Clicking a result opens the article scrolled to that passage, with it highlighted.
@@ -129,12 +131,17 @@ Everything is stored on the NAS. It works with no internet connection, costs not
 - The Knowledge Base home shows category tiles with article counts, and a "Recently updated" list beside them.
 - Articles read like a clean, well-set document: comfortable text size, clear headings, images that fit the page.
 - The editor looks like the article itself, with a toolbar across the top (ending in a bold **Import from Word** button), **Publish** and **Cancel** buttons, and a warning if you try to leave without saving.
+- *(v1.4)* The Knowledge Base home shows each category's first three articles on its tile, and **Recently updated** as a panel. A category's page shows each article's opening words and who last updated it. The editor follows the mockup: **Cancel** and **Publish** at the top, staying in view, with the compact toolbar (gates 7.70–7.77).
 - Search results appear in a panel under the search box as you type. Each shows the title, category, and a short passage with your words highlighted in the accent colour.
 
 ## A6. Tasks
 
 **What a staff member can do**
-- A staff member can add a task with a title, and optionally notes, one or more people, a due date, a size (Small, Medium or Large; Medium if not chosen), and a starting column.
+- A staff member can add a task with a title, and optionally notes, one or more people, a due date, a size (Small, Medium or Large; Medium if not chosen), and a starting column (**To do** if not chosen, since v1.4).
+- *(v1.4)* A staff member can make a job **repeat every week**. Each Saturday a finished weekly job goes back to To do, due that day, with its steps unticked. It never goes to Finished tasks.
+- *(v1.4)* A staff member can **link** two jobs: one must be finished before the other ("do first"), or they're simply related. A job waiting on another shows a **WAITING** stamp, but nothing stops anyone working on it.
+- *(v1.4)* A staff member can **search jobs** from the top bar on any Tasks page, finished jobs included.
+- *(v1.4)* A staff member who removes a job by mistake can press **Undo** in the message that appears, and the job goes back exactly where it was.
 - A staff member can move a task between **Ideas**, **To do**, **In progress** and **Done**, by dragging or with buttons.
 - A staff member can put **To do** in priority order: drag cards up or down, or use "Move up / Move down". The top card is the most important, and the order is the same on every computer.
 - A staff member can assign any task to anyone, and change it later.
@@ -144,6 +151,8 @@ Everything is stored on the NAS. It works with no internet connection, costs not
 - A staff member can reorder a person's upcoming jobs to set their priorities for them. This changes the same shared priority order the To do column uses.
 - A staff member opening Tasks lands on **My jobs**: their own jobs and workload, next to **Up for grabs**, the jobs and ideas nobody has taken yet.
 - A staff member who has finished their jobs can take a new one by dragging it from Up for grabs into their own list, or by pressing **Take it**. Taking an idea also moves it to To do.
+- *(v1.4)* A staff member can reorder their own Up next on My jobs (which changes the shared priority order), and drag an idea into Up next on My jobs or Team to make it a To do job.
+- *(v1.4)* On Team and My jobs, people are put on and taken off a job with the same circles as on the Board, so a job can have several people from any screen.
 - A staff member can **Give back** a job they can't do. If nobody else is on it, it returns to Up for grabs.
 - A staff member can open a task to edit it and see its activity ("Sam moved this to In progress · Sat 19 Sep").
 - A staff member can find finished tasks in **Finished tasks**, and reopen one.
@@ -152,7 +161,8 @@ Everything is stored on the NAS. It works with no internet connection, costs not
 **What it looks and feels like**
 - Four columns side by side. Cards show the title, people's initials in coloured circles, and the due date. A bold **OVERDUE** stamp appears when a task is past its date.
 - The **To do** header says "Top = most important".
-- Cards that have sat in Done for more than 14 days quietly leave the board, which keeps it tidy.
+- Cards that have sat in Done for more than 14 days quietly leave the board, which keeps it tidy. *(v1.4: weekly jobs never do; they go back to To do on Saturday instead.)*
+- *(v1.4)* Two new stamps join TODAY, OVERDUE and YOURS: **WEEKLY** on a weekly job, and **WAITING** on a job whose "do first" job isn't done yet.
 - **Team view:** one column per person, with an **Unassigned** column first. Each column starts with the person's name and a row of blocks showing their workload (small job = 1 block, medium = 2, large = 4). Below that are **Working on now** (their In progress jobs) and **Up next** (their To do jobs, numbered in priority order). There are no warning colours or limits: the person in charge decides who can take more.
 - **My jobs** (the screen Tasks opens on): two areas side by side. On the left is **My jobs**, which looks like your own column from the Team view (your workload blocks, Working on now, Up next). On the right is **Up for grabs**, listing jobs nobody has taken, then ideas nobody has taken, each with a **Take it** button. A switch at the top reads **My jobs · Board · Team**.
 
@@ -549,6 +559,120 @@ Phase 6 is a set of everyday fixes the owner asked for after v1.2. Nothing in Ph
 - **O6.3** On the Calendar, click an empty part of a day and add an event. Confirm Sunday-first looks right to you and that Saturday still stands out.
 - **O6.4** In the search box, slowly type a word from one of your articles. Confirm results appear before you finish the word.
 
+### Phase 7 — The board does what you expect, weekly jobs, linked jobs, and a tidier Knowledge Base (v1.4)
+
+**Status: approved by the owner, 5 October 2026.** Planned in `PLAN-v1.4.md`.
+
+Phase 7 is the staff's first round of requests after using Comp HQ for real: eight fixes and small
+changes to Tasks and the page frame, two new Tasks features (weekly jobs and linked jobs), and
+three Knowledge Base improvements. It ships as one update, v1.4.0 (D-89). The request numbers in brackets are the
+staff's own list. The design is in B13. A few earlier gates change meaning; gate 7.90 lists them
+and the decisions log records each one.
+
+**Your own priorities, on My jobs** *(request 2)*
+- **7.01** On My jobs, a job in **Up next** can be dragged up or down, and stays where it was dropped after a refresh and on every computer. Each Up next card also carries the **move up** and **move down** icons (gate 4.11) that do the same without dragging.
+- **7.02** Reordering on My jobs changes the one shared priority order, exactly as reordering on Team does (gate 2.29). On the Board, the moved job sits directly above or below the job it was placed next to, and every other job keeps its place (D-91).
+- **7.03** An idea in **Ideas I'm on** can be dragged into Up next, which moves it to To do where it's dropped. A **Move to To do** button on the idea does the same and puts it at the bottom of To do. History records the move.
+
+**The Team view** *(requests 3 and 13)*
+- **7.04** Team's **Unassigned** column also lists ideas nobody is on, in their own **Ideas** group below Up next. Ideas still never count towards anyone's workload. *(This adds to gate 2.25.)*
+- **7.05** An idea on Team can be dragged into any column's Up next, its own or another person's. It becomes a To do job where it's dropped. If it's dropped in a different person's column, it is handed over as well, as in gate 2.28. Every idea card on Team also has the **Move to To do** button.
+- **7.06** Every card on Team (Working on now, Up next and Ideas) and on My jobs (including Up for grabs) shows the same people circles as the Board, or **Assign** when nobody is on it (gate 4.20). Pressing them opens the same list of names, where any number of people can be put on or taken off. The old drop-down list and **Assign to…** button are gone (D-92).
+- **7.07** The list of names always opens fully in view: on the last card of a long column, in the right-most column when the columns scroll sideways, and in a 1024 × 700 window. It's never cut off or hidden inside the columns' own scrolling area.
+- **7.08** Changing people from the list updates the screen without reloading the page and records History exactly as on the Board. Dragging a job from one person's column to another's still hands it over as in gate 2.28.
+- **7.09** Without JavaScript, the circles are a link to a page where people can be put on and taken off, as the Board's already are.
+
+**Adding and dragging on the Board** *(requests 4 and 6)*
+- **7.10** A new job starts in **To do**, at the bottom, unless another column is chosen. The add-a-task window shows To do already chosen. *(This replaces "Ideas" in gate 2.02, D-90.)*
+- **7.11** A new job with people on it appears straight away in their Up next on My jobs and Team, and counts towards their workload.
+- **7.12** On the Board, every column accepts a dropped card anywhere from its heading down to the bottom of the longest column. A card dragged sideways from low down in a long column into a short one lands at the bottom of the short one.
+- **7.13** While a card is being dragged, holding it near the bottom of the window, or near the top just under the top bar, scrolls the page. So a card can be carried from the bottom of a long column to the top of another. The same is true on My jobs and Team.
+- **7.14** After a drag on the Board, any filter in use (My tasks, one person, or a word) is still applied, and the filter box still shows it.
+
+**Undo after removing a job** *(request 14)*
+- **7.15** Removing a job shows a message at the bottom of the screen: **Removed "Order toner" · Undo**. It stays for 10 seconds, the same time as a removed step's Undo (gate 5.06), and a screen reader announces it.
+- **7.16** Pressing **Undo** puts the job back as it was: the same column, the same place in the order, and the same people, steps and links. If the order has changed in the meantime, it goes back next to the job it used to sit beside. History records both the removal and the undo.
+- **7.17** This works when removing from a Board card and from a job's own page (which returns to the Board). Without JavaScript, the Board shows the same message with an **Undo** button after the page reloads, until the next action.
+- **7.18** **Removed tasks** is unchanged. A job that wasn't undone can still be restored from there, as before (gate 2.09).
+
+**Search finds jobs on the Tasks pages** *(request 10)*
+- **7.20** On every Tasks page (My jobs, Board, Team, a job's own page, Finished tasks and Removed tasks), the search box in the top bar reads **Search jobs** and finds jobs. On every other page it searches articles, as before (D-94).
+- **7.21** Results appear as you type, as article results do. Each shows the job's title with the matching words highlighted, its column, its people and its due date. When the match is in the notes, a short passage of the notes is shown with the words highlighted. Every word typed must appear in the title or notes, and the last word may be half-typed ("prin" finds "printer").
+- **7.22** Finished jobs are found too, including those tucked away after 14 days, and are marked **Finished**. Removed jobs are not found. Unfinished jobs are listed before finished ones, and title matches before notes matches.
+- **7.23** Clicking a result opens the job's window (or its page, without JavaScript). Pressing Enter shows a full results page with the same results.
+- **7.24** The bottom of the results offers **Search articles instead**, which runs the same words as an article search.
+- **7.25** With the test library loaded, job results appear within 1 second of the last keystroke. Symbols and odd input never cause an error (as gate 1.32).
+- **7.26** The Board's own **Filter by word** box works exactly as before (gate 2.07).
+
+**Weekly jobs** *(request 12)*
+- **7.30** The add-a-task window and the job's edit form have a tick-box: **Repeats every week (back in To do each Saturday)**. A weekly job's card shows a **WEEKLY** stamp on the Board, My jobs and Team, and in the Briefing.
+- **7.31** Ticking it on a job with no due date sets the due date to This Saturday (today, on a Saturday).
+- **7.32** At the start of each Saturday, every weekly job in **Done** goes back to the bottom of **To do**, due that Saturday, with the same people and all its steps unticked. It then appears in that Saturday's Briefing under **Must be done today** (D-95).
+- **7.33** A weekly job that wasn't finished by Saturday stays where it is, with its old due date, so it shows **OVERDUE**. It is never doubled up.
+- **7.34** A weekly job never goes to **Finished tasks**. While it's in Done it stays in the Done column until it resets, however long that is.
+- **7.35** The reset happens even if Comp HQ was switched off at midnight. It catches up the first time anyone opens Comp HQ on or after that Saturday, and happens only once, however many Saturdays were missed.
+- **7.36** History shows each reset: "Comp HQ put this back in To do for Sat 10 Oct (weekly)". "Comp HQ" never appears in any list of names.
+- **7.37** Unticking the box makes it an ordinary job again, from then on. A removed weekly job doesn't reset. Restored, or brought back with Undo, it repeats again.
+- **7.38** **Export everything** gains a **Repeats** column in `tasks.csv` ("weekly", or empty).
+- **7.39** Weekly jobs survive an upgrade from 1.3.0 and a rollback back to 1.3.0. The rolled-back app shows them as ordinary jobs. On upgrading again, each one is still weekly, and one that was finished while rolled back resets on the next Saturday, even if it had been tucked away into Finished tasks.
+
+**Linked jobs** *(request 15)*
+- **7.40** A job's window and its page have a **Linked jobs** section under Steps, with a **Link a job** control. Typing part of a title lists matching jobs (never the job itself, never removed jobs). Picking one asks what the link means: **That one first** (the other job must be finished before this one), **This one first** (this job must be finished before the other), or **Related** (they belong together, in any order). (D-96)
+- **7.41** Linked jobs are shown in three groups: **Do first** (jobs this one is waiting on), **Then** (jobs waiting on this one) and **Related**. The other job shows the same link from its own side. Each line shows the job's title (which opens it), its column, and **Finished** when it's done.
+- **7.42** A job with an unfinished **Do first** job shows a **WAITING** stamp on its card on the Board, My jobs and Team. Its tooltip and spoken name list what it's waiting on ("Waiting on: Order toner"). The stamp goes when every Do first job is Done, and comes back if one is reopened.
+- **7.43** WAITING is only a label. Anyone can still take, move, start and finish a waiting job (A3).
+- **7.44** A link can be removed with the **remove** icon (gate 4.11), and both jobs lose it. History on both jobs records links being added and removed: "Sam linked this to 'Order toner' (do first)".
+- **7.45** These are refused with a plain message, and nothing changes: linking a job to itself; a second link between the same two jobs; a "do first" link that would go round in a circle ("Print newsletter" already has to wait for this job); more than 20 links on one job; and linking to a job somebody has just removed.
+- **7.46** A removed job's links are hidden while it's removed, and come back when it's restored. Finished jobs keep their links.
+- **7.47** Without JavaScript, linking and unlinking work from the job's own page as ordinary forms.
+- **7.48** **Export everything** includes `links.csv`: the job, the linked job, what the link means, who linked them and when, and whether the link was removed.
+- **7.49** Links survive an upgrade from 1.3.0 and a rollback back to 1.3.0. The rolled-back app ignores them, and upgrading again finds them all still there.
+
+**No white areas when scrolling** *(request 5)*
+- **7.50** On every page, at 1024 × 700 and 1920 × 1080 with the test library loaded, the page as a whole never scrolls sideways. This is measured on the whole page, not only its body (D-97). A sideways swipe or Shift + mouse wheel over the Team columns scrolls only the columns, and the sidebar and top bar stay where they are.
+- **7.51** Scrolled to the bottom, and as far right as the page allows, every page shows its paper background and its frame. There is never a blank white strip beside or below the page.
+- **7.52** A picture wider than the article (for example 3,000 pixels wide) is shrunk to fit, both on the article page and in the editor.
+
+**Putting articles in order** *(request 7)*
+- **7.55** A category's page lists its articles in their own order, the same on every computer. Articles can be dragged up and down, and each has **move up** and **move down** icons (gate 4.11) that do the same.
+- **7.56** Editing an article no longer moves it to the top of its category. Reordering isn't an edit: it adds no History version and doesn't change the article's "Updated" date or its place in **Recently updated** (D-98).
+- **7.57** A new article goes to the bottom of its category. An article moved to another category, or brought back from Archived into its category, goes to the bottom of that category.
+- **7.58** After the upgrade, every category first shows its articles in the order it showed them on 1.3.0 (most recently edited first), so nothing appears to jump. **Export everything** lists articles in this order too.
+- **7.59** The order survives an upgrade from 1.3.0 and a rollback back to 1.3.0. On upgrading again, an article added while rolled back is at the bottom of its category, and no article is ever missing, shown twice, or out of its category.
+
+**Every picture from Word** *(request 8)*
+- **7.60** A Word document with 25 different pictures imports with all 25 showing: each is the right picture, in the right place. (At v1.3, the 10th picture onwards breaks.)
+- **7.61** Pictures that sit beside the text (wrapped or floating), pictures grouped together or placed on a drawing canvas, and several pictures in one group all come across, each as its own picture, in reading order.
+- **7.62** Pictures in documents made by other programs (Google Docs, LibreOffice, and programs that store pictures under unusual names, with spaces or capital letters) come across too.
+- **7.63** A picture in the same paragraph as the document's title is kept, at the top of the article.
+- **7.64** A picture that can't be brought in is never lost without a trace. It is marked in its place with the red dashed box (gate 1.49), and the import message counts it. This includes a picture that fails to save.
+- **7.65** Pictures in old Windows drawing formats (EMF and WMF, common for Visio drawings, Excel charts pasted as pictures, and clip art) are still marked rather than shown (D-99). The box now says what it was and how to fix it: **"A drawing in an old Windows picture format couldn't be brought in. Tip: in Word, right-click it → Save as Picture → PNG, then drag the PNG into this article."**
+- **7.66** Pictures in page headers and footers, such as a letterhead logo, are still left out, and the import message now says so: "Left out: the page header and footer (including 1 picture)".
+- **7.67** Every Word document in `samples\word` imports with each of its pictures either shown or marked in place. None goes missing without a mark.
+- **7.68** The 20-page, 10-picture document still imports within gate 1.52's time.
+
+**A tidier Knowledge Base** *(request 9 — the Home page, the category pages and the editor)*
+- **7.70** **Knowledge Base home:** a heading row with **Knowledge Base**, a **New article** main button, and **Categories** and **Archived** buttons. Each category is a tile showing its name, its article count, its first three articles (in the category's order) as links, and **All 6 articles →**. An empty category's tile says "No articles yet" with a link to add one.
+- **7.71** **Recently updated** is a panel like the Briefing's sections. Each of its 10 rows shows the title, the category, and who updated it and when, in the app's date style (gate 1.13 is unchanged).
+- **7.72** **A category's page:** a "Knowledge Base › Office facts" trail, the category name with its article count, and a **New article** button that starts an article already filed in this category. Each article is a row showing its title, its opening words (up to about 140 characters), "Updated by Jo · Sat 12 Sep 2026", and its move icons. An empty category says so in a friendly way, with the New article button.
+- **7.73** **The editor** follows the mockup's editor screen. A head at the top holds the trail, **Cancel** and **Publish**, and stays in view while a long article scrolls. The category is chosen in the head. The title is a large box styled like the article's heading. The toolbar is the mockup's compact one (Heading, Subheading, **B**, *I*, • List, 1. List, Link, Table, Picture, Import from Word) and also stays in view. The add and remove row and column buttons appear only while the cursor is in a table.
+- **7.74** The red dashed boxes for things that couldn't come across look like the mockup's: a bold sentence saying what it was, and a tip underneath.
+- **7.75** The import message gains the mockup's first line: "Came across: 2 headings, 1 list, 1 table, 3 pictures."
+- **7.76** Nothing the editor does changes. Every gate from 1.14 to 1.25 and from 1.45 to 1.52 still passes, including the unsaved-changes warning, the edit-conflict message, pasting and Import from Word.
+- **7.77** The three screens use only the design's shared parts, colours and fonts (B9). They have no raw browser controls, and they match the mockup wherever the mockup draws the same part. Every one passes the accessibility check and works from 1024 × 700 up to full HD.
+
+**Still true afterwards**
+- **7.90** Every gate from Phases 1 to 6 (1.01–6.41) still passes, unchanged, at the same thresholds, with these exceptions, each recorded in `docs/decisions.md`: gate 2.02's "bottom of Ideas" becomes "bottom of To do" (7.10, D-90); gate 2.25's Unassigned column gains unassigned ideas (7.04); gate 2.28's "Assign to…" button becomes the people list (7.06, D-92); and the sideways-scroll checks of gates 1.09, 2.31 and 5.31 measure the whole page again (7.50, D-97).
+- **7.91** Every screen still passes the accessibility check, works from 1024 × 700 up to full HD, and meets the speed limits of gate 4.53.
+
+**👤 Owner checks — end of Phase 7**
+- **O7.1** On My jobs, reorder your Up next by dragging and with the arrows. On Team, drag an idea into someone's Up next, and put two people on a job using the circles. Confirm all three feel as natural as on the Board.
+- **O7.2** Remove a job and press Undo. Then, on the Board, type part of a job's name into the top search box. Confirm both do what you'd expect.
+- **O7.3** Set up one real weekly job and finish it. On the next Saturday, confirm it's back in To do and in the Briefing.
+- **O7.4** Link two real jobs with "That one first". Confirm the WAITING stamp makes sense to the team and goes away when the first job is done.
+- **O7.5** Look at the Knowledge Base home, a category and the editor. Put a category's articles in order. Import the Word document that lost pictures before. Confirm it all looks and feels better, and every picture is there or clearly marked.
+- **O7.6** Scroll around the Board, Team and a long article. Confirm there are no white areas. If you still see one, note the page and what you did, and it becomes a fix.
+
 ## A12. What's not included
 
 From the confirmed intent:
@@ -565,7 +689,7 @@ Decided while writing this spec (any of these could be added later if real use s
 - A friendly address such as `comphq.local`.
 - The padlock "secure" certificate.
 - Phone and tablet layouts, and a dark theme.
-- Search that forgives misspellings. Search covering tasks and events (it covers articles).
+- Search that forgives misspellings. Search covering events. *(Since v1.4, the search box on Tasks pages searches jobs; everywhere else it searches articles.)*
 - Repeat rules like "second Saturday of December". Repeats are by date, and single occurrences can be moved.
 - Attaching files other than images (such as PDFs) to articles.
 - Sending articles back out to Word, or keeping a Word file linked to its article. Import works one way; after that, the article is edited in Comp HQ. (Export everything still gives readable copies of every article.)
@@ -576,6 +700,11 @@ Decided while writing this spec (any of these could be added later if real use s
 - Several named lists of steps on one job, and reusable step templates for jobs that come round every year (v1.2, D-70 and D-72). Steps in the Saturday Briefing, and a "Removed steps" screen (D-73, D-74).
 - Giving a step its own person or its own due date. A step is a tick-box; if it needs an owner and a date, it is a job.
 - A confirmation before removing a name, and a Removed people list to bring one back (considered for v1.3; the owner left it for later). A blank Calendar day offering "add a job" as well as an event (D-84).
+- *(v1.4)* Jobs that repeat on other schedules (every day, every other week, monthly, on a day other than Saturday), and a separate card for each week's copy of a weekly job (D-95).
+- *(v1.4)* A "do first" link that stops anyone working on a waiting job, links shown in the Saturday Briefing, and named kinds of link beyond "do first" and "related" (D-96).
+- *(v1.4)* A separate priority order for each person's own list. Reordering on My jobs changes the one shared order (D-91).
+- *(v1.4)* Turning EMF and WMF drawings, charts and SmartArt from Word into pictures, and bringing over page headers and footers (D-99).
+- *(v1.4)* A new look for the Categories, Archived and History pages of the Knowledge Base. The owner asked for the home page, category pages and editor (D-100).
 
 ## A13. Your hands-on moments
 
@@ -589,6 +718,7 @@ This is the complete list. Each one comes with click-by-click instructions in th
 | Once, end of Phase 1 | On TrueNAS: create a folder (a "dataset") for Comp HQ, install the app by pasting the settings file, and set up automatic nightly snapshots (saved copies the NAS can roll back to). | 30 min |
 | Once per office computer | Create the desktop shortcut and pick a name. | 3 min each |
 | Once, end of Phase 1 | Copy your HelpScout articles into Comp HQ (fewer than 20). | 1–2 hours |
+| Optional, before Phase 7 starts | Put the Word document(s) that lost pictures on import into the `samples\word` folder (nothing private), so gate 7.67 tests the real thing. | 5 min |
 | End of each phase (3 times) | The 👤 Owner checks above, including entering your yearly events and Trello cards in Phase 2. | 30–60 min each |
 | Each future update | In TrueNAS, change one version number in Comp HQ's settings. | 2 min |
 
@@ -658,7 +788,7 @@ Timestamps are stored as UTC ISO-8601 text. **Calendar dates** (due dates, event
 `id` · `name` · `sort_order` · `created_at` · `updated_at`
 
 **kb_articles**
-`id` · `category_id` → categories · `title` · `body_html` (sanitised, with block ids) · `status` (`published`|`archived`) · `version_no` · `created_by` → people · `created_at` · `updated_by` · `updated_at`
+`id` · `category_id` → categories · `title` · `body_html` (sanitised, with block ids) · `status` (`published`|`archived`) · `version_no` · `created_by` → people · `created_at` · `updated_by` · `updated_at` · *(v1.4)* `position` (integer, nullable; the article's place in its category, B13.8)
 
 **kb_article_versions**
 `id` · `article_id` · `version_no` · `title` · `category_id` · `body_html` · `action` (`created`|`edited`|`archived`|`unarchived`|`restored`) · `restored_from_version` (nullable) · `edited_by` · `edited_at`
@@ -672,14 +802,19 @@ One row per block of each **published** article: block 0 holds the title, and bl
 Files are stored at `/data/images/<first 2 hex>/<sha256>.<ext>` and served at `/images/<sha256>.<ext>`. They are never deleted.
 
 **tasks**
-`id` · `title` · `notes` (plain text) · `size` (`S`|`M`|`L`, default `M`) · `stage` (`idea`|`todo`|`doing`|`done`) · `position` (integer, unique per stage among visible) · `due_date` (nullable) · `done_at` (nullable) · `removed_at` (nullable) · `created_by` · `created_at` · `updated_by` · `updated_at`
+`id` · `title` · `notes` (plain text) · `size` (`S`|`M`|`L`, default `M`) · `stage` (`idea`|`todo`|`doing`|`done`) · `position` (integer, unique per stage among visible) · `due_date` (nullable) · `done_at` (nullable) · `removed_at` (nullable) · `created_by` · `created_at` · `updated_by` · `updated_at` · *(v1.4)* `repeat` (`none`|`weekly`, default `none`) · `repeat_reset_on` (local `YYYY-MM-DD`, nullable: the Saturday this job was last reset for, B13.5)
+The database default for `stage` stays `idea` (expand-only, B6). From v1.4 the store passes `todo` when no column is chosen (D-90).
+
+**task_links** *(v1.4)*
+`id` · `task_id` → tasks · `other_task_id` → tasks · `kind` (`before`|`related`) · `created_by` → people · `created_at` · `removed_by` (nullable) · `removed_at` (nullable)
+`before` means `task_id` must be finished before `other_task_id`. A `related` link is stored once, with `task_id < other_task_id`, and shown on both jobs. At most one live (non-removed) link joins any two jobs, enforced by the store. Indexed on `task_id` and on `other_task_id`. B13.6 has the rules.
 
 **task_assignees**
 `task_id` · `person_id` (composite primary key)
 
 **task_activity**
 `id` · `task_id` · `person_id` · `action` (`created`|`moved`|`assigned`|`unassigned`|`due_changed`|`size_changed`|`edited`|`reopened`|`removed`|`restored`|`step_added`|`step_renamed`|`step_removed`|`step_restored`) · `detail` (short JSON) · `at`
-The four `step_*` actions arrive in v1.2. There is deliberately **no** action for ticking a step (D-71): a job with twenty steps would otherwise bury its own history, and who ticked what is carried on the step itself.
+The four `step_*` actions arrive in v1.2. v1.4 adds `linked`, `unlinked`, `repeat_on`, `repeat_off` and `weekly_reset`, plus `undone` for a removal undone from the message (B13.3, B13.5, B13.6). There is deliberately **no** action for ticking a step (D-71): a job with twenty steps would otherwise bury its own history, and who ticked what is carried on the step itself.
 
 **task_checklist_items** *(v1.2)*
 `id` · `task_id` → tasks · `text` (plain text, ≤ 200 characters) · `position` (integer, unique per task among non-removed rows) · `done_by` → people (nullable) · `done_at` (nullable) · `removed_at` (nullable) · `created_by` · `created_at` · `updated_by` · `updated_at`
@@ -749,6 +884,7 @@ Key/value store: `last_backup_at`, `last_backup_ok`, `last_backup_error`, `min_a
   - Tracked changes: include `w:ins` and `w:moveTo`; skip `w:del`, `w:delText` and `w:moveFrom`. Descend into `w:sdt`/`w:sdtContent`, `w:smartTag`, `w:customXml` and `w:fldSimple`. Skip field instruction text. Drop empty paragraphs.
   - Unsupported items each become one placeholder, `<div data-missing-kind="chart|diagram|shape|equation|picture|object">`, containing the 1.49 wording. This covers charts (`c:chart`), SmartArt (`dgm:`), drawn shapes with no text, equations (`m:oMath`), embedded objects with no usable image, and pictures in other formats (EMF, WMF, TIFF, BMP) or external links.
   - Left out, and counted in `notes`: comments, footnotes and endnotes, headers and footers.
+  - *(v1.4)* B13.9 extends these image rules: pictures inside DrawingML groups, canvases and shapes, every picture in a VML group, `mc:Choice` when only it holds the picture, more ways of naming the picture file, a picture in the title paragraph, and no picture ever dropped without a placeholder. Image tokens can no longer collide.
 - The sanitiser allows `colspan` and `rowspan` on `td`/`th`, `alt` on `img`, and the `data-missing-kind` placeholder. The editor and the article page show placeholders as a red dashed box.
 
 **Edit conflicts**
@@ -759,6 +895,7 @@ Key/value store: `last_backup_at`, `last_backup_ok`, `last_backup_error`, `min_a
 - Moves use `POST /tasks/{id}/move` with `stage` and one of `before_id`, `after_id` or `to_bottom`. The server renumbers `position` for the affected stage in one transaction.
 - "Done more than 14 days" means `done_at < now − 14 days` in local time. Such tasks are excluded from the board query.
 - Reopening sets the stage to `todo`, puts the card at the bottom, and clears `done_at`.
+- *(v1.4)* A new task with no column chosen goes to the bottom of `todo` (D-90). A `weekly` task is never excluded by the 14-day rule and never listed in Finished tasks (B13.5).
 
 **Checklist steps** *(v1.2)*
 - A job holds at most **50** non-removed steps and a step at most **200** characters. Both limits are enforced in the store, not in a route, so nothing can get round them. Hitting one answers with the step text still in the box and a plain message ("A job can have up to 50 steps" / "A step can be up to 200 characters").
@@ -772,7 +909,7 @@ Key/value store: `last_backup_at`, `last_backup_ok`, `last_backup_error`, `min_a
 - Each lane lists `doing` tasks ("Working on now", ordered by `position`), then `todo` tasks ("Up next", ordered by `position`, numbered 1..n).
 - Load is the sum of weights S=1, M=2, L=4 over the lane's tasks, drawn as blocks grouped per task. There are no thresholds, colours or limits.
 - Reordering within a lane's Up next uses the existing move endpoint. `before_id`/`after_id` is the neighbouring card **in that lane**, so the task lands directly next to that card in the shared To do order and unrelated tasks keep their positions.
-- Assigning by drag: `POST /tasks/{id}/assign` with `from_person` (nullable) and `to_person`. It replaces `from_person` with `to_person`, keeps other assignees, records `unassigned`/`assigned` activity, and doesn't change stage or position. Every drag has an equivalent "Assign to…" button.
+- Assigning by drag: `POST /tasks/{id}/assign` with `from_person` (nullable) and `to_person`. It replaces `from_person` with `to_person`, keeps other assignees, records `unassigned`/`assigned` activity, and doesn't change stage or position. Every drag has an equivalent "Assign to…" button. *(v1.4: the button equivalent is now the Board's people list on every card, B13.1, D-92. The Unassigned lane also lists unassigned ideas in their own group, with no workload.)*
 - Lanes have a minimum width of 232 px. When there are more people than fit, the lanes scroll sideways inside their own container.
 
 **My jobs view** (default for `GET /tasks`; Board at `/tasks/board`, Team at `/tasks/team`)
@@ -1102,7 +1239,7 @@ window must still land somewhere real (gate 4.27).
 ### B9.8 The assigned-ideas fix (gates 4.48–4.51)
 
 The cause is known. `ListForTeamView` (`internal/tasks/lanes.go`) selects only `stage IN ('doing',
-'todo')`, while `Create` defaults a new task to `idea` (`internal/tasks/store.go`). An idea with people
+'todo')`, while `Create` defaults a new task to `idea` (`internal/tasks/store.go`). *(v1.4: `Create` now defaults to `todo`, D-90. The fix below still stands for ideas chosen on purpose.)* An idea with people
 on it therefore appears on the Board and nowhere else: not in My jobs, not in Team, and not in Up for
 grabs either, because `ListUpForGrabs` excludes anything somebody is on.
 
@@ -1393,3 +1530,384 @@ E2E on every date box, keyboard-only, and axe with the calendar open; 6.18–6.1
 `format` unit tests and a no-JavaScript E2E; 6.20 by grid unit tests and the corrected Calendar
 E2E; 6.21–6.23 by E2E and axe; 6.30–6.33 by `search` unit and integration tests and E2E; 6.34 by the
 container test's rollback step; 6.35 by the speed suite; 6.40–6.41 by the full suite.
+
+## B13. The staff's first requests (v1.4, gates 7.01–7.91)
+
+Phase 7 touches Tasks (most of it), the Knowledge Base (article order, Word pictures, three
+screens), and the shared frame (search box, page width). It adds two columns to `tasks`, one to
+`kb_articles`, and one table, `task_links`, all add-only (B6). The causes below were found by
+reading the v1.3.0 code on 5 October 2026, with file and line references. Wherever a cause is
+stated, **write the gate's test first and watch it fail against v1.3.0**, as B9.8 did, so the fix is
+proven rather than assumed. If a stated cause turns out wrong, fix the real one and record it.
+
+Everything in B1–B12 still holds: the command surface and definition of done (`PLAN.md` §2), the
+test layers (B7), the rules for the build agent (B8), the design system (B9), and the rule that
+pages work without JavaScript and every drag has a button (A2).
+
+### B13.1 My jobs and Team (gates 7.01–7.09)
+
+**Reordering My jobs (7.01–7.02).** Up next on My jobs is a Sortable list, so a card *looks* like it
+moves, but `handleMyJobsDrop` (`web/static/tasks/myjobs.js` ~66–83) only acts on a drop from Up for
+grabs. Every other drop just refreshes, and the card snaps back. My jobs also has no move icons
+(`myjobs.html` 59–77). The lane already carries what's needed: `buildLane` fills `PrevID`/`NextID`,
+and `LaneTask.MoveUp()`/`MoveDown()` exist (`lanes.go`), because My jobs uses Team's lane code.
+- Same-list drop in Up next: `POST /tasks/{id}/move` with `stage=todo` and the neighbour from
+  `computeDropParams`, exactly as `team.js`'s `postMove` does. No server change.
+- Add the move icon pair to My jobs' Up next cards with `redirect_to=myjobs`, copied from
+  `team.html` (`redirectTargetFrom` already allows `myjobs`).
+
+**Ideas into To do (7.03–7.05).** On Team, `.team-ideas-list` is never made sortable
+(`team.js` 12–39). A same-lane drop is ignored unless it's an Up next reorder (81–88), and a
+cross-lane drop only assigns (89–91), which by design never changes stage. Unassigned ideas never
+reach Team at all (`lanes.go` ~214).
+- The Unassigned lane gains an Ideas group (unassigned `idea` tasks by `position`). They're
+  excluded from workload, as D-59 already does for a person's ideas.
+- Ideas lists join the drag group. A drop from an Ideas list into an Up next list posts a move
+  with `stage=todo` and the drop neighbour (`to_bottom=1` when Up next is empty, since
+  `computeLaneMoveParams` returns null there). Across lanes it also posts the assign, **move first,
+  then assign**. Both must succeed, or the screen refreshes to the truth and says so.
+- **Move to To do** is an ordinary form posting the existing move with `stage=todo&to_bottom=1`.
+  It's a worded button (A2: it has a consequence).
+
+**People circles everywhere (7.06–7.09).** Team cards carry a `<select>` plus **Assign to…**, which
+*swaps* the lane's person for the chosen one (`team.html` 26–35 and 63–72). My jobs has no assign
+control. The Board's circle menu (B9.6, `people-menu.html`, `board.js` 119–166) is the target.
+- `LaneTask` gains an assignee list (initials and colour class; `Decorate` already has `meID`)
+  so `tasks-people-trigger` can render on lane cards.
+- `taskPeopleData` (`people_handlers.go`) takes a redirect target. The panel stops hard-coding
+  `redirect_to=board`.
+- Move the menu code out of `board.js` into one shared script. It refreshes whichever fragment
+  the page marks (`data-refresh-fragment-selector`, as `window.js` does), then fires
+  `refresh:applied` so each page's drag setup re-runs.
+- **Clipping (7.07):** `.team-lanes` is `overflow-x: auto`, which also clips vertically. An
+  absolutely positioned panel inside a lane is cut off. Position the open panel against the
+  viewport (`position: fixed` from the trigger's `getBoundingClientRect()`, flipping above when
+  there's no room below), or use the native `popover` attribute. Choose the simpler one that passes
+  7.07 and record it.
+- Remove the `<select>` and **Assign to…**. Rewrite `e2e/tasks/team-assign.spec.ts`'s button test
+  (162–184) to use the people list. This is a planned change of gate 2.28's wording (7.90), not a
+  weakened test (B8 rule 5). Say so in the task's commit and in D-92.
+
+### B13.2 New jobs start in To do, and dragging low on the Board (gates 7.10–7.14)
+
+**Default column (7.10–7.11).** Change the default in `store.go` (`Create`, ~110–113 and the
+comment at ~78) and `new_handlers.go` (~35, ~38, ~66–68). The template and `window.js` need no
+change. Update `store_test.go` (58–59) and `e2e/tasks/board.spec.ts` (158–161) to the new rule,
+which is a gate change (7.90), not a weakened test. Leave the database default alone (B3).
+
+**The dead zone (7.12).** `.task-board` is `align-items: start` (`board.css` 34–40), so each
+column is only as tall as its cards. The drop target is the inner `.task-card-list`, with
+`min-height: 24px` (80–88). Below a short column's last card there is grid space that belongs to no
+list, so a drop there does nothing. Fix: columns stretch to the row (`align-items: stretch`), and
+the card list grows to fill its column (for example `grid-template-rows: auto 1fr auto` on
+`.task-column`), so every column is a drop target down to the bottom of the tallest. Apply the same
+idea to Team lanes and the My jobs areas.
+
+**Auto-scroll (7.13).** `board.js` (14–31) sets no scroll options, so Sortable uses the browser's
+native drag. In that mode, its own auto-scroll leaves the window to the browser, which only scrolls
+at the very edge of the window. Since v1.3 the top 76 px of the window is the sticky top bar.
+Set `forceAutoScrollFallback: true`, `scroll: true`, and a `scrollSensitivity` of about
+`--topbar-height` + 40 px on every Tasks Sortable (Board, My jobs, Team, ideas), or use
+`forceFallback` if that tests more reliably. Record the choice. `docs/decisions.md`'s note that
+Sortable uses pointer events rather than native drag (around line 195) is wrong at v1.3.0. Correct
+it with a new decision entry.
+
+**Filter kept (7.14).** `handleDrop` follows the move endpoint's redirect to `/tasks/board` with
+no query string and swaps that page in. Carry `location.search` through, as `replaceBoardFromPage`
+already does.
+
+### B13.3 Undo after removing a job (gates 7.15–7.18)
+
+`Store.Remove` (`lifecycle.go` ~140–180) sets `removed_at` and renumbers the others. The removed
+row keeps its old `position`, and its assignees, steps and links are untouched. `Store.Restore` puts
+a task at the *bottom* of its stage, which is right for **Removed tasks** (unchanged, 7.18) but
+wrong for Undo.
+- **Undo** is `POST /tasks/{id}/restore` with `undo=1` and `redirect_to`. In one transaction it
+  puts the task back into its stage before the task that followed it when it was removed. Record
+  that neighbour's id in the `removed` activity row's `detail` (`{"after_id":…}` or
+  `{"before_id":…}`). If that neighbour has since moved, been removed or left the stage, fall back
+  to the old `position` clamped to the stage's length. It records an `undone` activity row and bumps
+  the change counter. Undo of a job that isn't removed (somebody else already restored it) is a
+  no-op with no error.
+- **The message** is one shared part, `.toast` in `theme.css`, with `role="status"`. It sits fixed
+  at the bottom centre, above page content and below dialogs. Its words are **Removed "*title*"**
+  and an **Undo** button (an ordinary form, so it works without JavaScript). A small shared script
+  (`web/static/app/toast.js`) removes it after 10 s. It lives **outside** any fragment that
+  `refresh.js` or a drag swaps, so a refresh can't wipe it.
+- **Without JavaScript (7.17):** the remove redirect carries `?removed=<id>`, and `renderBoard`
+  renders the same toast. The task page's Remove returns to the Board the same way.
+- The steps Undo (gate 5.06) is left exactly as it is.
+
+### B13.4 Search finds jobs on Tasks pages (gates 7.20–7.26)
+
+The top bar is hard-coded to articles (`layout.html` 42–47; `web/static/kb/search.js` fetches
+`/kb/search.json`).
+- **Per-section search.** `NavItem` (`internal/app/registry.go`) gains an optional `Search`
+  setting: form action, JSON URL, label/placeholder, the no-results message, and an "instead" link.
+  The frame uses the current section's setting, or the Knowledge Base's when a section has none.
+  `search.js` reads all of this from data attributes on the form, so one script serves both.
+  Move it to `web/static/app/` if that's cleaner, and keep the Knowledge Base's behaviour
+  byte-for-byte (gates 1.26–1.32 and 6.30–6.35 unchanged).
+- **The jobs query.** `GET /tasks/search.json?q=` and `GET /tasks/search?q=` (the full page).
+  - Take words exactly as B4's article query does: Unicode letter and digit runs, and fewer than
+    2 characters in total gives no results.
+  - Every word must appear, case-insensitively, as a substring of `title || ' ' || notes`, using
+    `LIKE` with `ESCAPE` (so `%` and `_` are literal). A substring match makes the half-typed last
+    word work with no extra machinery.
+  - Removed tasks are excluded. Finished ones are included, including those past 14 days.
+  - Order by: unfinished before finished, then title match before notes-only match, then stage
+    (doing, todo, idea, done), then `position`. Limit 20.
+  - Highlighting is done on the server: HTML-escape first, then wrap the matched words in `<mark>`
+    in the title and in a passage of about 120 characters of notes around the first notes match.
+- A result is a link to `/tasks/{id}`, so `window.js` opens it in the task window where there is
+  one. **Search articles instead** links to `/kb/search?q=`.
+- At 2,000 tasks a `LIKE` scan is well inside 1 s (7.25). Prove it in the speed layer, and add an
+  index only if the measurement says so.
+- The Board's **Filter by word** is untouched (7.26).
+
+### B13.5 Weekly jobs (gates 7.30–7.39)
+
+**Storage.** `migrations/tasks/0003_weekly.sql` adds `tasks.repeat TEXT NOT NULL DEFAULT 'none'`
+and `tasks.repeat_reset_on TEXT` (B3). 1.3.0 never reads them, and its inserts take the defaults,
+so rollback is safe.
+
+**Setting it (7.30–7.31, 7.37).** A tick-box in `tasks-details-form` (shared by the window, the
+page and the new-task page). Turning it on sets `repeat='weekly'`, sets `repeat_reset_on` to `S0`
+(the Saturday on or before today, so it doesn't reset straight away), and fills an empty due date
+with the Briefing's Saturday (B4: today if Saturday, otherwise the next one). Turning it off sets
+`repeat='none'`. Each records `repeat_on`/`repeat_off` activity.
+
+**The reset (7.32–7.36).** One store function, `ResetWeekly(ctx, today)`. With `S0` = the Saturday
+on or before `today` (`app.Today`, so `COMPHQ_TEST_TODAY` works), in **one transaction**, for every
+task with `repeat='weekly'`, `removed_at IS NULL`, and `repeat_reset_on` null or before `S0`:
+- If `stage='done'`: move it to the bottom of `todo`, clear `done_at`, set `due_date = S0`, and
+  clear `done_by`/`done_at` on its non-removed steps (ticks aren't History, D-71). Record a
+  `weekly_reset` activity row.
+- In every case, set `repeat_reset_on = S0`. So an unfinished one keeps its old due date and shows
+  OVERDUE (7.33), and nothing is ever copied.
+- Bump the change counter only if something changed.
+
+There is **no clock job.** `ResetWeekly` runs at start-up and at the top of every request that
+shows tasks (the Board, My jobs, Team, a task page, the Briefing, and the tasks `…/version`
+endpoint that open windows poll every 60 s). The no-op case must be one cheap indexed query, or
+an `app_meta` key holding the last `S0` processed. This catches up after the NAS was off (7.35),
+works under test mode, and needs no new goroutine. If two requests race, the second finds nothing
+to do, because the transaction re-checks `repeat_reset_on`.
+
+**Who did it (7.36).** `task_activity.person_id` is `NOT NULL REFERENCES people`. Don't add a
+"Comp HQ" person, which would show up in name lists, the export and the picker. Record the reset
+under the task's `created_by`, with `detail` `{"by":"comphq","for":"YYYY-MM-DD"}`. `activityText`
+renders it as "Comp HQ put this back in To do for Sat 10 Oct (weekly)". A rolled-back 1.3.0 shows
+an unknown action as "*name* weekly_reset", which is acceptable for a rollback (rare). A cleaner
+approach is allowed if 7.36 holds and it's recorded.
+
+**Never finished-away (7.34).** `ListBoard` keeps `weekly` tasks in Done regardless of `done_at`,
+and `ListFinished` excludes them. A weekly job finished on 1.3.0 and tucked away there is still
+`stage='done'`, so the first `ResetWeekly` after the upgrade brings it back (7.39).
+
+**Everywhere else.** The WEEKLY stamp is a `.stamp` variant in `theme.css`, with words, not an icon
+(4.11 stays four). `tasks.csv` gains **Repeats**. The Calendar shows a weekly job's current due date
+only, like any job.
+
+### B13.6 Linked jobs (gates 7.40–7.49)
+
+**Storage.** `migrations/tasks/0004_links.sql` creates `task_links` (B3) with its two indexes.
+It's add-only, so it's rollback-safe.
+
+**Endpoints.** `POST /tasks/{id}/links` with `other_id` and `kind` = `first` (the other job before
+this one, stored as `before` from other to this), `then` (stored as `before` from this to other) or
+`related` (stored once, with the lower id first). `POST /tasks/{id}/links/{linkID}/remove` sets
+`removed_at`/`removed_by` and never deletes (A3). Both bump the change counter and write
+`linked`/`unlinked` activity on **both** tasks, with the other task's title in `detail` so a later
+rename can't rewrite history (as the `step_*` rows do).
+
+**Rules, all in the store (7.45).** All of these are refused with a plain message and no change:
+- Self-links.
+- A second live link between the same two tasks, of any kind.
+- A `before` link that would close a loop. Walk the live `before` links from the target, ignoring
+  removed tasks.
+- More than 20 live links touching one task.
+- Linking to a task that is removed.
+
+Two people at once is settled by doing the checks inside the write transaction.
+
+**Showing them (7.41–7.42, 7.46).**
+- A task's links are read with one query, joined to the other task's title, stage and
+  `removed_at`. Links whose other task is removed are hidden, and come back with it.
+- **WAITING** is computed per list, not per card: one query for the visible tasks that have a live
+  `before` link from a task that isn't removed and isn't Done, returning the waiting-on titles.
+  This keeps the Board, My jobs and Team inside gate 4.53.
+- The stamp's tooltip and spoken name list the titles.
+- WAITING never blocks a move, take or finish (7.43).
+
+**Picking a job (7.40, 7.47).**
+- With JavaScript: the **Link a job** box queries `/tasks/search.json` (B13.4) with an
+  `exclude=<id>` parameter and removed tasks left out. Picking a result reveals the three kind
+  buttons.
+- Without JavaScript: the task page has a GET form (`?link_q=`) that re-renders the page with
+  matches, each with the three kind buttons as ordinary POST forms.
+
+**Export (7.48).** `links.csv`: Job, Linked job, Link (do first / related), Linked by, Linked,
+Removed. Wire it in beside `steps.csv`.
+
+### B13.7 No white areas: the page never scrolls sideways (gates 7.50–7.52)
+
+No CSS paints white over the paper. `body` is `--color-paper` and nothing leaves an unpainted area.
+The likely cause is that **the Team page itself can be scrolled sideways**:
+- Each Team card has a `.visually-hidden` label (`team.html` 29 and 66). `.visually-hidden` is
+  `position: absolute` with no `top`/`left` (`theme.css` 164–171), and no ancestor is positioned.
+  So the labels' containing block is the page, outside `.team-lanes`' scrolling area, and they stretch
+  the document to the full width of every lane.
+- D-48 measured exactly this (`documentElement.scrollWidth` ≈ 29,800 px at 1024 px wide). It
+  wrote it off as a quirk and switched the checks to `body.scrollWidth`, which can't see it.
+- A sideways swipe then slides the whole page left. The sticky sidebar and bar only stick
+  vertically, leaving blank paper with no frame.
+
+This was found by reading the code, not by running it. **Prove it first:** a failing test on Team
+with 10 people at 1024 × 700 asserting `documentElement.scrollWidth <= clientWidth`. Then:
+- `.visually-hidden` gets `top: 0; left: 0` (or the usual `clip-path: inset(50%)` pattern), and
+  `.team-lanes` and `.lane` get `position: relative`.
+- `e2e/helpers/no-side-scroll.ts` asserts on **both** `documentElement` and `body` from now on.
+  This is the D-97 change to how gates 1.09, 2.31 and 5.31 are measured (7.90). Sweep every page
+  type with it; any other offender is fixed in the same task.
+- **7.51:** after scrolling each page to its far bottom-right, sample the screenshot's corner
+  pixels and assert they are the paper or navy tokens, never `#FFFFFF`.
+- **7.52:** `.kb-article-body img` (and the editor's) get `max-width: 100%; height: auto`. Only
+  `.ProseMirror img` has it today.
+- Declare `color-scheme: light` on `:root`, so scrollbars stay consistent with the light-only theme.
+
+If O7.6 still finds a white area after this, it becomes a v1.4.x fix with the owner's description.
+
+### B13.8 Articles in order (gates 7.55–7.59)
+
+Today `ListByCategory` orders by `updated_at DESC` (`internal/kb/articles.go` ~210–215), which is
+why an edited article jumps to the top, and the export orders by title (`export.go` 37). Categories
+reorder by swapping `sort_order` with a neighbour (`categories.go` 110–156). Follow that model.
+- `migrations/kb/0006_article_order.sql`: `ALTER TABLE kb_articles ADD COLUMN position INTEGER`,
+  backfilled per category with `ROW_NUMBER() OVER (PARTITION BY category_id ORDER BY updated_at
+  DESC, id)`, so day one looks exactly like 1.3.0 (7.58).
+- **At every start-up**, after migrations, renumber each category's published articles 1..n by
+  `(position IS NULL, position, created_at, id)`. Like D-85's rebuild, this is what makes rollback
+  safe. Articles created on 1.3.0 have a null `position` and land at the bottom (7.59). An article
+  moved to another category on 1.3.0 keeps a stale number and lands somewhere in its new category,
+  never twice and never missing, which 7.59 accepts.
+- Create, a category change on save, a version restore into another category, and unarchive
+  all put the article at `MAX(position)+1` in its category (7.57).
+- `POST /kb/articles/{id}/move` with `before_id`/`after_id`, or `up`/`down`. It doesn't touch
+  `updated_at`, `version_no` or history (7.56).
+- `ListByCategory` and the export use `ORDER BY position`. Home's tiles (B13.10) use it too.
+- The category page uses the vendored SortableJS for drag, and the move icons for the buttons.
+
+### B13.9 Every picture from Word (gates 7.60–7.68)
+
+`internal/kb/docx` and `import_docx_handlers.go` today:
+
+1. **The token collision (7.60).** Tokens are `cid:docximage1`, `cid:docximage2`, …
+   (`document.go` ~203), replaced in order with `strings.ReplaceAll`
+   (`import_docx_handlers.go` 69–78). Replacing `cid:docximage1` also rewrites the start of
+   `cid:docximage10`–`19`, which yields `/images/<hash>.png0` and a 404. Every picture from the
+   10th breaks. Gate 1.52's fixture has exactly 10 pictures but only checks timing, and the
+   integration test checks only the first `<img>`.
+   - Fix: give each token an end marker (`cid:docximage-7-end`), or replace exact `src="…"`
+     attribute values.
+   - Test with 25 *distinct* pictures and assert each `src`'s hash, in order.
+2. **Groups, canvases and shapes (7.61).** A `w:drawing` is decoded whole into a struct
+   (`document.go` 513–521), so a `wpg:wgp` group, `wpc` canvas or `wps:wsp` shape with a picture
+   fill becomes one "shape" placeholder. Walk the drawing for every `pic:pic`/`a:blip` and emit each
+   picture in document order. Keep the placeholder only when no picture is found.
+3. **`mc:AlternateContent` (7.61).** `mc:Choice` is always skipped (`document.go` 463–470). Use
+   Choice when it yields pictures and Fallback yields fewer or none (B4's "the one branch that
+   yields an image or text").
+4. **VML groups (7.61).** `scanVMLPict` (`document.go` 236–261) keeps only the *last*
+   `v:imagedata`, and lets a text box win over every picture. Keep every picture and every text box,
+   in order. Treat `v:fill r:id` as a picture.
+5. **Naming the picture file (7.62).** In `images.go` 113–122 and `docx.go` 143–150:
+   - Resolve absolute targets (`/word/media/x.png`) from the package root.
+   - Percent-decode targets.
+   - Match part names case-insensitively (OPC part names are case-insensitive).
+6. **The title paragraph (7.63).** Removing the title paragraph (`result.go` 239–258) drops its
+   pictures. Move them to the top of the body.
+7. **Silent loss (7.64).** A failed image save `continue`s, leaving a token the sanitiser then
+   drops (`import_docx_handlers.go` 71–76). Turn it into a `picture` placeholder plus a note.
+8. **Budget.** Read only images that are actually referenced, each once (dedupe by target),
+   before counting towards the 300 MB limit.
+9. **EMF/WMF (7.65).** These stay placeholders (D-99). Converting them needs a vector renderer, and
+   there's no small, stable, pure-Go one. Give them their own kind, `data-missing-kind="drawing"`,
+   with gate 7.65's wording. TIFF and BMP stay as gate 1.49 has them.
+10. **Headers and footers (7.66).** Still left out. The note counts the pictures in them.
+
+**Fixtures.** Extend the committed generator (`e2e/fixtures/docx/gen`, D-07), byte-reproducible as
+now, with:
+- 25 distinct pictures
+- an anchored picture
+- a DrawingML group of 3
+- a canvas
+- a VML group of 3
+- an absolute target
+- a `%20` target
+- an upper-case part name
+- a picture in the title paragraph
+- an EMF
+- a header logo
+
+**Gate 7.67's check.** Count the pictures referenced from `document.xml` and assert that this
+count equals the `img`s plus picture placeholders in the result, for every fixture and every
+`samples/word/*.docx`.
+
+### B13.10 A tidier Knowledge Base (gates 7.70–7.77)
+
+The mockup draws only the article and editor screens (`data-screen="kb"` and `"editor"`). The home
+and category pages were never drawn. Build them from the mockup's own parts (`.panel-head`, `.stamp`,
+`.date`, `.crumbs`, `.btn`, `.btn.primary`, the card surface), so they look as if they had always
+been there, and add **no new colour or font** (B9.1, B9.2). `theme.css` stays the only place
+values live.
+- **Home (`kb/home.html`, `kb.css`).**
+  - Heading row: h1 plus **New article** (`.btn.primary`), **Categories** and **Archived**
+    (`.btn`).
+  - Tiles: the category name in the display font, a count, and the first three articles by
+    `position` as links, plus **All *n* articles →**.
+  - **Recently updated** is a panel with a `.panel-head`. Its 10 rows (gate 1.13) show the title,
+    the category, and "*name* · `.date`".
+  - Empty states have a friendly sentence and the relevant button.
+- **Category (`kb/category.html`).**
+  - `.crumbs`, then h1 plus a count, then **New article** linking to `/kb/new?category=<id>`
+    (preselect the category; add that query parameter if it doesn't exist).
+  - Rows show the title, the opening words, and "Updated by *name* · `.date`", with the move icons
+    and a drag handle area.
+  - The opening words are the first non-heading block's plain text from the existing block-text
+    extraction, cut at a word boundary at about 140 characters.
+- **Editor (`kb/editor.html`, `editor.css`, `editor.js`, `messages.js`).**
+  - The mockup's `.edit-head` holds the crumbs, **Cancel** and **Publish**, with the category
+    select styled as a shared control. It is `position: sticky; top: var(--topbar-height)`.
+  - The toolbar `.bar` is sticky under the head and holds exactly the mockup's buttons plus
+    **Import from Word**. B and I keep `aria-label`s and tooltips; the mockup draws them this way
+    and wins on appearance (A10). Gate 4.11's four icon-only buttons are unaffected, because these
+    are letters, not icons.
+  - Row and column table controls show only while the selection is inside a table.
+  - The title is the mockup's `.title-in` style on a real `input`, with a spoken label and no
+    visible "Title" label.
+  - Placeholders take the mockup's `.missing` look (bold line plus tip) for every kind, including
+    7.65's.
+  - The import summary gains "Came across: …", built from counts the converter already has or can
+    cheaply return.
+  - Keep every existing behaviour: `beforeunload`, conflict handling, paste, images, import, and
+    the form fields' names. Only the arrangement and look change (7.76).
+- Categories, Archived and History pages are untouched (A12, D-100).
+
+### B13.11 How Phase 7 gates are checked
+
+As B7, per gate:
+
+| Gates | How they're checked |
+|---|---|
+| 7.01–7.09 | E2E, with two browser contexts for refresh. Drag tests use the stable drag helper from Phase 5. The people list is checked at 1024 × 700 on the last card of the right-most lane, scrolled, and its bounding box must be inside the viewport. No-JS E2E for 7.09. |
+| 7.10–7.14 | Unit (`Create` default) and E2E. 7.12: drag from the 15th card of a long Ideas column to a column holding 1 card, using a pointer path that ends below that column's last card. 7.13: test library loaded, drag from the bottom of one column to the top of another. 7.14: filter applied, drag, assert the URL and the cards. |
+| 7.15–7.18 | Store unit tests (undo position with an unchanged and a changed neighbour, and undo of an already-restored task). E2E for the toast, its timing with `page.clock`, axe with it open, and no-JS. Avoid D-86's tight margins. |
+| 7.20–7.26 | Unit tests for the query (words, escaping, ordering, finished and removed tasks) and E2E on each Tasks page. 7.25 in the speed layer. Gates 1.26–1.32 and 6.30–6.35 re-run unchanged. |
+| 7.30–7.39 | `ResetWeekly` table tests across `COMPHQ_TEST_TODAY` dates (Friday→Saturday, a missed Saturday, two missed Saturdays, a Saturday reset run twice, removed, unfinished, steps unticked). E2E for the box, the stamp, Briefing placement and History. 7.39 in the container test's rollback step. |
+| 7.40–7.49 | Store unit tests for every 7.45 refusal, including a three-job loop and two contexts racing. E2E for linking from the window and the page (and no-JS), WAITING appearing and clearing, and the export. 7.49 in the container rollback step. Speed layer with links seeded. |
+| 7.50–7.52 | The strengthened no-side-scroll helper on every page type at both sizes, the corner-pixel screenshot check, and an oversize-image article. |
+| 7.55–7.59 | Store unit tests (backfill order, start-up renumbering with nulls and stale numbers), E2E for drag and icons, an assertion that an edit doesn't move an article, the export order, and the container rollback step. |
+| 7.60–7.68 | `internal/kb/docx` unit fixtures (above), the integration test asserting every `src`, E2E import of the new fixtures, the `samples/word` sweep, and the gate 1.52 timing. |
+| 7.70–7.77 | B9.9's layers: computed styles against the mockup for every part the mockup draws (edit head, toolbar, title, `.missing`, the import summary, crumbs); the token and drift rules on the new templates; axe; and screenshots of all three screens in `reports/screens/` for O7.5. |
+| 7.90–7.91 | The full suite, unchanged except the planned rewrites named in 7.90, each pointed at its D-entry in its commit message. |

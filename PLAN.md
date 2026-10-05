@@ -1323,7 +1323,7 @@ Send each message as plain text in the chat. Log it in `PROGRESS.md` → Stop lo
 **N1 — Optional Word samples (P1-10, no waiting)**
 > Optional, whenever you like: if you put 1–3 of your real Word documents (ones with pictures and tables, nothing private) in the **samples\word** folder inside the Staff HQ folder on your Desktop, I'll test Import from Word on them too. I'm carrying on either way.
 
-**S3 — End of Phase 1 (P1-39)**, **S4 — End of Phase 2 (P2-20)**, **S5 — End of Phase 3 (P3-05)**, **S9 — End of Phase 4 (P4-15)**, **S10 — End of Phase 5 (P5-09, see `PLAN-v1.2.md`)**, **S11 — End of Phase 6 (P6-08, see `PLAN-v1.3.md`)**
+**S3 — End of Phase 1 (P1-39)**, **S4 — End of Phase 2 (P2-20)**, **S5 — End of Phase 3 (P3-05)**, **S9 — End of Phase 4 (P4-15)**, **S10 — End of Phase 5 (P5-09, see `PLAN-v1.2.md`)**, **S11 — End of Phase 6 (P6-08, see `PLAN-v1.3.md`)**, **S12 — End of Phase 7 (P7-19, see `PLAN-v1.4.md`; in Phase 7 it is written into the report, never waited for — `PLAN-v1.4.md` §2 replaces every stop point for that phase)**
 Send the summary part of `reports/phase-N-report.md` (§5.2 step 7):
 > **Phase *N* is finished: version *X.Y.Z* is ready.**
 > - **What's new:** *two plain sentences*.
@@ -1513,6 +1513,7 @@ Unless noted, E2E paths are under `e2e/`, and "std checks" means `e2e/a11y/pages
 | O4.1–O4.4 | P4-15 (S9) | Owner reply, logged in `PROGRESS.md` |
 | 5.01–5.31, O5.1–O5.4 | P5-01–P5-09 | See `PLAN-v1.2.md` §5, which carries its own gate-to-task table |
 | 6.01–6.41, O6.1–O6.4 | P6-01–P6-08 | See `PLAN-v1.3.md` §5, which carries its own gate-to-task table |
+| 7.01–7.91, O7.1–O7.6 | P7-01–P7-19 | See `PLAN-v1.4.md` §5, which carries its own gate-to-task table |
 
 ---
 

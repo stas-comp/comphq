@@ -2,6 +2,54 @@
 
 Non-obvious choices made while building Comp HQ, in the format required by `PLAN.md` §2.4: one short paragraph each, headed `D-NN Title (task ID, date)`.
 
+## D-100 The Knowledge Base's new look covers the home page, category pages and editor only (P7-00, 2026-10-05)
+
+The owner picked these three screens as the ones that bother people (request 9). The home and category pages were never in the mockup. They're built from the mockup's own parts, with no new colours or fonts. The editor is brought in line with the mockup's editor screen, which it had drifted from: the buttons are at the top and the toolbar is the compact one. The reading page was already close to the mockup and only gains the picture-width fix (7.52). Categories, Archived and History are left as they are; any of them can follow later if asked for. SPEC B13.10.
+
+## D-99 Word pictures: every fault fixed, but EMF/WMF and headers stay out (P7-00, 2026-10-05)
+
+Reading the v1.3.0 converter found one real bug (from the 10th picture on, every picture's address is corrupted, B13.9 item 1), and several shapes of document whose pictures are dropped or flattened: groups, canvases, VML groups, unusual part names, the title paragraph, and failed saves. All of these are fixed. Two things stay out on purpose. **EMF/WMF** is a vector format browsers can't show, and turning it into a picture needs a renderer with no small, stable, pure-Go option, so stability wins (A2). The placeholder now names the format and gives the three-click fix in Word. **Header and footer pictures** (letterhead logos) repeat on every printed page and don't belong in an article; the import message now counts them. If the owner's real document (A13, optional) shows a different cause, the build agent fixes that cause and records it here.
+
+## D-98 Articles have their own order in each category; editing doesn't move them (P7-00, 2026-10-05)
+
+Up to v1.3, a category listed its articles newest-edit first, so fixing a typo moved an article to the top. Request 7 asks for an order people choose. A `position` column per category, moved by drag or by the move icons, works the way category order already does. On upgrade day each category keeps the order it showed on 1.3.0, so nothing jumps. A new article goes to the bottom, as a new task does. Reordering isn't an edit: no History version, and **Recently updated** is unchanged, because that list is about content changes. Like D-85, the order is tidied at every start-up, which keeps a rollback and an upgrade again safe.
+
+## D-97 Sideways scrolling is measured on the whole page again; supersedes D-48's measurement (P7-00, 2026-10-05)
+
+D-48 saw `documentElement.scrollWidth` report about 29,800 px on Team and treated it as a measurement quirk, switching the checks to `body.scrollWidth`. Reading the code on 2026-10-05 points to a real cause: hidden labels inside each Team card are positioned against the page, not the lanes, so the page really can be scrolled sideways. That fits the staff's report of white areas when scrolling (request 5). The checks go back to measuring the whole page, alongside the body, and the cause is fixed (SPEC B13.7). D-48's `min-width: 0` hardening stays.
+
+## D-96 Two kinds of link: "do first" and "related"; WAITING is a label, not a lock (P7-00, 2026-10-05)
+
+The owner asked for both kinds (request 15): one job must be finished before another, and jobs that simply belong together. Seen from a job, links fall into three groups: Do first, Then, and Related. A job with an unfinished Do-first job shows a **WAITING** stamp. It doesn't stop anyone moving, taking or finishing the job, because the team is trusted and anyone can do anything (A3), and a lock would need overrides and explanations. Loops of "do first" are refused, because a loop would leave both jobs waiting forever. 20 links per job is far more than real use needs, and keeps the queries small. Links aren't shown in the Briefing.
+
+## D-95 A weekly job is one card that resets itself each Saturday (P7-00, 2026-10-05)
+
+The owner chose this over a fresh copy each week (request 12). At the start of each Saturday, a weekly job in Done goes back to the bottom of To do, due that Saturday, with its steps unticked. If it wasn't finished, it's left alone and shows OVERDUE, so a missed week is visible rather than hidden under a new copy. It never goes to Finished tasks. There's no clock job: the reset catches up the first time Comp HQ is used on or after the Saturday, so a NAS that was off at midnight can't make it miss a week, and test mode's fixed date works. The bottom of To do follows Reopen (B4); the due date puts it in that Saturday's Briefing, which matters more than its place in the column. The reset is recorded under the job's creator with a marker, so it reads "Comp HQ put this back…" without adding a fake person to the name lists.
+
+## D-94 On Tasks pages, the top search box searches jobs (P7-00, 2026-10-05)
+
+Request 10: on the Tasks pages, people expect the search box to find jobs. One box that changes what it searches by section is simpler than two boxes, and the box's own words say which it is ("Search jobs" or "Search articles"). Every result list ends with a link to search the other. Job search matches every word in the title or notes, and finds finished jobs (marked Finished) but not removed ones. The Board's own Filter by word box stays: it narrows the columns in place, which is a different job from finding one. Events are still not searchable (A12).
+
+## D-93 Undo after removing a job puts it back exactly where it was (P7-00, 2026-10-05)
+
+Request 14. The message at the bottom of the screen lasts 10 seconds, matching a removed step's Undo (D-74). Undo is not the same as restoring from Removed tasks, which puts a job at the bottom: Undo returns it beside the job it sat next to, because the point is "that was a mistake". Removed tasks stays as the longer-term way back. The message is a shared part with an ordinary form inside, so it works without JavaScript and any later screen can reuse it. The steps Undo is left as it is.
+
+## D-92 Team and My jobs use the Board's people list; "Assign to…" goes (P7-00, 2026-10-05)
+
+Request 13. The Team page's drop-down and **Assign to…** button swapped one person for another, and couldn't add a second person from a person's column. The Board's circles (gate 4.20) can put any number of people on or off a job, so every card on Team and My jobs gets them. This replaces the button half of gate 2.28 and the "kept on purpose" note in D-62b. Dragging between columns still hands a job over. The people list stays the "button" for every drag (A2). The Team assign test is rewritten to use it, a planned change of gate wording, not a weakened test.
+
+## D-91 Reordering My jobs changes the one shared order (P7-00, 2026-10-05)
+
+Request 2 ("can't re-prioritise my own tasks") was a fault: My jobs' Up next looked draggable, but every drop snapped back. It's fixed the way Team already works (gate 2.29). Moving a job in your own list places it next to the job you dropped it by, in the shared To do order, and every other job keeps its place. A separate private order per person stays out (A12): two orders would disagree about what's most important, and the original decision was one shared order.
+
+## D-90 New jobs start in To do (P7-00, 2026-10-05)
+
+Request 4. Most new cards are real jobs, not ideas, so To do is the better default. Ideas can still be chosen. A new job goes to the bottom of To do, as a job moved there by button does (gate 2.05). As a result, a new job with people on it shows up in their Up next and counts towards their workload straight away. That's intended: it's their job now. The database default stays `idea`, because changing a column's meaning is forbidden by the expand-only rule (B6), and the store passes the column explicitly. This replaces "Ideas" in gate 2.02.
+
+## D-89 v1.4 ships all the staff's requests as one update (P7-00, 2026-10-05)
+
+The owner chose one update (Phase 7, v1.4.0) over splitting the fixes and the new features into two. The build plan orders the work so that the fixes land first and the larger features (weekly jobs, linked jobs, the Knowledge Base look) come after, each behind its own gates. A stalled feature can then be left out of the release without holding back the fixes, with the owner's agreement.
+
 ## D-88 FTS5: a quoted term joined by a bare space to a parenthesised group is a syntax error (P6-06, 2026-09-22)
 
 The half-typed-word expansion (D-85) wraps the last search term in a group when it has alternatives: `("pay"* OR "payment")`. Every earlier term was joined to the next with a plain space, relying on FTS5 treating adjacent terms as an implicit AND — true for two quoted terms (`"toner" "cartridge"*`, unchanged since P1-08), but **not** true when the second one is a parenthesised group: `"NEAR" ("OR"* OR "order")` is `SQL logic error: fts5: syntax error near "OR" (1)`; `"NEAR" AND ("OR"* OR "order")` isn't. Found only in CI, never locally — gate 1.32's symbol-fuzzing test types "NEAR AND OR", and by the time it runs, other tests in the same shared worker have given "or" a real expansion, which only then forms the group. `internal/kb/search_handlers.go`'s two search handlers were silently discarding the real error (`http.Error(w, "internal error", 500)` with no `log.Printf`), which is why the CI log showed nothing useful the first two times this failed — now logged. Fixed by joining every term with an explicit `" AND "`: FTS5's own documented default for space-separated terms, so it changes no existing query's meaning, confirmed by the full suite staying green.
