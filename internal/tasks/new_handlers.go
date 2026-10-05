@@ -32,10 +32,10 @@ type newTaskPageData struct {
 	People   []personOption
 }
 
-// handleNewTaskForm serves GET /tasks/new: an empty form, In Ideas, Medium.
+// handleNewTaskForm serves GET /tasks/new: an empty form, in To do, Medium (gate 7.10).
 // With ?fragment=1 it is just the form, for the task window.
 func (h *Handlers) handleNewTaskForm(w http.ResponseWriter, r *http.Request) {
-	h.renderNewTask(w, r, http.StatusOK, "", CreateInput{Size: "M", Stage: StageIdea}, nil)
+	h.renderNewTask(w, r, http.StatusOK, "", CreateInput{Size: "M", Stage: StageTodo}, nil)
 }
 
 // renderNewTask draws the page with whatever was typed, so a refused save
@@ -64,7 +64,7 @@ func (h *Handlers) renderNewTask(w http.ResponseWriter, r *http.Request, status 
 		size = "M"
 	}
 	if stage == "" {
-		stage = StageIdea
+		stage = StageTodo
 	}
 
 	data := newTaskPageData{

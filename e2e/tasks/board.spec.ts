@@ -142,9 +142,10 @@ test('gate 2.01: Board shows Ideas, To do, In progress, Done in order', async ({
   expect(headings[3]).toContain('Done');
 });
 
-// SPEC gate 2.02: adding a task with just a title puts it at the bottom
-// of the chosen column for everyone.
-test('gate 2.02: a title-only task is visible in a second context after reload', async ({ page, server, browser }) => {
+// SPEC gate 2.02, as changed by gate 7.10 (D-90): adding a task with just a
+// title puts it at the bottom of the chosen column for everyone, and the
+// default column is To do, not Ideas.
+test('gate 7.10 (was 2.02, D-90): a title-only task lands in To do and is visible in a second context after reload', async ({ page, server, browser }) => {
   await signInAsNewPerson(page, server.baseURL, '/tasks/board');
   await ready(page);
 
@@ -155,10 +156,11 @@ test('gate 2.02: a title-only task is visible in a second context after reload',
   await ready(page);
 
   await expect(page.locator('.task-card', { hasText: title })).toHaveCount(1);
-  // Defaults: bottom of Ideas (the default starting column), size M
+  // Defaults: bottom of To do (the default starting column, D-90), size M
   // isn't shown on the card itself (SPEC A6 only shows title, people, due
-  // date on a card), but the task must land in Ideas.
-  await expect(page.locator('.task-column[data-stage="idea"] .task-card', { hasText: title })).toHaveCount(1);
+  // date on a card), but the task must land in To do.
+  await expect(page.locator('.task-column[data-stage="todo"] .task-card', { hasText: title })).toHaveCount(1);
+  await expect(page.locator('.task-column[data-stage="idea"] .task-card', { hasText: title })).toHaveCount(0);
 
   const otherContext = await browser.newContext();
   const otherPage = await otherContext.newPage();
@@ -180,7 +182,7 @@ test('gate 2.02: a task can be added directly into a chosen column', async ({ pa
   await ready(page);
 
   await expect(page.locator('.task-column[data-stage="doing"] .task-card', { hasText: title })).toHaveCount(1);
-  await expect(page.locator('.task-column[data-stage="idea"] .task-card', { hasText: title })).toHaveCount(0);
+  await expect(page.locator('.task-column[data-stage="todo"] .task-card', { hasText: title })).toHaveCount(0);
 });
 
 // SPEC gate 2.03 (assignees/due date part) and 2.26 (size default): a

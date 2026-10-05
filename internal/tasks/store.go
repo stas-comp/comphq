@@ -75,7 +75,7 @@ type CreateInput struct {
 	Title     string
 	Notes     string
 	Size      string // "" defaults to M
-	Stage     string // "" defaults to idea
+	Stage     string // "" defaults to todo (gate 7.10, D-90)
 	DueDate   string // "" for none
 	PersonIDs []int64
 }
@@ -109,7 +109,10 @@ func (s *Store) Create(ctx context.Context, input CreateInput, creatorID int64, 
 	}
 	stage := input.Stage
 	if stage == "" {
-		stage = StageIdea
+		// Gate 7.10, D-90: most new cards are real jobs. The database
+		// default stays 'idea' (B3, expand-only); the store says so
+		// explicitly instead.
+		stage = StageTodo
 	}
 	if !validStage(stage) {
 		return Task{}, ErrInvalidStage

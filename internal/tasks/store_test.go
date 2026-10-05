@@ -55,8 +55,9 @@ func TestCreateAssignsPositionAtBottomOfStage(t *testing.T) {
 	if first.Position != 1 {
 		t.Errorf("first.Position = %d, want 1", first.Position)
 	}
-	if first.Stage != StageIdea {
-		t.Errorf("first.Stage = %q, want %q (default)", first.Stage, StageIdea)
+	// Gate 7.10 (D-90) replaces gate 2.02's "Ideas" default.
+	if first.Stage != StageTodo {
+		t.Errorf("first.Stage = %q, want %q (default)", first.Stage, StageTodo)
 	}
 	if first.Size != "M" {
 		t.Errorf("first.Size = %q, want M (default)", first.Size)
@@ -71,12 +72,38 @@ func TestCreateAssignsPositionAtBottomOfStage(t *testing.T) {
 	}
 
 	// A different stage starts its own position sequence at 1.
-	thirdInTodo, err := store.Create(ctx, CreateInput{Title: "Third", Stage: StageTodo}, creator, fixedNow)
+	thirdInIdeas, err := store.Create(ctx, CreateInput{Title: "Third", Stage: StageIdea}, creator, fixedNow)
 	if err != nil {
 		t.Fatalf("Create(third): %v", err)
 	}
-	if thirdInTodo.Position != 1 {
-		t.Errorf("thirdInTodo.Position = %d, want 1 (a different stage's own sequence)", thirdInTodo.Position)
+	if thirdInIdeas.Position != 1 {
+		t.Errorf("thirdInIdeas.Position = %d, want 1 (a different stage's own sequence)", thirdInIdeas.Position)
+	}
+}
+
+// Gate 7.10: no stage means To do, at the bottom; an explicit Ideas still works.
+func TestCreateDefaultsToTodoAndKeepsAnExplicitIdea(t *testing.T) {
+	sqlDB := openTestDB(t)
+	store := &Store{DB: sqlDB}
+	creator := testPerson(t, sqlDB, "Sam")
+	ctx := context.Background()
+
+	if _, err := store.Create(ctx, CreateInput{Title: "Existing", Stage: StageTodo}, creator, fixedNow); err != nil {
+		t.Fatalf("Create(existing): %v", err)
+	}
+	def, err := store.Create(ctx, CreateInput{Title: "Default"}, creator, fixedNow)
+	if err != nil {
+		t.Fatalf("Create(default): %v", err)
+	}
+	if def.Stage != StageTodo || def.Position != 2 {
+		t.Errorf("default job = stage %q position %d, want todo at the bottom (2)", def.Stage, def.Position)
+	}
+	idea, err := store.Create(ctx, CreateInput{Title: "Maybe", Stage: StageIdea}, creator, fixedNow)
+	if err != nil {
+		t.Fatalf("Create(idea): %v", err)
+	}
+	if idea.Stage != StageIdea || idea.Position != 1 {
+		t.Errorf("explicit idea = stage %q position %d, want idea at 1", idea.Stage, idea.Position)
 	}
 }
 

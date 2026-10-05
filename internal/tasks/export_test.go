@@ -21,7 +21,7 @@ func TestExportRows(t *testing.T) {
 	}, sam, fixedNow); err != nil {
 		t.Fatalf("Create: %v", err)
 	}
-	removed, err := store.Create(ctx, CreateInput{Title: "Old idea"}, sam, fixedNow)
+	removed, err := store.Create(ctx, CreateInput{Title: "Old idea", Stage: StageIdea}, sam, fixedNow)
 	if err != nil {
 		t.Fatalf("Create: %v", err)
 	}
