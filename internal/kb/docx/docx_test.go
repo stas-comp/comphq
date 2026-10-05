@@ -352,7 +352,9 @@ func TestConvertSampleDocxCountsNotes(t *testing.T) {
 	}
 	want := []string{
 		"the header", "the footer", "a comment", "a footnote",
-		"a picture", "a chart", "a shape", "an equation",
+		// The EMF picture is now named for what it is (gate 7.65, D-99): a
+		// planned change of wording from "a picture", not a weakened test.
+		"a drawing in an old Windows picture format", "a chart", "a shape", "an equation",
 	}
 	if len(result.Notes) != len(want) {
 		t.Fatalf("Notes = %v, want %v", result.Notes, want)

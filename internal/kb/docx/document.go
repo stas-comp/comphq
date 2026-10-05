@@ -159,39 +159,6 @@ type docCtx struct {
 	imageCounter int
 }
 
-// resolveDrawingSegment turns a decoded <w:drawing> into a segment: a
-// real image (SPEC B4: "w:drawing ... a:blip r:embed"), or a placeholder
-// for a chart, SmartArt diagram, or anything else this converter doesn't
-// specifically recognise (rendered as a generic "shape" placeholder,
-// covering real drawn shapes and any other DrawingML content).
-func (ctx *docCtx) resolveDrawingSegment(raw drawingXML) segment {
-	body := raw.Inline
-	if body == nil {
-		body = raw.Anchor
-	}
-	if body == nil {
-		return segment{kind: segMedia, missingKind: "object"}
-	}
-	alt := body.DocPr.Descr
-	if alt == "" {
-		alt = body.DocPr.Title
-	}
-	switch {
-	case hasSuffixFold(body.GraphicData.URI, "/picture"):
-		relID := ""
-		if body.GraphicData.Pic != nil {
-			relID = body.GraphicData.Pic.BlipFill.Blip.Embed
-		}
-		return ctx.resolvePictureSegment(relID, alt)
-	case hasSuffixFold(body.GraphicData.URI, "/chart"):
-		return segment{kind: segMedia, missingKind: "chart"}
-	case hasSuffixFold(body.GraphicData.URI, "/diagram"):
-		return segment{kind: segMedia, missingKind: "diagram"}
-	default:
-		return segment{kind: segMedia, missingKind: "shape"}
-	}
-}
-
 // resolvePictureSegment looks relID up in the images already resolved
 // (read and sniffed) by docx.go's Convert before parsing ever started.
 // Anything not found there — an unrecognised id, or one that resolved to
@@ -201,6 +168,12 @@ func (ctx *docCtx) resolveDrawingSegment(raw drawingXML) segment {
 func (ctx *docCtx) resolvePictureSegment(relID, alt string) segment {
 	resolved := ctx.resolveImage(relID)
 	if !resolved.supported {
+		// EMF and WMF (Visio drawings, Excel charts pasted as pictures,
+		// clip art) can't be shown by a browser: they are marked with their
+		// own kind, which says what to do about it (gate 7.65, D-99).
+		if resolved.legacyDrawing {
+			return segment{kind: segMedia, missingKind: "drawing"}
+		}
 		return segment{kind: segMedia, missingKind: "picture"}
 	}
 	ctx.imageCounter++
@@ -216,6 +189,8 @@ func noteForMissingKind(kind string) string {
 	switch kind {
 	case "picture":
 		return "a picture"
+	case "drawing":
+		return "a drawing in an old Windows picture format"
 	case "chart":
 		return "a chart"
 	case "diagram":
@@ -227,44 +202,6 @@ func noteForMissingKind(kind string) string {
 	default:
 		return "a shape"
 	}
-}
-
-// vmlContent is what scanVMLPict finds inside a <w:pict> (or <w:object>):
-// at most one of an image relationship id or a text box's own inner XML,
-// found anywhere in the subtree regardless of which VML shape element
-// wraps it (v:shape, v:rect, v:roundrect... all vary by drawing tool, so
-// this looks for the content that actually matters rather than modelling
-// every shape element).
-type vmlContent struct {
-	imageRelID string
-	txbxInner  string
-}
-
-func scanVMLPict(data []byte) vmlContent {
-	var out vmlContent
-	dec := xml.NewDecoder(bytes.NewReader(data))
-	for {
-		tok, err := dec.Token()
-		if err != nil {
-			break
-		}
-		se, ok := tok.(xml.StartElement)
-		if !ok {
-			continue
-		}
-		switch se.Name.Local {
-		case "imagedata":
-			out.imageRelID = attrVal(se, "id")
-		case "txbxContent":
-			var raw struct {
-				InnerXML string `xml:",innerxml"`
-			}
-			if err := dec.DecodeElement(&raw, &se); err == nil {
-				out.txbxInner = raw.InnerXML
-			}
-		}
-	}
-	return out
 }
 
 // parseBlocks walks a WordprocessingML body (document.xml, or a table
@@ -370,9 +307,20 @@ func parseBlocks(data []byte, ctx *docCtx) (parsedDocument, error) {
 	// skipped.
 	skipDepth := 0
 
+	// decoders is a stack: an mc:AlternateContent is read whole, and the
+	// branch chosen for it is walked by a decoder pushed on top, so its
+	// content flows through exactly as if it had been written in place
+	// (including a branch that itself holds another AlternateContent).
+	decoders := []*xml.Decoder{dec}
+
 	for {
 		tok, err := dec.Token()
 		if err == io.EOF {
+			if len(decoders) > 1 {
+				decoders = decoders[:len(decoders)-1]
+				dec = decoders[len(decoders)-1]
+				continue
+			}
 			break
 		}
 		if err != nil {
@@ -467,13 +415,23 @@ func parseBlocks(data []byte, ctx *docCtx) (parsedDocument, error) {
 					v := onOffXML{Val: attrVal(t, "val")}.bool()
 					runItalic = &v
 				}
-			case "del", "delText", "moveFrom", "instrText", "Choice":
-				// Choice is mc:Choice: SPEC B4 says AlternateContent must
-				// use exactly one branch, and this converter understands
-				// none of the extensions a Choice branch Requires, so it
-				// always prefers mc:Fallback — skipping Choice's content
-				// the same way deleted/field-instruction text is skipped
-				// keeps that simple, without a second mechanism.
+			case "AlternateContent":
+				// SPEC B4: exactly one branch is used. Which one is decided
+				// by chooseAlternate (the Fallback, unless the Choice shows
+				// more pictures); the branch is then walked in place.
+				var raw struct {
+					InnerXML string `xml:",innerxml"`
+				}
+				if err := dec.DecodeElement(&raw, &t); err != nil {
+					return parsedDocument{}, ErrUnreadable
+				}
+				if skipDepth == 0 {
+					if chosen := chooseAlternate(raw.InnerXML); chosen != "" {
+						dec = xml.NewDecoder(bytes.NewReader(wrapInnerXML(chosen)))
+						decoders = append(decoders, dec)
+					}
+				}
+			case "del", "delText", "moveFrom", "instrText":
 				skipDepth++
 				if t.Name.Local == "instrText" {
 					inInstrText = true
@@ -518,13 +476,19 @@ func parseBlocks(data []byte, ctx *docCtx) (parsedDocument, error) {
 					out.notes = append(out.notes, tbDoc.notes...)
 				}
 			case "drawing":
-				var raw drawingXML
+				var raw struct {
+					InnerXML string `xml:",innerxml"`
+				}
 				if err := dec.DecodeElement(&raw, &t); err != nil {
 					return parsedDocument{}, ErrUnreadable
 				}
 				if skipDepth == 0 && inRun {
 					flushRun()
-					appendMedia(ctx.resolveDrawingSegment(raw))
+					// A group, a canvas or a shape with a picture fill holds
+					// several pictures: each comes across, in order (gate 7.61).
+					for _, seg := range ctx.resolveDrawingSegments(raw.InnerXML) {
+						appendMedia(seg)
+					}
 				}
 			case "pict":
 				var raw struct {
@@ -534,23 +498,28 @@ func parseBlocks(data []byte, ctx *docCtx) (parsedDocument, error) {
 					return parsedDocument{}, ErrUnreadable
 				}
 				if skipDepth == 0 && inRun {
-					vml := scanVMLPict(wrapInnerXML(raw.InnerXML))
-					switch {
-					case vml.txbxInner != "":
-						tbDoc, err := parseBlocks(wrapInnerXML(vml.txbxInner), ctx)
-						if err != nil {
-							return parsedDocument{}, err
-						}
-						pendingTextBoxParagraphs = append(pendingTextBoxParagraphs, flattenBlocksToParagraphs(tbDoc.blocks)...)
-						out.notes = append(out.notes, tbDoc.notes...)
-					case vml.imageRelID != "":
-						flushRun()
-						appendMedia(ctx.resolvePictureSegment(vml.imageRelID, ""))
-					default:
+					items := scanVML(wrapInnerXML(raw.InnerXML))
+					if len(items) == 0 {
 						// A drawn shape with no text and no picture (SPEC
 						// B4: "drawn shapes with no text").
 						flushRun()
 						appendMedia(segment{kind: segMedia, missingKind: "shape"})
+					}
+					// Every picture and every text box, in order (gate 7.61):
+					// a VML group holds several, and a text box no longer
+					// hides the pictures beside it.
+					for _, item := range items {
+						if item.txbxInner != "" {
+							tbDoc, err := parseBlocks(wrapInnerXML(item.txbxInner), ctx)
+							if err != nil {
+								return parsedDocument{}, err
+							}
+							pendingTextBoxParagraphs = append(pendingTextBoxParagraphs, flattenBlocksToParagraphs(tbDoc.blocks)...)
+							out.notes = append(out.notes, tbDoc.notes...)
+							continue
+						}
+						flushRun()
+						appendMedia(ctx.resolvePictureSegment(item.imageRelID, ""))
 					}
 				}
 			case "object":
@@ -566,10 +535,14 @@ func parseBlocks(data []byte, ctx *docCtx) (parsedDocument, error) {
 				}
 				if skipDepth == 0 && inRun {
 					flushRun()
-					vml := scanVMLPict(wrapInnerXML(raw.InnerXML))
-					if vml.imageRelID != "" {
-						appendMedia(ctx.resolvePictureSegment(vml.imageRelID, ""))
-					} else {
+					shown := false
+					for _, item := range scanVML(wrapInnerXML(raw.InnerXML)) {
+						if item.imageRelID != "" {
+							appendMedia(ctx.resolvePictureSegment(item.imageRelID, ""))
+							shown = true
+						}
+					}
+					if !shown {
 						appendMedia(segment{kind: segMedia, missingKind: "object"})
 					}
 				}
@@ -623,7 +596,7 @@ func parseBlocks(data []byte, ctx *docCtx) (parsedDocument, error) {
 				inRun = false
 			case "rPr":
 				inRunProps = false
-			case "del", "delText", "moveFrom", "instrText", "Choice":
+			case "del", "delText", "moveFrom", "instrText":
 				if skipDepth > 0 {
 					skipDepth--
 				}

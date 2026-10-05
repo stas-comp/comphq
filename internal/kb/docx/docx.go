@@ -10,6 +10,7 @@ import (
 	"archive/zip"
 	"errors"
 	"io"
+	"strconv"
 	"strings"
 )
 
@@ -282,13 +283,32 @@ func (p *pkgReader) headerFooterNotes(mainPart string) ([]string, error) {
 		return nil, err
 	}
 	var notes []string
+	pictures := 0
 	for _, rel := range rels {
+		var note string
 		switch {
 		case hasSuffixFold(rel.Type, "/header"):
-			notes = append(notes, "the header")
+			note = "the header"
 		case hasSuffixFold(rel.Type, "/footer"):
-			notes = append(notes, "the footer")
+			note = "the footer"
+		default:
+			continue
 		}
+		notes = append(notes, note)
+		// A letterhead logo is a picture too: count the ones in this part so
+		// the message can say so (gate 7.66, B13.9 item 10).
+		if target, ok := resolveRelativeTarget(mainPart, rel.Target); ok && rel.TargetMode != "External" {
+			if part, err := p.readPartIfExists(target); err == nil && part != nil {
+				pictures += countPictureRefs(part)
+			}
+		}
+	}
+	if pictures > 0 && len(notes) > 0 {
+		noun := "pictures"
+		if pictures == 1 {
+			noun = "picture"
+		}
+		return []string{"the page header and footer (including " + strconv.Itoa(pictures) + " " + noun + ")"}, nil
 	}
 	return notes, nil
 }

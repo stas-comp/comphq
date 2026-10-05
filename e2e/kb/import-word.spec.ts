@@ -103,7 +103,10 @@ async function expectSampleDocxImported(page: Page, server: { dataDir: string })
   // Unsupported items each become a placeholder (SPEC gate 1.49): the
   // EMF picture, the chart, the textless shape, the equation. SmartArt
   // isn't among them here — its mc:Fallback happens to be plain text.
-  await expect(editorEl.locator('div[data-missing-kind="picture"]')).toHaveCount(1);
+  // (The EMF is now marked with its own "drawing" kind, gate 7.65 / D-99: a
+  // planned change, not a weakened check.)
+  await expect(editorEl.locator('div[data-missing-kind="drawing"]')).toHaveCount(1);
+  await expect(editorEl.locator('div[data-missing-kind="picture"]')).toHaveCount(0);
   await expect(editorEl.locator('div[data-missing-kind="chart"]')).toHaveCount(1);
   await expect(editorEl.locator('div[data-missing-kind="shape"]')).toHaveCount(1);
   await expect(editorEl.locator('div[data-missing-kind="equation"]')).toHaveCount(1);
@@ -305,6 +308,30 @@ test('gate 7.63: a picture in the title paragraph is kept at the top of the arti
     return !!img && !!words && !!(img.compareDocumentPosition(words) & Node.DOCUMENT_POSITION_FOLLOWING);
   });
   expect(imageFirst).toBe(true);
+});
+
+test('gates 7.61, 7.65, 7.66: groups, canvases, VML groups and fills all come across; an old Windows drawing and the header logo are marked and counted', async ({ page, server }) => {
+  const imgs = await importAndCountPictures(page, server.baseURL, 'pictures-shapes.docx');
+  // 13 pictures in reading order (a floating one, a group of 3, a canvas of 2, a VML group of 3, a
+  // filled shape, and four from mc:Choice cases), every one loaded.
+  await expect(imgs).toHaveCount(13);
+  const state = () =>
+    imgs.evaluateAll((els) => els.map((el) => (el as HTMLImageElement).complete && (el as HTMLImageElement).naturalWidth > 0));
+  await expect.poll(async () => (await state()).filter((ok) => !ok).length, { timeout: 15_000 }).toBe(0);
+
+  // The EMF is marked with its own box, which says what it was and how to fix it.
+  const box = page.locator('#article-editor .ProseMirror [data-missing-kind="drawing"]');
+  await expect(box).toHaveCount(1);
+  const text = await box.evaluate((el) => getComputedStyle(el, '::after').content);
+  expect(text).toContain("A drawing in an old Windows picture format couldn't be brought in.");
+  expect(text).toContain('Save as Picture');
+  expect(text).toContain('PNG');
+  await expect(page.locator('#article-editor .ProseMirror [data-missing-kind="shape"]')).toHaveCount(0);
+
+  // And the message counts both: the old drawing, and the picture in the page header.
+  const message = page.locator('#editor-message');
+  await expect(message).toContainText('a drawing in an old Windows picture format');
+  await expect(message).toContainText('the page header and footer (including 1 picture)');
 });
 
 // Optional: the owner's own real documents, per PLAN.md P1-33 — imports

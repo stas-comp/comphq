@@ -24,36 +24,6 @@ type Image struct {
 	Alt   string
 }
 
-// drawingXML captures just enough of a <w:drawing> to classify and
-// resolve it (SPEC B4): wp:inline or wp:anchor, each with a wp:docPr for
-// alt text and a graphicData whose uri says what kind of drawing this is
-// — a real picture (uri ending "/picture", with pic:blipFill>a:blip's own
-// r:embed — deliberately not descending into a:extLst, so an SVG icon's
-// PNG fallback blip is what's read, per SPEC B4's "SVG icons use the PNG
-// blip"), a chart, a diagram (SmartArt), or anything else, treated as a
-// generic shape placeholder.
-type drawingXML struct {
-	Inline *drawingBodyXML `xml:"inline"`
-	Anchor *drawingBodyXML `xml:"anchor"`
-}
-
-type drawingBodyXML struct {
-	DocPr struct {
-		Descr string `xml:"descr,attr"`
-		Title string `xml:"title,attr"`
-	} `xml:"docPr"`
-	GraphicData struct {
-		URI string `xml:"uri,attr"`
-		Pic *struct {
-			BlipFill struct {
-				Blip struct {
-					Embed string `xml:"embed,attr"`
-				} `xml:"blip"`
-			} `xml:"blipFill"`
-		} `xml:"pic"`
-	} `xml:"graphic>graphicData"`
-}
-
 // mediaRelationship is one image-type relationship: either a target
 // inside the zip (already resolved and path-traversal-checked), or an
 // external one, which SPEC B4 says to never fetch.
@@ -69,6 +39,10 @@ type mediaRelationship struct {
 type resolvedImage struct {
 	supported bool
 	bytes     []byte
+	// legacyDrawing is an EMF or WMF: a real picture, in an old Windows
+	// vector format browsers can't show (gate 7.65, D-99). It is marked with
+	// its own kind of placeholder rather than the general "picture" one.
+	legacyDrawing bool
 }
 
 // mediaRelationships returns mainPart's image relationships (SPEC B4:
@@ -151,7 +125,7 @@ func (p *pkgReader) resolveImage(rel mediaRelationship) resolvedImage {
 		return resolvedImage{}
 	}
 	if !sniffSupportedImage(data) {
-		return resolvedImage{}
+		return resolvedImage{legacyDrawing: isEMF(data) || isWMF(data)}
 	}
 	return resolvedImage{supported: true, bytes: data}
 }
@@ -180,4 +154,27 @@ func sniffSupportedImage(data []byte) bool {
 
 func isWebP(data []byte) bool {
 	return len(data) >= 12 && string(data[0:4]) == "RIFF" && string(data[8:12]) == "WEBP"
+}
+
+// isEMF recognises an Enhanced Metafile by its header: record type 1, and the
+// " EMF" signature at byte 40.
+func isEMF(data []byte) bool {
+	return len(data) >= 44 && data[0] == 1 && data[1] == 0 && data[2] == 0 && data[3] == 0 &&
+		string(data[40:44]) == " EMF"
+}
+
+// isWMF recognises a Windows Metafile: the placeable header's magic number
+// 0x9AC6CDD7, or a standard header (type 1 or 2 memory or disk metafile, a
+// header size of 9 words, and version 0x0100 or 0x0300).
+func isWMF(data []byte) bool {
+	if len(data) >= 4 && data[0] == 0xD7 && data[1] == 0xCD && data[2] == 0xC6 && data[3] == 0x9A {
+		return true
+	}
+	if len(data) < 18 {
+		return false
+	}
+	typ := int(data[0]) | int(data[1])<<8
+	size := int(data[2]) | int(data[3])<<8
+	version := int(data[4]) | int(data[5])<<8
+	return (typ == 1 || typ == 2) && size == 9 && (version == 0x0100 || version == 0x0300)
 }

@@ -65,6 +65,16 @@
   content: "Shape not shown.";
 }
 
+/* An EMF or WMF picture (Visio drawings, Excel charts pasted as pictures, clip
+   art): browsers can't show them, so the box says what it was and how to fix
+   it (gate 7.65, D-99). P7-17 draws this as the mockup's bold sentence with a
+   tip underneath. */
+.ProseMirror div[data-missing-kind="drawing"]::after,
+.kb-article-body div[data-missing-kind="drawing"]::after {
+  content: "A drawing in an old Windows picture format couldn't be brought in.\A Tip: in Word, right-click it \2192  Save as Picture \2192  PNG, then drag the PNG into this article.";
+  white-space: pre-line;
+}
+
 .ProseMirror div[data-missing-kind="equation"]::after,
 .kb-article-body div[data-missing-kind="equation"]::after {
   content: "Equation not shown.";

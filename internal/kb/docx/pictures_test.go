@@ -191,7 +191,7 @@ func referencedPictureCount(t *testing.T, docxPath string) int {
 						count()
 					}
 				}
-			case "imagedata":
+			case "imagedata", "fill":
 				for _, a := range e.Attr {
 					if a.Name.Local == "id" && a.Value != "" {
 						count()
@@ -236,5 +236,71 @@ func TestEveryPictureIsShownOrMarkedInPlace(t *testing.T) {
 					name, want, shown, marked, want-shown-marked)
 			}
 		})
+	}
+}
+
+// SPEC gates 7.61, 7.65, 7.66 (B13.9 items 2, 3, 4, 9, 10): pictures in
+// groups, canvases, VML groups, picture fills, an mc:Choice, old Windows
+// formats, and a header logo. pictures-shapes.docx's own comment lists the
+// pictures in document order (1-13, then an EMF).
+func TestEveryShapeOfPictureComesAcrossInReadingOrder(t *testing.T) {
+	r, err := convertFixture(t, "pictures-shapes.docx")
+	if err != nil {
+		t.Fatal(err)
+	}
+	tokens := imgTokens(r.HTML)
+	if len(tokens) != 13 {
+		t.Fatalf("%d pictures shown, want 13:\n%s", len(tokens), r.HTML)
+	}
+	for i, tok := range tokens {
+		if got, want := colourOf(t, imageByToken(t, r, tok).Bytes), pictureColour(i+1); got != want {
+			t.Errorf("picture %d is colour %v, want %v (missing, doubled or out of order)", i+1, got, want)
+		}
+	}
+	// The EMF is marked, once, after the pictures, and with its own kind.
+	if got := strings.Count(r.HTML, `data-missing-kind="drawing"`); got != 1 {
+		t.Errorf("%d drawing placeholders, want 1:\n%s", got, r.HTML)
+	}
+	if strings.Contains(r.HTML, `data-missing-kind="shape"`) {
+		t.Errorf("a group, canvas or filled shape was flattened into a shape placeholder:\n%s", r.HTML)
+	}
+}
+
+// Gate 7.65: the old Windows formats are marked with their own kind, and the
+// import message names them.
+func TestEmfIsMarkedAsAnOldWindowsDrawing(t *testing.T) {
+	r, err := convertFixture(t, "pictures-shapes.docx")
+	if err != nil {
+		t.Fatal(err)
+	}
+	found := false
+	for _, n := range r.Notes {
+		if n == "a drawing in an old Windows picture format" {
+			found = true
+		}
+	}
+	if !found {
+		t.Errorf("notes = %v, want one naming the old Windows picture format", r.Notes)
+	}
+}
+
+// Gate 7.66: the page header's logo is left out, and the message says so,
+// counting the picture.
+func TestHeaderLogoIsLeftOutAndCounted(t *testing.T) {
+	r, err := convertFixture(t, "pictures-shapes.docx")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(r.HTML, "Letterhead") {
+		t.Errorf("header text reached the article: %s", r.HTML)
+	}
+	found := false
+	for _, n := range r.Notes {
+		if n == "the page header and footer (including 1 picture)" {
+			found = true
+		}
+	}
+	if !found {
+		t.Errorf("notes = %v, want 'the page header and footer (including 1 picture)'", r.Notes)
 	}
 }

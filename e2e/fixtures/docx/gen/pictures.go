@@ -58,7 +58,10 @@ func writePictureFixtures(dir string) error {
 	if err := writeOddPictureNames(filepath.Join(dir, "pictures-oddnames.docx")); err != nil {
 		return err
 	}
-	return writePictureInTitle(filepath.Join(dir, "picture-in-title.docx"))
+	if err := writePictureInTitle(filepath.Join(dir, "picture-in-title.docx")); err != nil {
+		return err
+	}
+	return writeShapesFixture(filepath.Join(dir, "pictures-shapes.docx"))
 }
 
 // pictures-25.docx: 25 different pictures, one after another. At v1.3.0 the
