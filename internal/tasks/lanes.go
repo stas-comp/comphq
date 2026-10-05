@@ -211,9 +211,9 @@ func buildLane(personID int64, name string, tasksList []Task, everyone []people.
 			lt.Number = number
 			lane.UpNext = append(lane.UpNext, lt)
 		case StageIdea:
-			if personID != 0 {
-				lane.Ideas = append(lane.Ideas, laneTask(t, personID))
-			}
+			// An idea nobody is on lands in the Unassigned lane's own Ideas
+			// group too (gate 7.04). Still never workload (workloadFor).
+			lane.Ideas = append(lane.Ideas, laneTask(t, personID))
 		}
 	}
 	for i := range lane.UpNext {

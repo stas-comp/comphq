@@ -18,28 +18,36 @@ async function waitForChosen(page: Page, taskId: string, timeout: number): Promi
   }
 }
 
+// Where each page's synthetic pointer is (Playwright doesn't say).
+const pointer = new WeakMap<Page, { x: number; y: number }>();
+
 /** Presses on a card's title and moves just far enough that the drag has begun. */
 export async function beginDrag(page: Page, card: Locator): Promise<void> {
   const taskId = await card.getAttribute('data-task-id');
   if (!taskId) throw new Error('beginDrag: not a card');
   for (let attempt = 1; attempt <= 4; attempt++) {
-    await card.scrollIntoViewIfNeeded();
-    const box = await card.locator('.task-card-title').first().boundingBox();
-    if (!box) throw new Error('beginDrag: card has no title box');
-    const x = box.x + box.width / 2;
-    const y = box.y + box.height / 2;
-    await page.mouse.move(x, y);
-    await page.mouse.down();
-    await page.mouse.move(x, y + 10, { steps: 5 });
-    pointer.set(page, { x, y: y + 10 });
+    try {
+      await card.scrollIntoViewIfNeeded();
+      const box = await card.locator('.task-card-title').first().boundingBox();
+      if (!box) throw new Error('beginDrag: card has no title box');
+      const x = box.x + box.width / 2;
+      const y = box.y + box.height / 2;
+      await page.mouse.move(x, y);
+      await page.mouse.down();
+      await page.mouse.move(x, y + 10, { steps: 5 });
+      pointer.set(page, { x, y: y + 10 });
+    } catch {
+      // The page was swapped under us (a refresh after the last drop). Try
+      // again on the new nodes.
+      await page.mouse.up();
+      await page.waitForTimeout(300);
+      continue;
+    }
     if (await waitForChosen(page, taskId, 3000)) return;
     await page.mouse.up();
   }
   throw new Error('beginDrag: the drag never started after retries');
 }
-
-// Where each page's synthetic pointer is (Playwright doesn't say).
-const pointer = new WeakMap<Page, { x: number; y: number }>();
 
 /**
  * Moves the pointer to (x, y) in steps, giving the page real time between

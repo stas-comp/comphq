@@ -6,6 +6,8 @@
 <a class="btn primary tools-add" id="add-task-link" href="/tasks/new">+ Add task</a>
 </div>
 
+<p class="message" role="alert" id="team-drag-message" hidden data-text="That didn't work, so the screen has been refreshed to show how things really are. Try again.">That didn't work, so the screen has been refreshed to show how things really are. Try again.</p>
+
 <div class="team-lanes team" tabindex="0" role="region" aria-label="Team lanes" data-refresh-fragment-selector=".team-lanes">
 {{range .Lanes}}
 {{$lane := .}}
@@ -74,18 +76,24 @@
 {{end}}
 </ul>
 
-{{if $lane.PersonID}}
 <h3 class="sub">Ideas</h3>
 <ul class="team-task-list team-ideas-list">
 {{range .Ideas}}
 <li class="card team-task" data-task-id="{{.ID}}">
 <div class="task-card-row">{{template "tasks-job-title" .}}</div>
-<div class="task-card-row">{{template "part-size" .SizeLabel}}{{template "tasks-job-date" .}}</div>
+<div class="task-card-row">
+{{template "part-size" .SizeLabel}}{{template "tasks-job-date" .}}
+<form method="post" action="/tasks/{{.ID}}/move" class="inline-form team-idea-move">
+<input type="hidden" name="stage" value="todo">
+<input type="hidden" name="to_bottom" value="1">
+<input type="hidden" name="redirect_to" value="team">
+<button class="mini" type="submit">Move to To do</button>
+</form>
+</div>
 {{if .AlsoOn}}<span class="also">Also on it: {{.AlsoOn}}</span>{{end}}
 </li>
 {{end}}
 </ul>
-{{end}}
 </div>
 {{end}}
 </div>

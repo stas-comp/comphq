@@ -261,10 +261,11 @@ func TestAssignedIdeaShowsInLaneNotUpForGrabsAndAddsNoWorkload(t *testing.T) {
 	}
 }
 
-// SPEC gate 4.49: an idea shared by two people shows in both lanes, and
-// an idea nobody is on stays out of the Team view's Unassigned lane (it
-// belongs in Up for grabs — gate 4.50).
-func TestIdeasSharedAcrossLanesAndUnassignedIdeaStaysOut(t *testing.T) {
+// SPEC gate 4.49: an idea shared by two people shows in both lanes. And,
+// as gate 7.04 changes gate 2.25 (planned correction, D-90's companion in
+// 7.90): an idea nobody is on now shows in the Unassigned lane's own Ideas
+// group, with nothing in its Working on now or Up next, and no workload.
+func TestIdeasSharedAcrossLanesAndUnassignedIdeaGetsItsOwnGroup(t *testing.T) {
 	sqlDB := openTestDB(t)
 	store := &Store{DB: sqlDB}
 	sam := testPerson(t, sqlDB, "Sam")
@@ -287,8 +288,14 @@ func TestIdeasSharedAcrossLanesAndUnassignedIdeaStaysOut(t *testing.T) {
 		}
 	}
 	unassigned := laneFor(t, lanes, 0)
-	if len(unassigned.Ideas) != 0 || len(unassigned.UpNext) != 0 || len(unassigned.WorkingOnNow) != 0 {
-		t.Errorf("Unassigned lane = %+v, want empty (an unassigned idea belongs in Up for grabs)", unassigned)
+	if got := laneTitles(unassigned.Ideas); len(got) != 1 || got[0] != "Nobody's idea" {
+		t.Errorf("Unassigned Ideas = %v, want [Nobody's idea] (gate 7.04)", got)
+	}
+	if len(unassigned.UpNext) != 0 || len(unassigned.WorkingOnNow) != 0 {
+		t.Errorf("Unassigned lane = %+v, want an Ideas group only", unassigned)
+	}
+	if unassigned.JobCount() != 0 || len(unassigned.Workload) != 0 {
+		t.Errorf("an idea must not count as a waiting job or as workload: %d jobs, %+v", unassigned.JobCount(), unassigned.Workload)
 	}
 }
 

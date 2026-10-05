@@ -4,7 +4,11 @@
 // is one task, and dragging it here changes who's on it, not its
 // column or priority); dragging within one lane's Up next reorders
 // that lane's slice of the shared To do order via the existing move
-// endpoint (the same one the Board's own buttons already use).
+// endpoint (the same one the Board's own buttons already use). An idea
+// (any lane's Ideas group, Unassigned's included) can be dragged into an Up
+// next list (gates 7.04, 7.05): it moves to To do where it is dropped and,
+// if that is another lane, is handed over as well — move first, then assign.
+// The Move to To do button on every idea does the same, with no drag.
 document.addEventListener('DOMContentLoaded', initTeamSortable)
 document.addEventListener('refresh:applied', initTeamSortable)
 
@@ -14,6 +18,18 @@ function initTeamSortable() {
     if (upNext) {
       comphqSortable(upNext, {
         group: 'team-assign',
+        filter: 'button, select',
+        preventOnFilter: false,
+        onStart: () => { document.body.dataset.refreshBusy = '1' },
+        onEnd: (evt) => handleTeamDrop(evt),
+      })
+    }
+    const ideas = lane.querySelector('.team-ideas-list')
+    if (ideas) {
+      comphqSortable(ideas, {
+        // Ideas only ever leave, into an Up next list.
+        group: { name: 'team-assign', put: false },
+        sort: false,
         filter: 'button, select',
         preventOnFilter: false,
         onStart: () => { document.body.dataset.refreshBusy = '1' },
@@ -52,20 +68,29 @@ function computeLaneMoveParams(item) {
 
 async function postMove(taskId, params) {
   const body = new URLSearchParams({ stage: 'todo', ...params })
-  await fetch(`/tasks/${taskId}/move`, {
+  const res = await fetch(`/tasks/${taskId}/move`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: body.toString(),
   })
+  return res.ok
 }
 
 async function postAssign(taskId, fromPersonId, toPersonId) {
   const body = new URLSearchParams({ from_person: fromPersonId, to_person: toPersonId })
-  await fetch(`/tasks/${taskId}/assign`, {
+  const res = await fetch(`/tasks/${taskId}/assign`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: body.toString(),
   })
+  return res.ok
+}
+
+// A drop that couldn't be carried out: the screen is refreshed to how things
+// really are, and says so in plain words (the text is in the page).
+function showDragMessage(show) {
+  const el = document.getElementById('team-drag-message')
+  if (el) el.hidden = !show
 }
 
 async function handleTeamDrop(evt) {
@@ -76,7 +101,16 @@ async function handleTeamDrop(evt) {
   const fromLane = evt.from.closest('.team-lane')
   const toLane = evt.to.closest('.team-lane')
 
-  if (fromLane === toLane) {
+  let ok = true
+  if (evt.from.classList.contains('team-ideas-list')) {
+    // An idea only means something dropped into an Up next list.
+    if (evt.to.classList.contains('team-up-next-list')) {
+      ok = await postMove(taskId, computeLaneMoveParams(item) || { to_bottom: '1' })
+      if (ok && fromLane !== toLane) {
+        ok = await postAssign(taskId, fromLane.dataset.personId, toLane.dataset.personId)
+      }
+    }
+  } else if (fromLane === toLane) {
     if (evt.from === evt.to && evt.from.classList.contains('team-up-next-list')) {
       const params = computeLaneMoveParams(item)
       if (params) await postMove(taskId, params)
@@ -85,10 +119,11 @@ async function handleTeamDrop(evt) {
     // no defined meaning here — left alone, and the refresh below
     // restores whatever the server still says is true.
   } else {
-    await postAssign(taskId, fromLane.dataset.personId, toLane.dataset.personId)
+    ok = await postAssign(taskId, fromLane.dataset.personId, toLane.dataset.personId)
   }
 
   await refreshTeamLanes()
+  showDragMessage(!ok)
 }
 
 // Re-fetches the Team page and swaps in just the lanes, the same
