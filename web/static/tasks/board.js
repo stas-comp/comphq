@@ -73,13 +73,25 @@ async function handleDrop(item) {
 //
 // replaceBoardFromPage is also how the task window refreshes the board after
 // it saves (window.js).
-async function replaceBoardFromPage() {
-  const res = await fetch(location.pathname + location.search)
+//
+// The message at the bottom of the screen (toast.js) lives beside the board,
+// not in it. Every swap replaces its contents with what the server sent, so it
+// is empty after any action but a removal, which asks for it with the id of
+// the job just removed (gates 7.15, 7.17).
+async function replaceBoardFromPage(removedId) {
+  let url = location.pathname + location.search
+  if (removedId) url += (location.search ? '&' : '?') + 'removed=' + encodeURIComponent(removedId)
+  const res = await fetch(url)
   const html = await res.text()
-  const newBoard = new DOMParser().parseFromString(html, 'text/html').querySelector('.task-board')
+  const doc = new DOMParser().parseFromString(html, 'text/html')
+  const newBoard = doc.querySelector('.task-board')
   const oldBoard = document.querySelector('.task-board')
   if (!newBoard || !oldBoard) throw new Error('no board in the response')
   oldBoard.replaceWith(newBoard)
+  const newRegion = doc.getElementById('toast-region')
+  const oldRegion = document.getElementById('toast-region')
+  if (newRegion && oldRegion) oldRegion.innerHTML = newRegion.innerHTML
+  if (window.comphqToast) window.comphqToast.arm()
   initSortable()
 }
 
@@ -90,7 +102,8 @@ async function swapBoardAfter(form, submitter) {
     body: new URLSearchParams(new FormData(form, submitter)).toString(),
     redirect: 'manual',
   })
-  await replaceBoardFromPage()
+  const removed = new URL(form.action).pathname.match(/^\/tasks\/(\d+)\/remove$/)
+  await replaceBoardFromPage(removed ? removed[1] : undefined)
 }
 
 document.addEventListener('submit', async (event) => {

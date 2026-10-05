@@ -41,6 +41,15 @@ type boardPageData struct {
 	FilterPersonID int64
 	FilterQuery    string
 	FilterActive   bool
+	// Toast is the "Removed … Undo" message, when the page was reached by
+	// removing a job (gates 7.15, 7.17).
+	Toast *toastData
+}
+
+// toastData is the job a message offers to put back.
+type toastData struct {
+	ID    int64
+	Title string
 }
 
 // assigneeView adds the display-only initials/colour html/template can't
@@ -257,7 +266,15 @@ func (h *Handlers) renderBoard(w http.ResponseWriter, r *http.Request, status in
 		columns = append(columns, boardColumn{Stage: stage, Label: stageLabels[stage], Count: len(cards), Tasks: cards})
 	}
 
+	var toast *toastData
+	if id, err := strconv.ParseInt(r.URL.Query().Get("removed"), 10, 64); err == nil {
+		if title, ok, err := h.tasks.RemovedTitle(r.Context(), id); err == nil && ok {
+			toast = &toastData{ID: id, Title: title}
+		}
+	}
+
 	h.srv.RenderFrame(w, r, status, "tasks-board.html", "Tasks", boardPageData{
+		Toast:          toast,
 		WindowClose:    app.NewIconButton(app.IconClose, "", false),
 		CurrentView:    "board",
 		Columns:        columns,

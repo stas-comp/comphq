@@ -129,12 +129,26 @@ func (h *Handlers) handleRemoveTask(w http.ResponseWriter, r *http.Request) {
 	today := app.Today(h.srv.TestMode)
 	switch err := h.tasks.Remove(r.Context(), id, person.ID, today); err {
 	case nil:
-		http.Redirect(w, r, "/tasks/board", http.StatusFound)
+		// The Board offers Undo for a moment (gates 7.15, 7.17).
+		http.Redirect(w, r, "/tasks/board?removed="+strconv.FormatInt(id, 10), http.StatusFound)
 	case ErrTaskNotFound:
 		http.NotFound(w, r)
 	default:
 		http.Error(w, "internal error", http.StatusInternalServerError)
 	}
+}
+
+// handleRestoreTask serves gate 2.09's Restore action, from the Removed
+// tasks list, and gate 7.16's Undo (undo=1, from the message after a job is
+// removed), which puts the job back where it was rather than at the bottom.
+func (h *Handlers) handleRestoreTaskUndo(w http.ResponseWriter, r *http.Request, id int64, actorID int64) {
+	today := app.Today(h.srv.TestMode)
+	if _, err := h.tasks.Undo(r.Context(), id, actorID, today); err != nil {
+		http.Error(w, "internal error", http.StatusInternalServerError)
+		return
+	}
+	// A job somebody else already restored is simply there; no error.
+	http.Redirect(w, r, "/tasks/board", http.StatusFound)
 }
 
 // handleRestoreTask serves gate 2.09's Restore action, from the Removed
@@ -148,6 +162,15 @@ func (h *Handlers) handleRestoreTask(w http.ResponseWriter, r *http.Request) {
 	person, ok := people.FromContext(r.Context())
 	if !ok {
 		http.Error(w, "not signed in", http.StatusForbidden)
+		return
+	}
+
+	if err := r.ParseForm(); err != nil {
+		http.Error(w, "invalid form", http.StatusBadRequest)
+		return
+	}
+	if r.FormValue("undo") == "1" {
+		h.handleRestoreTaskUndo(w, r, id, person.ID)
 		return
 	}
 

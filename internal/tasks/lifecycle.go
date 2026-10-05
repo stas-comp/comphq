@@ -3,6 +3,7 @@ package tasks
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"time"
 )
 
@@ -153,6 +154,26 @@ func (s *Store) Remove(ctx context.Context, taskID int64, actorID int64, now tim
 		return err
 	}
 
+	// Remember which job it sat beside, so Undo can put it back exactly there
+	// (gate 7.16, D-93): the job that followed it, or the one before it when
+	// it was last. Only new removals carry this; older ones fall back to the
+	// row's old position.
+	before, err := stageOrder(ctx, tx, stage, 0)
+	if err != nil {
+		return err
+	}
+	detail := removedDetail{}
+	for i, id := range before {
+		if id != taskID {
+			continue
+		}
+		if i+1 < len(before) {
+			detail.BeforeID = before[i+1]
+		} else if i > 0 {
+			detail.AfterID = before[i-1]
+		}
+	}
+
 	nowStr := now.UTC().Format(time.RFC3339)
 	if _, err := tx.ExecContext(ctx,
 		`UPDATE tasks SET removed_at = ?, updated_by = ?, updated_at = ? WHERE id = ?`,
@@ -169,7 +190,7 @@ func (s *Store) Remove(ctx context.Context, taskID int64, actorID int64, now tim
 		return err
 	}
 
-	if err := recordActivity(ctx, tx, taskID, actorID, "removed", nil, nowStr); err != nil {
+	if err := recordActivity(ctx, tx, taskID, actorID, "removed", detail, nowStr); err != nil {
 		return err
 	}
 
@@ -177,6 +198,112 @@ func (s *Store) Remove(ctx context.Context, taskID int64, actorID int64, now tim
 		return err
 	}
 	return tx.Commit()
+}
+
+// removedDetail is what a "removed" activity row remembers: the job that was
+// next to the removed one (gate 7.16). Both are 0 when the stage held only
+// this job.
+type removedDetail struct {
+	BeforeID int64 `json:"before_id,omitempty"`
+	AfterID  int64 `json:"after_id,omitempty"`
+}
+
+// Undo puts a job someone has just removed back where it was (gates 7.15,
+// 7.16, D-93): in its column, directly before the job that followed it when
+// it was removed (or after the one that preceded it). If that neighbour has
+// since moved to another column or been removed itself, it goes back to its
+// old position, held within the column's length. A job that is not removed
+// (someone else already restored it, or undid it) is left alone, with no
+// error: restored reports whether it was removed to begin with. People,
+// steps and links were never touched by removal, so they are all still there.
+// Restore (Removed tasks) is a different thing and still goes to the bottom.
+func (s *Store) Undo(ctx context.Context, taskID int64, actorID int64, now time.Time) (restored bool, err error) {
+	tx, err := s.DB.BeginTx(ctx, nil)
+	if err != nil {
+		return false, err
+	}
+	defer tx.Rollback()
+
+	var stage string
+	var oldPosition int
+	err = tx.QueryRowContext(ctx,
+		`SELECT stage, position FROM tasks WHERE id = ? AND removed_at IS NOT NULL`, taskID,
+	).Scan(&stage, &oldPosition)
+	if err == sql.ErrNoRows {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+
+	var detailJSON string
+	err = tx.QueryRowContext(ctx,
+		`SELECT detail FROM task_activity WHERE task_id = ? AND action = 'removed' ORDER BY id DESC LIMIT 1`, taskID,
+	).Scan(&detailJSON)
+	if err != nil && err != sql.ErrNoRows {
+		return false, err
+	}
+	var detail removedDetail
+	if detailJSON != "" {
+		_ = json.Unmarshal([]byte(detailJSON), &detail) // an older row has "{}": fall back below
+	}
+
+	order, err := stageOrder(ctx, tx, stage, taskID)
+	if err != nil {
+		return false, err
+	}
+	index := -1
+	for i, id := range order {
+		if detail.BeforeID != 0 && id == detail.BeforeID {
+			index = i
+			break
+		}
+		if detail.AfterID != 0 && id == detail.AfterID {
+			index = i + 1
+			break
+		}
+	}
+	if index < 0 {
+		index = oldPosition - 1
+		if index < 0 {
+			index = 0
+		}
+		if index > len(order) {
+			index = len(order)
+		}
+	}
+	newOrder := make([]int64, 0, len(order)+1)
+	newOrder = append(newOrder, order[:index]...)
+	newOrder = append(newOrder, taskID)
+	newOrder = append(newOrder, order[index:]...)
+	if err := renumber(ctx, tx, newOrder); err != nil {
+		return false, err
+	}
+
+	nowStr := now.UTC().Format(time.RFC3339)
+	if _, err := tx.ExecContext(ctx,
+		`UPDATE tasks SET removed_at = NULL, updated_by = ?, updated_at = ? WHERE id = ?`,
+		actorID, nowStr, taskID,
+	); err != nil {
+		return false, err
+	}
+	if err := recordActivity(ctx, tx, taskID, actorID, "undone", nil, nowStr); err != nil {
+		return false, err
+	}
+	if err := bumpTasksVersion(ctx, tx); err != nil {
+		return false, err
+	}
+	return true, tx.Commit()
+}
+
+// RemovedTitle is the title of a task that is currently removed, for the
+// message that offers Undo; ok is false for a task that isn't removed.
+func (s *Store) RemovedTitle(ctx context.Context, taskID int64) (title string, ok bool, err error) {
+	err = s.DB.QueryRowContext(ctx, `SELECT title FROM tasks WHERE id = ? AND removed_at IS NOT NULL`, taskID).Scan(&title)
+	if err == sql.ErrNoRows {
+		return "", false, nil
+	}
+	return title, err == nil, err
 }
 
 // Restore brings a removed task back, landing at the bottom of the

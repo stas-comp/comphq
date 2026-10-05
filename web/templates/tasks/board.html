@@ -1,3 +1,15 @@
+{{/* The message after a job is removed (gates 7.15-7.17): what was removed and
+an Undo, an ordinary form so it works with no script. It sits outside the
+refreshed board, in a region the screen reader already knows about, and
+toast.js takes it away after 10 seconds. */}}
+{{define "tasks-toast"}}{{if .}}<div class="toast" data-toast>
+<span class="toast-text">Removed “{{.Title}}”</span>
+<form method="post" action="/tasks/{{.ID}}/restore" class="toast-undo">
+<input type="hidden" name="undo" value="1">
+<button class="mini go" type="submit">Undo</button>
+</form>
+</div>{{end}}{{end}}
+
 {{define "tasks-board.html"}}
 <div class="tools">
 <h1>Tasks</h1>
@@ -21,6 +33,8 @@
 <a class="btn primary tools-add" id="add-task-link" href="/tasks/new">+ Add task</a>
 </div>
 {{if .Message}}<p class="message" role="alert">{{.Message}}</p>{{end}}
+
+<div class="toast-region" id="toast-region" role="status" aria-live="polite">{{template "tasks-toast" .Toast}}</div>
 
 <div class="task-board" data-refresh-version-url="/tasks/version" data-refresh-fragment-selector=".task-board">
 {{range .Columns}}
@@ -89,6 +103,7 @@
 <script src="/static/vendor/sortable/Sortable-1.15.7.min.js"></script>
 <script src="/static/tasks/sortable-options.js"></script>
 <script src="/static/tasks/people-menu.js"></script>
+<script src="/static/app/toast.js"></script>
 <script src="/static/tasks/board.js"></script>
 <script src="/static/tasks/steps.js"></script>
 <script src="/static/tasks/window.js"></script>

@@ -626,8 +626,13 @@ func TestRemoveAndRestoreTaskHTTP(t *testing.T) {
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("remove status = %d, want 200 (following the redirect to the board)", resp.StatusCode)
 	}
-	if strings.Contains(boardBody, "Removable") {
-		t.Errorf("board still shows a removed task; got:\n%s", boardBody)
+	// The board now also offers Undo in a message that names the job (gate
+	// 7.15), so look for its card, not for its name anywhere on the page.
+	if strings.Contains(boardBody, fmt.Sprintf(`data-task-id="%d"`, task)) {
+		t.Errorf("board still shows a removed task's card; got:\n%s", boardBody)
+	}
+	if !strings.Contains(boardBody, "Removed “Removable”") || !strings.Contains(boardBody, `name="undo"`) {
+		t.Errorf("board is missing the Removed … Undo message; got:\n%s", boardBody)
 	}
 
 	removedResp, err := client.Get(ts.URL + "/tasks/removed")

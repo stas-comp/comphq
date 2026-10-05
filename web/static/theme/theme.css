@@ -974,3 +974,41 @@ mark {
   color: var(--color-signal-orange);
   letter-spacing: -0.01em;
 }
+
+/* The message at the bottom of the screen, such as "Removed “Order toner” ·
+   Undo" (gate 7.15). It floats above the page's content and below the task
+   window (a <dialog> is always on top). The region around it is a live
+   region and is always on the page, so a screen reader announces a message
+   that arrives; it doesn't catch clicks itself. */
+.toast-region {
+  position: fixed;
+  left: 50%;
+  bottom: var(--space-6);
+  transform: translateX(-50%);
+  z-index: 40;
+  max-width: calc(100vw - 2 * var(--space-4));
+  pointer-events: none;
+}
+
+.toast {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-ink-navy);
+  color: var(--color-white);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-raised);
+  font-weight: 600;
+}
+
+.toast .toast-text {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.toast form {
+  display: flex;
+  margin: 0;
+}
