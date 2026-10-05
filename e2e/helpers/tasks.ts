@@ -47,3 +47,24 @@ export async function seedJobs(
     if (res.status() >= 400) throw new Error(`could not make job ${title}: ${res.status()}`);
   }
 }
+
+/** One job with every field a search or a card can show. */
+export async function seedJob(
+  page: Page,
+  baseURL: string,
+  job: { title: string; notes?: string; stage?: 'idea' | 'todo' | 'doing' | 'done'; personID?: string; due?: string },
+): Promise<void> {
+  const form: Record<string, string> = { title: job.title, stage: job.stage ?? 'todo' };
+  if (job.notes) form.notes = job.notes;
+  if (job.personID) form.person_id = job.personID;
+  if (job.due) form.due_date = job.due;
+  const res = await page.request.post(baseURL + '/tasks', { form, headers: { origin: baseURL }, maxRedirects: 0 });
+  if (res.status() >= 400) throw new Error(`could not make job ${job.title}: ${res.status()}`);
+}
+
+/** The id in a job's own address (/tasks/12). */
+export function idFromHref(href: string): string {
+  const m = /\/tasks\/(\d+)/.exec(href);
+  if (!m) throw new Error(`not a job address: ${href}`);
+  return m[1];
+}

@@ -39,10 +39,10 @@
 <div class="backup-banner" role="alert">The last backup is more than 2 days old. Check <a href="/settings/backups">Settings → Backups</a>.</div>
 {{end}}
 <header class="topbar">
-<form class="search" role="search" action="/kb/search" method="get" autocomplete="off">
+<form class="search" role="search" action="{{.Search.Action}}" method="get" autocomplete="off" data-search-kind="{{.Search.Kind}}" data-search-json="{{.Search.JSONURL}}"{{if .Search.InsteadHref}} data-instead-href="{{.Search.InsteadHref}}" data-instead-label="{{.Search.InsteadLabel}}"{{end}}>
 <span class="icon icon-search" aria-hidden="true"></span>
-<label for="search-box" class="visually-hidden">Search articles</label>
-<input class="search-input" type="search" id="search-box" name="q" placeholder="Search articles">
+<label for="search-box" class="visually-hidden">{{.Search.Label}}</label>
+<input class="search-input" type="search" id="search-box" name="q" placeholder="{{.Search.Label}}">
 <kbd aria-hidden="true">/</kbd>
 </form>
 <div class="you">

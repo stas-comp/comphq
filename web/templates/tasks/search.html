@@ -1,0 +1,22 @@
+{{define "tasks-search.html"}}
+<h1>Search results for <em>{{.Query}}</em></h1>
+
+{{if .Results}}
+<ul class="kb-search-results task-search-results">
+{{range .Results}}
+<li class="search-result">
+<a href="{{.URL}}">
+<span class="search-result-title">{{.Title}}{{if .Finished}} <span class="stamp stamp-date">Finished</span>{{end}}</span>
+<span class="search-job-meta">{{.Column}}{{range .People}} · {{.}}{{end}}{{if .Due}} · {{.Due}}{{end}}</span>
+{{if .Passage}}<div class="search-snippet">{{.Passage}}</div>{{end}}
+</a>
+</li>
+{{end}}
+</ul>
+{{else}}
+<p>No jobs match <em>{{.Query}}</em>.</p>
+{{end}}
+<p class="search-instead"><a href="/kb/search?q={{.Query | urlquery}}">Search articles instead</a></p>
+{{template "tasks-window" .}}
+<script src="/static/tasks/window.js"></script>
+{{end}}

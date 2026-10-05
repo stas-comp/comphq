@@ -27,6 +27,16 @@ window.ComphqMessages = {
     const noun = notes.length === 1 ? 'thing' : 'things'
     return notes.length + ' ' + noun + " couldn't be brought in: " + notes.join(', ') + '.'
   },
+  // SPEC gate 7.21: the same, for the job search on Tasks pages.
+  noJobsMatch(query) {
+    const span = document.createElement('span')
+    span.textContent = query
+    return 'No jobs match <em>' + span.innerHTML + '</em>.'
+  },
+  // SPEC gate 4.42's foot, for jobs.
+  jobsFoot(count) {
+    return count + (count === 1 ? ' job' : ' jobs') + ' · press Enter to see all results'
+  },
   // SPEC gate 1.32 (the asterisks around "words" in the SPEC text are its
   // own markdown emphasis, not literal characters to render).
   noArticlesMatch(query) {

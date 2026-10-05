@@ -137,3 +137,50 @@ test.describe('Tasks speed (SPEC gates 2.21, 2.31, 2.38)', () => {
     }
   });
 });
+
+// SPEC gate 7.25 (D-94): with the test library loaded (2,000 jobs), job
+// results appear within 1 second of the last keystroke, and symbols or odd
+// input never cause an error (as gate 1.32 does for articles).
+test.describe('Job search speed (gate 7.25)', () => {
+  const PANEL_LIMIT_MS = 1000;
+
+  test('last keystroke to the job results rendering stays within budget', async ({ page, server }) => {
+    await signInAsNewPerson(page, server.baseURL, '/tasks/board');
+    await ready(page);
+    // Real words from the seeded jobs.
+    const titles = await page.locator('.task-card-title a').allInnerTexts();
+    const words = titles
+      .flatMap((t) => t.split(/[^\p{L}\p{N}]+/u))
+      .filter((w) => w.length >= 4 && !/^\d+$/.test(w))
+      .slice(0, 5);
+    expect(words.length).toBeGreaterThan(0);
+
+    const times: number[] = [];
+    for (let i = 0; i < SAMPLE_SIZE; i++) {
+      const start = Date.now();
+      await page.fill('#search-box', words[i % words.length]);
+      await page.waitForSelector('.search-panel .search-result');
+      times.push(Date.now() - start);
+      await page.fill('#search-box', '');
+      await page.waitForSelector('.search-panel', { state: 'detached' });
+    }
+    assertUnderLimit('job search panel render', median(times), PANEL_LIMIT_MS);
+  });
+
+  test('symbols and odd input never cause an error', async ({ page, server }) => {
+    const problems: string[] = [];
+    page.on('pageerror', (e) => problems.push(String(e)));
+    page.on('console', (m) => {
+      if (m.type() === 'error') problems.push(m.text());
+    });
+    await signInAsNewPerson(page, server.baseURL, '/tasks/board');
+    await ready(page);
+    for (const q of ['%', '_', '"', "'", '\\', 'NEAR AND OR', '100%', ')(', '<script>', 'a b', '😀😀', '%%__']) {
+      const res = await page.request.get(server.baseURL + '/tasks/search.json?q=' + encodeURIComponent(q));
+      expect(res.status(), q).toBe(200);
+      await page.fill('#search-box', q);
+      await page.waitForTimeout(400);
+    }
+    expect(problems).toEqual([]);
+  });
+});

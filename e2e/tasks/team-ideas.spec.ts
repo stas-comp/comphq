@@ -149,7 +149,7 @@ test('gate 7.05: an idea can be dropped into an empty Up next, and an unassigned
   );
   expect(status2).toBe(302);
   await expect.poll(() => upNext(lane(page, a))).toEqual([looseIdea]);
-  expect(await ideas(unassigned(page))).not.toContain(looseIdea);
+  await expect.poll(() => ideas(unassigned(page))).not.toContain(looseIdea);
 });
 
 test('gate 7.05: every idea card on Team has Move to To do, which puts it at the bottom of To do', async ({ page, server, browser }) => {

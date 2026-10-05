@@ -414,3 +414,23 @@
   color: var(--color-text-muted);
   justify-self: start;
 }
+
+/* A job in the search results (gate 7.21): its column, people and due date
+   in small capitals under the title, the way an article shows its category;
+   and the link to the other kind of search under the results (gate 7.24). */
+.search-job-meta {
+  font: 500 11px var(--font-mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.search-instead-link,
+.search-instead a {
+  color: var(--color-ink-navy);
+  font-weight: 700;
+}
+
+.search-instead {
+  margin: var(--space-4) 0 0;
+}

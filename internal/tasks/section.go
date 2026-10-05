@@ -21,7 +21,10 @@ func Section(srv *app.Server) app.Section {
 	}
 	return app.Section{
 		MigrationName: "tasks",
-		Nav:           &app.NavItem{Label: "Tasks", Path: "/tasks", Icon: "tasks"},
+		Nav: &app.NavItem{Label: "Tasks", Path: "/tasks", Icon: "tasks", Search: &app.SearchSetting{
+			Kind: "jobs", Action: "/tasks/search", JSONURL: "/tasks/search.json", Label: "Search jobs",
+			InsteadLabel: "Search articles instead", InsteadHref: "/kb/search",
+		}},
 		RegisterRoutes: func(mux *http.ServeMux) {
 			mux.HandleFunc("GET /tasks", h.handleMyJobs)
 			mux.HandleFunc("GET /tasks/board", h.handleBoard)
@@ -31,6 +34,8 @@ func Section(srv *app.Server) app.Section {
 			mux.HandleFunc("GET /tasks/team", h.handleTeam)
 			mux.HandleFunc("GET /tasks/finished", h.handleFinished)
 			mux.HandleFunc("GET /tasks/removed", h.handleRemoved)
+			mux.HandleFunc("GET /tasks/search", h.handleSearchPage)
+			mux.HandleFunc("GET /tasks/search.json", h.handleSearchJSON)
 			mux.HandleFunc("GET /tasks/{id}", h.handleTaskDetails)
 			mux.HandleFunc("GET /tasks/{id}/people", h.handleTaskPeople)
 			mux.HandleFunc("POST /tasks/{id}", h.handleUpdateTask)

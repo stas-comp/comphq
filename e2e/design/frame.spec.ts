@@ -91,7 +91,9 @@ test('gate 4.14: the search box is the mockup search box, with a "/" hint, and r
     ['font-family', 'font-weight', 'font-size', 'color', 'padding', 'border-top-width', 'border-top-color', 'border-radius'],
   );
   await expect(page.locator('.topbar .search kbd')).toHaveText('/');
-  await expect(page.locator('#search-box')).toHaveAttribute('placeholder', 'Search articles');
+  // On a Tasks page the box reads Search jobs (gate 7.20, D-94: a planned change of
+  // this assertion's wording, not a weakened test; the box looks the same).
+  await expect(page.locator('#search-box')).toHaveAttribute('placeholder', 'Search jobs');
 
   // Focused: the mockup's `.search.active` — a navy outline and the soft accent ring.
   await page.locator('#search-box').focus();

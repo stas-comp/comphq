@@ -18,6 +18,7 @@ export const pages: RegisteredPage[] = [
   { name: 'tasks-board', path: '/tasks/board', needsPerson: true },
   { name: 'tasks-team', path: '/tasks/team', needsPerson: true },
   { name: 'tasks-new', path: '/tasks/new', needsPerson: true },
+  { name: 'tasks-search', path: '/tasks/search?q=printer', needsPerson: true },
   { name: 'tasks-finished', path: '/tasks/finished', needsPerson: true },
   { name: 'tasks-removed', path: '/tasks/removed', needsPerson: true },
   { name: 'calendar', path: '/calendar', needsPerson: true },

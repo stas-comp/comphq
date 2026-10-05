@@ -13,6 +13,26 @@ type NavItem struct {
 	// AlsoCurrentAt lists other exact paths that mark this item current
 	// too (the Briefing is also the home page, "/").
 	AlsoCurrentAt []string
+	// Search is what the top bar's search box does on this section's pages
+	// (gate 7.20, D-94). Nil means the Knowledge Base's article search.
+	Search *SearchSetting
+}
+
+// SearchSetting is one kind of top-bar search: where the form goes, where the
+// live panel fetches from, what the box says, and the link to the other kind
+// of search offered under the results.
+type SearchSetting struct {
+	Kind         string // "articles" or "jobs": which results the script draws
+	Action       string // the full results page
+	JSONURL      string // the live panel's source
+	Label        string // the box's label and placeholder
+	InsteadLabel string // "" when there is no other search to offer
+	InsteadHref  string // the other search's results page; the script adds ?q=
+}
+
+// ArticleSearch is the top bar's default: the Knowledge Base's search.
+var ArticleSearch = SearchSetting{
+	Kind: "articles", Action: "/kb/search", JSONURL: "/kb/search.json", Label: "Search articles",
 }
 
 // Section is what SPEC B2 means by "each section registers its routes,

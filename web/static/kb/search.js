@@ -1,11 +1,15 @@
 // The search box's live panel (SPEC gates 1.26, 1.27, 1.32), on every
-// page via layout.html. Pressing Enter without picking a result falls
+// page via layout.html. On Tasks pages the same box searches jobs (gates
+// 7.20-7.24): the form says which, and where, in data attributes, and a job
+// result is drawn a little differently; articles behave exactly as before. Pressing Enter without picking a result falls
 // through to the form's own normal GET submission to /kb/search — the
 // full results page needs no JS at all.
 document.addEventListener('DOMContentLoaded', () => {
   const input = document.getElementById('search-box')
   if (!input) return
   const form = input.closest('form')
+  const jsonURL = form.dataset.searchJson || '/kb/search.json'
+  const jobs = form.dataset.searchKind === 'jobs'
 
   // The "/" hint in the box is a real shortcut (SPEC gate 4.14): pressing
   // it anywhere outside a text field puts the keyboard in the search box.
@@ -36,7 +40,70 @@ document.addEventListener('DOMContentLoaded', () => {
     return span.innerHTML
   }
 
+  // The other kind of search, offered under the results (gate 7.24).
+  function insteadLink(query) {
+    if (!form.dataset.insteadHref) return null
+    const a = document.createElement('a')
+    a.className = 'search-instead-link'
+    a.href = form.dataset.insteadHref + '?q=' + encodeURIComponent(query)
+    a.textContent = form.dataset.insteadLabel
+    return a
+  }
+
+  // A job result (gate 7.21): the title with the matching words marked, its
+  // column, people and due date, and a passage of the notes when that is
+  // where the words are. title and passage arrive escaped, with <mark>.
+  function renderJobs(query, results) {
+    closePanel()
+    // The panel holds the list of results and, under it, a link that is not
+    // one of them; only the list is a listbox.
+    panel = document.createElement('div')
+    panel.className = 'search-panel'
+    if (results.length === 0) {
+      const empty = document.createElement('p')
+      empty.className = 'search-panel-empty'
+      empty.innerHTML = window.ComphqMessages.noJobsMatch(query)
+      panel.appendChild(empty)
+    }
+    const list = document.createElement('div')
+    list.setAttribute('role', 'listbox')
+    list.setAttribute('aria-label', 'Search results')
+    for (const r of results) {
+      const a = document.createElement('a')
+      a.href = r.url
+      a.className = 'search-result'
+      a.setAttribute('role', 'option')
+      const meta = [r.column].concat(r.people || [])
+      if (r.due) meta.push(r.due)
+      a.innerHTML =
+        '<span class="search-result-title">' + r.title +
+        (r.finished ? ' <span class="stamp stamp-date">Finished</span>' : '') + '</span>' +
+        '<span class="search-job-meta">' + escapeHTML(meta.join(' · ')) + '</span>' +
+        (r.passage ? '<div class="search-snippet">' + r.passage + '</div>' : '')
+      list.appendChild(a)
+    }
+    if (results.length > 0) panel.appendChild(list)
+    const foot = document.createElement('div')
+    foot.className = 'search-panel-foot'
+    if (results.length > 0) {
+      const text = document.createElement('span')
+      text.textContent = window.ComphqMessages.jobsFoot(results.length)
+      foot.appendChild(text)
+      foot.appendChild(document.createTextNode(' · '))
+    }
+    const instead = insteadLink(query)
+    if (instead) foot.appendChild(instead)
+    panel.appendChild(foot)
+    form.appendChild(panel)
+    // A job opens in the task window over this page (window.js); the panel
+    // has done its job.
+    panel.addEventListener('click', (event) => {
+      if (event.target instanceof Element && event.target.closest('a.search-result')) setTimeout(closePanel, 0)
+    })
+  }
+
   function renderResults(query, results) {
+    if (jobs) return renderJobs(query, results)
     closePanel()
     panel = document.createElement('div')
     panel.className = 'search-panel'
@@ -79,7 +146,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const seq = ++requestSeq
     let data
     try {
-      const res = await fetch('/kb/search.json?q=' + encodeURIComponent(query))
+      const res = await fetch(jsonURL + '?q=' + encodeURIComponent(query))
       if (!res.ok) return
       data = await res.json()
     } catch (err) {

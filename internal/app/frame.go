@@ -27,6 +27,7 @@ type frameData struct {
 	BodyContent      template.HTML
 	ShowBackupBanner bool
 	Today            string
+	Search           SearchSetting
 }
 
 type navItemData struct {
@@ -69,15 +70,22 @@ func (s *Server) RenderFrame(w http.ResponseWriter, r *http.Request, status int,
 	}
 
 	navItems := make([]navItemData, 0, len(s.registry.NavItems()))
+	search := ArticleSearch
 	for _, item := range s.registry.NavItems() {
+		// A sub-page (e.g. "/settings/people") still marks its
+		// section's nav item current, not just an exact match.
+		current := r.URL.Path == item.Path || strings.HasPrefix(r.URL.Path, item.Path+"/") || slices.Contains(item.AlsoCurrentAt, r.URL.Path)
 		navItems = append(navItems, navItemData{
-			Label: item.Label,
-			Path:  item.Path,
-			Icon:  item.Icon,
-			// A sub-page (e.g. "/settings/people") still marks its
-			// section's nav item current, not just an exact match.
-			Current: r.URL.Path == item.Path || strings.HasPrefix(r.URL.Path, item.Path+"/") || slices.Contains(item.AlsoCurrentAt, r.URL.Path),
+			Label:   item.Label,
+			Path:    item.Path,
+			Icon:    item.Icon,
+			Current: current,
 		})
+		// The current section decides what the top bar's box searches
+		// (gate 7.20); a section with no setting leaves it on articles.
+		if current && item.Search != nil {
+			search = *item.Search
+		}
 	}
 
 	showBackupBanner := false
@@ -100,7 +108,8 @@ func (s *Server) RenderFrame(w http.ResponseWriter, r *http.Request, status int,
 		// buttons, and its "follows typing" nearest-year rule (D-82), need
 		// the same idea of "today" the server itself uses — honouring
 		// COMPHQ_TEST_TODAY in test mode — not the browser's own clock.
-		Today: Today(s.TestMode).Format("2006-01-02"),
+		Today:  Today(s.TestMode).Format("2006-01-02"),
+		Search: search,
 	}
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
