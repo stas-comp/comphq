@@ -105,6 +105,26 @@ Status values: `todo` · `in-progress` · `blocked` · `done`.
 | P6-06 | Search finds half-typed words | done | 8e6cb9d | https://github.com/stas-comp/comphq/actions/runs/35770332906 | New `kb_search_words` (unicode61, unstemmed) plus an `fts5vocab` table; the last typed word is also matched against up to 30 most common whole words it prefixes (D-85). Rebuilt from `kb_search` at every start-up, so a rollback to v1.2.0 never leaves it stale (gate 6.34; rebuild measured about 12 ms per 500 articles). Original implementation d175aeb. First CI runs failed: FTS5 rejects a quoted term directly before a parenthesised group, only when the shared worker's content gave the last word an expansion; fixed by joining with explicit AND (8e6cb9d, D-88), diagnosed via error logging added in 8347e81. Gate 6.34's `container-test.sh` additions are untested locally (no Docker) and first run in the P6-07 full dispatch. |
 | P6-07 | Full sweep: screenshots, README, CHANGES | done | 592d1b3 | https://github.com/stas-comp/comphq/actions/runs/36060832936 | Full dispatch green at every layer (browser, go, speed, screens, container), including gate 6.34's rollback/upgrade search check for the first time. Three new screenshots in `e2e/screens/populated.spec.ts` (Board scrolled with sidebar, date calendar in the task window, Sunday-first month). README (date calendar, 25/9, blank-day click, Sunday weeks, half-typed search) and CHANGES 1.3.0 updated. An earlier full run failed gate 5.06 (window) twice, the D-86 flake; its 1s timing margin was widened to 5s (same assertions), see D-86 follow-up. |
 | P6-08 | Release v1.3.0 and the Phase 6 report (STOP S11) | done | a1a2a97, 660d4e2, ee37c79, 8b47c3c | https://github.com/stas-comp/comphq/actions/runs/36243232804 | First attempt (2026-09-24, run 36065567059) was blocked on GitHub billing: the container, speed and screens jobs never started. Once billing was sorted, three follow-ups landed before the release: `deploy/truenas.local.yaml` ignored (660d4e2), and two shared-server test fixes (board order tests compare only their own cards, ee37c79; gate 4.16 reads the date colour from its own card, 8b47c3c). Full dispatch green on 2026-09-26 (run 36243232804). Tagged `v1.3.0` at 8b47c3c; tag CI (36244532776) and Release (https://github.com/stas-comp/comphq/actions/runs/36244532756) both green. The owner published v1.3.0; this row was updated afterwards, on 2026-10-05. |
+| P7-00 | Spec and plan for v1.4 | done | 9326f41 | | Not a build-agent task: done by the owner's spec model, 2026-10-05. SPEC A5, A6, A11 Phase 7, A12, A13, B3, B4, B9.8, new B13; `PLAN-v1.4.md`; D-89–D-100. Committed locally as 9326f41 and pushed with P7-01. `samples\word` holds only its README (no `.docx`), so P7-10 works from the code reading and records an inbox entry. |
+| P7-01 | The page never scrolls sideways (the white areas) | todo | | | |
+| P7-02 | New jobs start in To do | todo | | | |
+| P7-03 | Drop anywhere in a column, scroll while dragging, keep the filter | todo | | | |
+| P7-04 | Reorder your own Up next; ideas into To do on My jobs | todo | | | |
+| P7-05 | Team: unassigned ideas, and ideas into Up next | todo | | | |
+| P7-06 | People circles on Team and My jobs | todo | | | |
+| P7-07 | Undo after removing a job | todo | | | |
+| P7-08 | Search finds jobs on Tasks pages | todo | | | |
+| P7-09 | Articles in order | todo | | | |
+| P7-10 | Every picture from Word, part 1 | todo | | | |
+| P7-11 | Every picture from Word, part 2 | todo | | | |
+| P7-12 | Weekly jobs, part 1: storage and the Saturday reset | todo | | | |
+| P7-13 | Weekly jobs, part 2: the tick-box, the stamp and the export | todo | | | |
+| P7-14 | Linked jobs, part 1: storage, rules and export | todo | | | |
+| P7-15 | Linked jobs, part 2: on screen | todo | | | |
+| P7-16 | Knowledge Base home and category pages | todo | | | |
+| P7-17 | The editor | todo | | | |
+| P7-18 | Full sweep: every gate, README, CHANGES, screenshots | todo | | | |
+| P7-19 | Release v1.4.0 and the Phase 7 report (no stop) | todo | | | |
 
 ## Stop log
 

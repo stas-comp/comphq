@@ -9,6 +9,7 @@
    scrolls sideways on its own rather than the whole page (gate 2.31) when
    there are more people than fit. */
 .team-lanes {
+  position: relative; /* the lanes' own scrolling area contains everything inside (D-97) */
   display: grid;
   grid-auto-flow: column;
   grid-auto-columns: minmax(232px, 1fr);
@@ -20,6 +21,7 @@
 }
 
 .lane {
+  position: relative;
   background: var(--color-paper-muted);
   border-radius: 10px;
   padding: 10px;

@@ -83,3 +83,26 @@ export function generateOversizePNG(minBytes = 21 * 1024 * 1024): Buffer {
     chunk('IEND', Buffer.alloc(0)),
   ]);
 }
+
+/**
+ * A real, valid solid-colour greyscale PNG of any size. All-zero rows
+ * compress to almost nothing, so a 3,000-pixel-wide picture (gate 7.52) is
+ * only a few kilobytes.
+ */
+export function generatePNG(width: number, height: number, grey = 128): Buffer {
+  const PNG_SIGNATURE = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+  const bytesPerRow = width + 1;
+  const raw = Buffer.alloc(height * bytesPerRow, grey);
+  for (let y = 0; y < height; y++) raw[y * bytesPerRow] = 0; // filter type "None"
+  const ihdr = Buffer.alloc(13);
+  ihdr.writeUInt32BE(width, 0);
+  ihdr.writeUInt32BE(height, 4);
+  ihdr[8] = 8;
+  ihdr[9] = 0;
+  return Buffer.concat([
+    PNG_SIGNATURE,
+    chunk('IHDR', ihdr),
+    chunk('IDAT', deflateSync(raw, { level: 9 })),
+    chunk('IEND', Buffer.alloc(0)),
+  ]);
+}

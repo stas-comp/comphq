@@ -31,6 +31,10 @@
 }
 
 :root {
+  /* The theme is light only (A10); say so, so the browser draws its own
+     scrollbars and overscroll areas to match (gate 7.51). */
+  color-scheme: light;
+
   /* The B9.2 table, exactly. The bright accent is only ever a FILL, and
      the text on it is ink navy (6.02:1); white on it is 2.85:1 and is
      never used. Where orange is the text itself it is the deep accent
@@ -163,10 +167,17 @@ a {
 
 .visually-hidden {
   position: absolute;
+  /* With no positioned ancestor an absolute box's containing block is the
+     whole page, so each hidden label inside a scrolling area (Team's
+     lanes) stretched the document sideways (D-97, gate 7.50). The lanes
+     are positioned now (team.css); do not add top/left here: that would
+     park every hidden label at the page's top-left corner, on top of the
+     sidebar logo, where axe reads it as the logo's background. */
   width: 1px;
   height: 1px;
   overflow: hidden;
   clip: rect(0 0 0 0);
+  clip-path: inset(50%);
   white-space: nowrap;
 }
 
