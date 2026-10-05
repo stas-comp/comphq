@@ -88,6 +88,8 @@ type cardView struct {
 	// DueLabel is the due date as a card shows it ("Wed 23 Sep").
 	DueLabel  string
 	Overdue   bool
+	// Weekly shows the WEEKLY stamp (gate 7.30).
+	Weekly bool
 	Done      bool
 	Rank      int // 1-based priority number; only To do cards have one (gate 4.16)
 	Assignees []assigneeView
@@ -153,7 +155,7 @@ func newCardView(t Task, meID int64, today time.Time) cardView {
 	}
 	return cardView{
 		ID: t.ID, Title: t.Title, Size: t.Size, SizeLabel: sizeLabels[t.Size], Stage: t.Stage,
-		DueDate: t.DueDate, DueLabel: dueLabel, Overdue: t.Overdue, Done: t.Stage == StageDone,
+		DueDate: t.DueDate, DueLabel: dueLabel, Overdue: t.Overdue, Weekly: t.Weekly, Done: t.Stage == StageDone,
 		Assignees: views, PeopleRedirect: "board", OnIt: meID != 0 && onJob[meID], MeID: meID,
 		OtherStages: otherStages,
 		StepsTotal:  t.StepsTotal, StepsDone: t.StepsDone,
@@ -327,6 +329,7 @@ func (h *Handlers) handleCreateTask(w http.ResponseWriter, r *http.Request) {
 		Stage:     r.FormValue("stage"),
 		DueDate:   format.NormaliseDate(r.FormValue("due_date"), today),
 		PersonIDs: personIDs,
+		Weekly:    r.FormValue("repeat") == repeatWeekly,
 	}
 
 	_, err = h.tasks.Create(r.Context(), input, person.ID, today)

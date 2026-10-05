@@ -38,6 +38,9 @@ type Task struct {
 	DueDate   string // "YYYY-MM-DD", empty if unset
 	Assignees []Assignee
 	Overdue   bool
+	// Weekly marks a job that repeats every week (gate 7.30): it shows a
+	// WEEKLY stamp and goes back to To do each Saturday (weekly.go).
+	Weekly bool
 	// StepsTotal and StepsDone count the job's live steps, for the small
 	// 3/7 on a card (gate 5.10). Set by ListBoard only.
 	StepsTotal int
@@ -213,6 +216,11 @@ func (s *Store) Get(ctx context.Context, id int64, today time.Time) (Task, error
 		return Task{}, err
 	}
 	t.Assignees = assignees[id]
+	weekly, err := s.weeklyIDs(ctx, []int64{id})
+	if err != nil {
+		return Task{}, err
+	}
+	t.Weekly = weekly[id]
 	return t, nil
 }
 
@@ -443,9 +451,14 @@ func (s *Store) ListBoard(ctx context.Context, today time.Time, filter BoardFilt
 	if err != nil {
 		return nil, err
 	}
+	weekly, err := s.weeklyIDs(ctx, ids)
+	if err != nil {
+		return nil, err
+	}
 	for i := range tasks {
 		tasks[i].Assignees = assigneesByTask[tasks[i].ID]
 		tasks[i].StepsDone, tasks[i].StepsTotal = stepCounts[tasks[i].ID].done, stepCounts[tasks[i].ID].total
+		tasks[i].Weekly = weekly[tasks[i].ID]
 	}
 	return tasks, nil
 }

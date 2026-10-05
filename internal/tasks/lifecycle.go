@@ -67,9 +67,14 @@ func (s *Store) listTasks(ctx context.Context, query string, args ...any) ([]Tas
 	if err != nil {
 		return nil, err
 	}
+	weekly, err := s.weeklyIDs(ctx, ids)
+	if err != nil {
+		return nil, err
+	}
 	for i := range tasks {
 		tasks[i].Assignees = assigneesByTask[tasks[i].ID]
 		tasks[i].StepsDone, tasks[i].StepsTotal = stepCounts[tasks[i].ID].done, stepCounts[tasks[i].ID].total
+		tasks[i].Weekly = weekly[tasks[i].ID]
 	}
 	return tasks, nil
 }

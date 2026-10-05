@@ -22,6 +22,7 @@
 </div>
 <p class="stamps briefing-stamps">
 <span class="stamp stamp-{{.StampKind}}">{{.Stamp}}</span>
+{{if .Weekly}}<span class="stamp weekly">WEEKLY</span>{{end}}
 {{if .Yours}}<span class="stamp stamp-yours">YOURS</span>{{end}}
 </p>
 {{if .Notes}}<p class="note briefing-notes">{{.Notes}}</p>{{end}}

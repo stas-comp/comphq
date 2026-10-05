@@ -31,6 +31,8 @@ editing face (fragment). Same field ids in both. */}}
 {{range .People}}<option value="{{.ID}}"{{if .Selected}} selected{{end}}>{{.Name}}</option>{{end}}
 </select>
 
+<label class="check-row" for="details-repeat"><input class="check" type="checkbox" id="details-repeat" name="repeat" value="weekly"{{if .Weekly}} checked{{end}}> Repeats every week (back in To do each Saturday)</label>
+
 <div class="add-task-actions">
 <button class="btn primary" type="submit">Save</button>
 {{if .InWindow}}<button class="btn" type="button" data-hook="window-cancel-edit">Cancel</button>{{end}}

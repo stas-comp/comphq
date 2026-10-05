@@ -557,6 +557,16 @@ body.has-datepicker .field-date {
   transform: rotate(-2deg);
 }
 
+/* WEEKLY (gate 7.30): a job that comes back every Saturday. Words, never an
+   icon (gate 4.11 stays at four icon-only buttons). Navy ink on the paper-
+   muted field, so it reads as a label and is never mistaken for a warning. */
+.stamp-weekly,
+.stamp.weekly {
+  color: var(--color-ink-navy);
+  background: var(--color-paper-muted);
+  border-color: var(--color-ink-navy);
+}
+
 .stamp-yours,
 .stamp.yours {
   color: var(--color-signal-orange-deep);
@@ -1011,4 +1021,13 @@ mark {
 .toast form {
   display: flex;
   margin: 0;
+}
+
+/* A tick-box with its words beside it, as in the add-a-task window (gate 7.30). */
+.check-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: var(--space-3) 0;
+  font-weight: 600;
 }

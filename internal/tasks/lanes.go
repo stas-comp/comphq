@@ -86,6 +86,8 @@ type LaneTask struct {
 	// returns to ("team" or "myjobs"). Decorate fills in the colours.
 	Assignees      []assigneeView
 	PeopleRedirect string
+	// Weekly shows the WEEKLY stamp (gate 7.30).
+	Weekly bool
 }
 
 // MoveUp and MoveDown are the two icon-only move buttons of an Up next
@@ -260,7 +262,7 @@ func laneTask(t Task, personID int64) LaneTask {
 	}
 	return LaneTask{
 		ID: t.ID, Title: t.Title, SizeLabel: sizeLabels[t.Size], DueDate: t.DueDate, AlsoOn: strings.Join(others, ", "),
-		StepsTotal: t.StepsTotal, StepsDone: t.StepsDone, Assignees: views,
+		StepsTotal: t.StepsTotal, StepsDone: t.StepsDone, Assignees: views, Weekly: t.Weekly,
 	}
 }
 

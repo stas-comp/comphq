@@ -15,6 +15,9 @@ type BriefingTask struct {
 	DueDate   string
 	Position  int
 	Assignees []Assignee
+	// Weekly marks a job that repeats every week (gate 7.30): its card shows
+	// a WEEKLY stamp.
+	Weekly bool
 }
 
 // BriefingTasks returns every unfinished, unremoved task with a due
@@ -23,7 +26,7 @@ type BriefingTask struct {
 // Saturday"), ordered by due date then board position.
 func (s *Store) BriefingTasks(ctx context.Context, dueOnOrBefore time.Time) ([]BriefingTask, error) {
 	rows, err := s.DB.QueryContext(ctx, `
-		SELECT id, title, notes, due_date, position
+		SELECT id, title, notes, due_date, position, repeat = 'weekly'
 		FROM tasks
 		WHERE removed_at IS NULL
 		  AND stage != ?
@@ -41,7 +44,7 @@ func (s *Store) BriefingTasks(ctx context.Context, dueOnOrBefore time.Time) ([]B
 	var ids []int64
 	for rows.Next() {
 		var t BriefingTask
-		if err := rows.Scan(&t.ID, &t.Title, &t.Notes, &t.DueDate, &t.Position); err != nil {
+		if err := rows.Scan(&t.ID, &t.Title, &t.Notes, &t.DueDate, &t.Position, &t.Weekly); err != nil {
 			rows.Close()
 			return nil, err
 		}

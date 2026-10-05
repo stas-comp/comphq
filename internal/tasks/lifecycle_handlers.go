@@ -22,6 +22,8 @@ type simpleCardView struct {
 	DueLabel  string
 	IsIdea    bool
 	Assignees []assigneeView
+	// Weekly shows the WEEKLY stamp (gate 7.30).
+	Weekly bool
 	// PeopleRedirect is which screen the card's people list returns to.
 	PeopleRedirect string
 	// StepsTotal and StepsDone are the job's live steps, for the small 3/7.
@@ -42,7 +44,7 @@ func newSimpleCardView(t Task, meID int64, today time.Time) simpleCardView {
 	}
 	return simpleCardView{
 		ID: t.ID, Title: t.Title, SizeLabel: sizeLabels[t.Size], DueDate: t.DueDate, DueLabel: shortDueLabel(t.DueDate, today),
-		IsIdea: t.Stage == StageIdea, Assignees: views,
+		IsIdea: t.Stage == StageIdea, Assignees: views, Weekly: t.Weekly,
 		StepsTotal: t.StepsTotal, StepsDone: t.StepsDone,
 	}
 }

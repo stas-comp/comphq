@@ -1,4 +1,4 @@
-import type { Locator, Page } from '@playwright/test';
+import { expect, type Locator, type Page } from '@playwright/test';
 
 // Dragging with SortableJS under a synthetic mouse (D-41): real pauses
 // between waypoints, a wait for the library's own "drag started" class
@@ -30,6 +30,14 @@ export async function beginDrag(page: Page, card: Locator): Promise<void> {
   const selector = await card.evaluate((el) =>
     el.hasAttribute('data-task-id') ? `[data-task-id="${el.getAttribute('data-task-id')}"]` : `[data-article-id="${el.getAttribute('data-article-id')}"]`,
   );
+  // On a slow machine the page can be loaded and drawn before its scripts have
+  // bound the drag library to the list; pressing then does nothing. Wait for
+  // the list the card is in to be a SortableJS list.
+  await expect
+    .poll(() => card.evaluate((el) => !!(window as unknown as { Sortable?: { get(e: Element | null): unknown } }).Sortable?.get(el.parentElement)), {
+      timeout: 15_000,
+    })
+    .toBe(true);
   for (let attempt = 1; attempt <= 4; attempt++) {
     try {
       await card.scrollIntoViewIfNeeded();

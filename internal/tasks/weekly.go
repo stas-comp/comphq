@@ -3,6 +3,7 @@ package tasks
 import (
 	"context"
 	"database/sql"
+	"strings"
 	"time"
 )
 
@@ -186,4 +187,33 @@ func (s *Store) ResetWeekly(ctx context.Context, today time.Time) (int, error) {
 		}
 	}
 	return reset, tx.Commit()
+}
+
+// weeklyIDs says which of the given jobs repeat every week: one query for a
+// whole list, so the stamp costs a card nothing (the same way assigneesFor and
+// stepCounts are computed per list, not per card).
+func (s *Store) weeklyIDs(ctx context.Context, taskIDs []int64) (map[int64]bool, error) {
+	out := make(map[int64]bool)
+	if len(taskIDs) == 0 {
+		return out, nil
+	}
+	placeholders := strings.TrimSuffix(strings.Repeat("?,", len(taskIDs)), ",")
+	args := make([]any, 0, len(taskIDs)+1)
+	args = append(args, repeatWeekly)
+	for _, id := range taskIDs {
+		args = append(args, id)
+	}
+	rows, err := s.DB.QueryContext(ctx, `SELECT id FROM tasks WHERE repeat = ? AND id IN (`+placeholders+`)`, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var id int64
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		out[id] = true
+	}
+	return out, rows.Err()
 }

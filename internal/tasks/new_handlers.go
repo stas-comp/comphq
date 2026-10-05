@@ -30,6 +30,8 @@ type newTaskPageData struct {
 	Sizes    []sizeOption
 	Stages   []stageOption
 	People   []personOption
+	// Weekly keeps the tick-box as typed when a refused save comes back.
+	Weekly bool
 }
 
 // handleNewTaskForm serves GET /tasks/new: an empty form, in To do, Medium (gate 7.10).
@@ -78,6 +80,7 @@ func (h *Handlers) renderNewTask(w http.ResponseWriter, r *http.Request, status 
 		Sizes:    sizeOptions,
 		Stages:   stages,
 		People:   options,
+		Weekly:   input.Weekly,
 	}
 	if data.InWindow {
 		h.srv.RenderPartial(w, status, "tasks-new-form", data)

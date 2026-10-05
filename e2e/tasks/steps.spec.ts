@@ -326,6 +326,10 @@ test('gate 5.12: a change on another computer arrives within a minute, and never
   await otherPage.goto(jobUrl);
   await expect(words(otherPage)).toHaveText(['Book the hall', 'Email the parents']);
   await checkOf(otherPage, 'Book the hall').check();
+  // The tick re-draws the Steps list when it comes back; typing into the box
+  // before that is done can lose what was typed (the cause of an occasional CI
+  // failure of this test), so wait for it to settle first.
+  await expect(count(otherPage)).toHaveText('1 of 2 done');
   await otherPage.getByPlaceholder('Add a step').fill('Order the programmes');
   await otherPage.getByPlaceholder('Add a step').press('Enter');
   await expect(words(otherPage)).toHaveCount(3);

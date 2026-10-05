@@ -18,7 +18,7 @@ import (
 // package (SPEC B2, D-53).
 func (s *Store) ExportRows(ctx context.Context) ([][]string, error) {
 	rows, err := s.DB.QueryContext(ctx, `
-		SELECT t.id, t.title, t.stage, t.size, t.due_date, p.name, t.created_at, t.done_at, t.removed_at
+		SELECT t.id, t.title, t.stage, t.size, t.due_date, p.name, t.created_at, t.done_at, t.removed_at, t.repeat
 		FROM tasks t JOIN people p ON p.id = t.created_by
 		ORDER BY t.id
 	`)
@@ -31,12 +31,13 @@ func (s *Store) ExportRows(ctx context.Context) ([][]string, error) {
 		id                                     int64
 		title, stage, size, creator, createdAt string
 		dueDate, doneAt, removedAt             *string
+		repeat                                 string
 	}
 	var all []raw
 	var ids []int64
 	for rows.Next() {
 		var r raw
-		if err := rows.Scan(&r.id, &r.title, &r.stage, &r.size, &r.dueDate, &r.creator, &r.createdAt, &r.doneAt, &r.removedAt); err != nil {
+		if err := rows.Scan(&r.id, &r.title, &r.stage, &r.size, &r.dueDate, &r.creator, &r.createdAt, &r.doneAt, &r.removedAt, &r.repeat); err != nil {
 			return nil, err
 		}
 		all = append(all, r)
@@ -51,7 +52,7 @@ func (s *Store) ExportRows(ctx context.Context) ([][]string, error) {
 		return nil, err
 	}
 
-	out := [][]string{{"Title", "Column", "Size", "People", "Due date", "Created by", "Created", "Finished", "Removed"}}
+	out := [][]string{{"Title", "Column", "Size", "People", "Due date", "Created by", "Created", "Finished", "Removed", "Repeats"}}
 	for _, r := range all {
 		var people []string
 		for _, a := range assignees[r.id] {
@@ -61,9 +62,14 @@ func (s *Store) ExportRows(ctx context.Context) ([][]string, error) {
 		if r.dueDate != nil {
 			due = exportDate(*r.dueDate)
 		}
+		// "weekly", or empty for an ordinary job (gate 7.38).
+		repeats := ""
+		if r.repeat == repeatWeekly {
+			repeats = repeatWeekly
+		}
 		out = append(out, []string{
 			r.title, stageLabels[r.stage], sizeLabels[r.size], strings.Join(people, ", "),
-			due, r.creator, exportDateTime(r.createdAt), exportDateTimePtr(r.doneAt), exportDateTimePtr(r.removedAt),
+			due, r.creator, exportDateTime(r.createdAt), exportDateTimePtr(r.doneAt), exportDateTimePtr(r.removedAt), repeats,
 		})
 	}
 	return out, nil

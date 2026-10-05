@@ -637,7 +637,21 @@ func TestMigrationAddsTheTableAndLeavesTheOldSchemaReadable(t *testing.T) {
 	}
 	sam := testPerson(t, sqlDB, "Sam")
 	store := &Store{DB: sqlDB}
-	old := createNamed(t, store, context.Background(), sam, "Written under 1.1.0", StageDoing)
+	// The job is written the way v1.1.0's own binary wrote it, with plain SQL:
+	// the current Store knows columns that a database at this age doesn't have
+	// yet (the weekly columns, v1.4), so it can't be the one to write it.
+	stamp := fixedNow.UTC().Format(time.RFC3339)
+	res, err := sqlDB.Exec(
+		`INSERT INTO tasks (title, notes, size, stage, position, created_by, created_at, updated_by, updated_at)
+		 VALUES ('Written under 1.1.0', '', 'M', 'doing', 1, ?, ?, ?, ?)`, sam, stamp, sam, stamp)
+	if err != nil {
+		t.Fatal(err)
+	}
+	oldID, _ := res.LastInsertId()
+	if _, err := sqlDB.Exec(`INSERT INTO task_activity (task_id, person_id, action, detail, at) VALUES (?, ?, 'created', '{}', ?)`, oldID, sam, stamp); err != nil {
+		t.Fatal(err)
+	}
+	old := Task{ID: oldID}
 
 	var n int
 	if err := sqlDB.QueryRow(`SELECT COUNT(*) FROM sqlite_master WHERE name = 'task_checklist_items'`).Scan(&n); err != nil || n != 0 {

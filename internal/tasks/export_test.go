@@ -28,15 +28,21 @@ func TestExportRows(t *testing.T) {
 	if err := store.Remove(ctx, removed.ID, sam, fixedNow); err != nil {
 		t.Fatalf("Remove: %v", err)
 	}
+	// A weekly job's Repeats column says "weekly" (gate 7.38); an ordinary
+	// one's is empty.
+	if _, err := store.Create(ctx, CreateInput{Title: "Weekly clean", Stage: StageTodo, Weekly: true}, sam, fixedNow); err != nil {
+		t.Fatalf("Create weekly: %v", err)
+	}
 
 	got, err := store.ExportRows(ctx)
 	if err != nil {
 		t.Fatalf("ExportRows: %v", err)
 	}
 	want := [][]string{
-		{"Title", "Column", "Size", "People", "Due date", "Created by", "Created", "Finished", "Removed"},
-		{"Fix printer", "To do", "Large", "Sam, Alex", "Sat 19 Sep 2026", "Sam", "Thu 17 Sep 2026, 12:00", "", ""},
-		{"Old idea", "Ideas", "Medium", "", "", "Sam", "Thu 17 Sep 2026, 12:00", "", "Thu 17 Sep 2026, 12:00"},
+		{"Title", "Column", "Size", "People", "Due date", "Created by", "Created", "Finished", "Removed", "Repeats"},
+		{"Fix printer", "To do", "Large", "Sam, Alex", "Sat 19 Sep 2026", "Sam", "Thu 17 Sep 2026, 12:00", "", "", ""},
+		{"Old idea", "Ideas", "Medium", "", "", "Sam", "Thu 17 Sep 2026, 12:00", "", "Thu 17 Sep 2026, 12:00", ""},
+		{"Weekly clean", "To do", "Medium", "", "Sat 19 Sep 2026", "Sam", "Thu 17 Sep 2026, 12:00", "", "", "weekly"},
 	}
 	if !reflect.DeepEqual(got, want) {
 		t.Errorf("ExportRows =\n%v\nwant\n%v", got, want)

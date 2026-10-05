@@ -63,6 +63,8 @@ type detailsPageData struct {
 	Activity   []Activity
 	Message    string
 	Steps      stepsView
+	// Weekly is whether the job repeats every week (gate 7.30).
+	Weekly bool
 }
 
 // handleTaskDetails serves a task's own page, unchanged (SPEC gate 4.27:
@@ -142,9 +144,13 @@ func (h *Handlers) renderDetails(w http.ResponseWriter, r *http.Request, id int6
 		Activity:  activity,
 		Message:   message,
 		Steps:     stepsData,
+		Weekly:    task.Weekly,
 	}
 	if typed != nil {
 		data.Title, data.Notes, data.Size, data.Stage, data.DueDate = typed.Title, typed.Notes, typed.Size, typed.Stage, format.DayFirst(typed.DueDate)
+		if typed.Weekly != nil {
+			data.Weekly = *typed.Weekly
+		}
 		chosen := make(map[int64]bool, len(typedPeople))
 		for _, id := range typedPeople {
 			chosen[id] = true
@@ -189,6 +195,9 @@ func (h *Handlers) handleUpdateTask(w http.ResponseWriter, r *http.Request) {
 	}
 
 	today := app.Today(h.srv.TestMode)
+	// The tick-box is part of the form, so a form without it means "off"
+	// (gate 7.37); an unticked box sends nothing at all.
+	weekly := r.FormValue("repeat") == repeatWeekly
 	input := UpdateInput{
 		Title:     r.FormValue("title"),
 		Notes:     r.FormValue("notes"),
@@ -196,6 +205,7 @@ func (h *Handlers) handleUpdateTask(w http.ResponseWriter, r *http.Request) {
 		Stage:     r.FormValue("stage"),
 		DueDate:   format.NormaliseDate(r.FormValue("due_date"), today),
 		PersonIDs: personIDs,
+		Weekly:    &weekly,
 	}
 
 	// From the task window the form posts as a fragment: a saved edit answers
