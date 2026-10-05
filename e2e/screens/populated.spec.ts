@@ -21,7 +21,7 @@ async function signInAs(page: Page, baseURL: string, name: string): Promise<void
   await ready(page);
 }
 
-type Job = { title: string; stage: string; size?: string; due?: string; people?: string[]; notes?: string };
+type Job = { title: string; stage: string; size?: string; due?: string; people?: string[]; notes?: string; weekly?: boolean };
 
 async function addJob(page: Page, baseURL: string, job: Job): Promise<void> {
   await page.goto(baseURL + '/tasks/new');
@@ -34,6 +34,7 @@ async function addJob(page: Page, baseURL: string, job: Job): Promise<void> {
     await page.keyboard.press('Escape'); // close the date calendar (v1.3)
   }
   if (job.notes) await page.fill('#new-task-notes', job.notes);
+  if (job.weekly) await page.check('#new-task-repeat');
   if (job.people?.length) await page.selectOption('#new-task-people', job.people.map((label) => ({ label })));
   await page.click('.add-task-form button[type="submit"]');
   await ready(page);
@@ -92,6 +93,7 @@ test('@fresh screenshots: the screens in use, and the task window in each state'
     { title: 'Photocopy concert programmes', stage: 'todo', size: 'L', due: '05/12/2026' },
     { title: 'Move HelpScout articles', stage: 'done', size: 'M' },
     { title: 'Fix the kitchen tap sign', stage: 'done', size: 'S' },
+    { title: 'Empty the sharps bin', stage: 'todo', size: 'S', weekly: true, people: ['Priya'] },
   ] as Job[]) {
     await addJob(page, base, job);
   }
@@ -101,10 +103,25 @@ test('@fresh screenshots: the screens in use, and the task window in each state'
   await addSteps(page, base, 'Print exam papers', ['Print the papers', 'Staple each set', 'Count the sets per room', 'Put the sets in the exam hall', 'Email the invigilators', 'Check the spare copies', 'Lock up the copier room'], 3);
   await addSteps(page, base, 'Post September newsletter', ['Write the front page', 'Proofread', 'Post it'], 3);
 
+  // v1.4: "Post September newsletter" can't go out until the toner is ordered (a link, so
+  // WAITING shows on the Board, My jobs and Team); the Linked jobs section in the window.
+  await page.goto(base + '/tasks/board');
+  await ready(page);
+  const idOf = async (title: string) =>
+    (await page.locator('.task-card', { hasText: title }).locator('.task-card-title a').first().getAttribute('href'))!.replace('/tasks/', '');
+  const newsletter = await idOf('Post September newsletter');
+  const toner = await idOf('Order printer toner (HP 305A)');
+  await page.request.post(`${base}/tasks/${newsletter}/links`, { headers: { origin: base }, form: { other_id: toner, kind: 'first' }, maxRedirects: 0 });
+  await page.request.post(`${base}/tasks/${newsletter}/links`, {
+    headers: { origin: base },
+    form: { other_id: await idOf('Update Christmas card address list'), kind: 'related' },
+    maxRedirects: 0,
+  });
+
   // The Board, and the task window over it.
   await page.goto(base + '/tasks/board');
   await ready(page);
-  await shot(page, 'tasks-board-populated');
+  await shot(page, 'tasks-board-populated'); // (v1.4: with WEEKLY and WAITING stamps)
   // v1.3: the Board scrolled right to the bottom, sidebar and top bar still in view (gate 6.01, 6.41).
   await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
   await page.screenshot({ path: 'reports/screens/tasks-board-scrolled.png' });
@@ -138,6 +155,30 @@ test('@fresh screenshots: the screens in use, and the task window in each state'
   await page.getByRole('button', { name: 'Cancel' }).click();
   await page.getByRole('button', { name: 'Close' }).click();
   await expect(page.locator('#task-window')).toBeHidden();
+
+  // v1.4: the Linked jobs section in the window, and its picker.
+  await page.locator('.task-card-title a', { hasText: 'Post September newsletter' }).click();
+  await expect(page.locator('#task-window .task-links')).toBeVisible();
+  await page.locator('#task-window .task-links').scrollIntoViewIfNeeded();
+  await page.locator('#task-window .link-search input').fill('piano');
+  await expect(page.locator('#task-window .link-match-pick')).toHaveCount(1);
+  await page.locator('#task-window .link-results').scrollIntoViewIfNeeded();
+  await page.screenshot({ path: 'reports/screens/task-window-links.png' });
+  await page.getByRole('button', { name: 'Close' }).click();
+  await expect(page.locator('#task-window')).toBeHidden();
+
+  // v1.4: the message after removing a job, with Undo.
+  await page.locator('.task-card', { hasText: 'Fix the kitchen tap sign' }).getByRole('button', { name: /^Remove / }).click();
+  await expect(page.locator('#toast-region .toast')).toBeVisible();
+  await page.screenshot({ path: 'reports/screens/tasks-undo-message.png' });
+  await page.locator('#toast-region .toast').getByRole('button', { name: 'Undo' }).click();
+
+  // v1.4: the job search results.
+  await page.goto(base + '/tasks/search?q=printer');
+  await ready(page);
+  await shot(page, 'tasks-search-results');
+  await page.goto(base + '/tasks/board');
+  await ready(page);
 
   // The people menu on a card.
   await page.locator('.task-card', { hasText: 'Book piano tuner' }).locator('.people-menu-trigger').click();

@@ -163,8 +163,10 @@ Click **Tasks** in the left-hand list. Across the top there's a switch: **My job
 - **To take a job**, press **Take it**, or drag it from Up for grabs into your Up next list. Dragging puts it exactly where you drop it; **Take it** keeps the job's place in the priority order. Taking an idea moves it to To do.
 - If two people go for the same job at the same moment, the second person is told who got there first, and nothing changes for them.
 - **Start** moves a job to In progress, **Done** finishes it, and **Give back** takes you off a job you can't do — it returns to Up for grabs if nobody else is on it.
+- **To put your Up next jobs in order**, use the small **up and down arrows** on each one, or drag a job up or down. The top one is the one to do first.
+- **An idea you're on becomes a job** when you press **Move to To do** (or drag it into Up next). It goes to the bottom of To do, or exactly where you drop it. **Team** has the same **Move to To do** on every idea.
 
-The **Board** shows every job in four columns: **Ideas → To do → In progress → Done**. Press **+ Add task** (top right) to add a job: a window opens where you type the title and, if you like, a description, size, starting column, due date and people, then press **Add task**. Dates are typed day first, like **25/09/2026** — or just **25/9**, and Comp HQ picks the nearest year (in September 2026, 25/9 means 25 September 2026; 3/1 means 3 January 2027). Click a date box and a small calendar opens under it: press a day, **Today** or **This Saturday** to fill the box, or ignore it and keep typing. Every date box in Comp HQ works this way. In **To do**, the top of the column is the most important, and each card there carries its priority number.
+The **Board** shows every job in four columns: **Ideas → To do → In progress → Done**. Press **+ Add task** (top right) to add a job: a window opens where you type the title and, if you like, a description, size, starting column, due date and people, then press **Add task**. A new job starts in **To do** unless you pick another column. Dates are typed day first, like **25/09/2026** — or just **25/9**, and Comp HQ picks the nearest year (in September 2026, 25/9 means 25 September 2026; 3/1 means 3 January 2027). Click a date box and a small calendar opens under it: press a day, **Today** or **This Saturday** to fill the box, or ignore it and keep typing. Every date box in Comp HQ works this way. In **To do**, the top of the column is the most important, and each card there carries its priority number.
 
 Every card has three small icons, each with a tooltip that names the job:
 
@@ -172,9 +174,17 @@ Every card has three small icons, each with a tooltip that names the job:
 - the **bin** removes the job — it goes to **Removed tasks**, where **Restore** brings it back, so nothing is lost;
 - the **arrow curling back** (only on jobs you're on) is **Give back**: it takes *you* off the job and leaves anyone else on it. The job returns to Up for grabs only if nobody is left.
 
-Press the **little circles** (or **Assign** on a job nobody is on) to open a short list of names: pick a name to put that person on the job, pick a ticked name to take them off. Several people can be on one job. To move a card to another column without dragging, open **Move to…** at the bottom of the card.
+Press the **little circles** (or **Assign** on a job nobody is on) to open a short list of names: pick a name to put that person on the job, pick a ticked name to take them off. Several people can be on one job. The same circles are on **Team** and **My jobs**, and open the same list there. To move a card to another column without dragging, open **Move to…** at the bottom of the card.
 
 **Click a card's title** to open the job in a window, laid out to read: its description, who's on it, its size, column and due date. **Edit** turns it into the form; **History** at the foot (closed until you open it) lists who changed what. Escape, the **×**, **Cancel** or a click on the page behind closes the window and puts you back where you were, and if you've typed something it asks before it throws it away. Every job also has its own page (the same address, for example from a Calendar link), which does the same things. Jobs that have sat in Done for more than two weeks tuck away into **Finished tasks** (a link at the top of the Board), where **Reopen** brings one back. **Removed tasks** lists removed ones, where **Restore** brings them back. Nothing is ever permanently deleted.
+
+**Removed a job by mistake?** Right after you press the **bin**, a message at the bottom of the screen says **Removed "the job's title"** with an **Undo** button, and it stays for about ten seconds. **Undo** puts the job back exactly where it was, beside the job it sat next to, with its people, steps and links. After the message has gone, **Removed tasks** is still the way back (**Restore** puts it at the bottom of its column).
+
+**Finding a job.** On any Tasks page the search box at the top says **Search jobs**. Type a few letters of a title or of its description: matching jobs appear underneath, each showing its column, who's on it and its due date, and a job you finished is marked **Finished**. Press **Enter** to see all the results on a page of their own; **Search articles instead** under the results takes you to the Knowledge Base search. (The **Filter by word** box on the Board is a different thing: it narrows the columns in place.)
+
+**Weekly jobs.** For a job that comes round every week — "Empty the sharps bin", "Water the plants" — tick **Repeats every week (back in To do each Saturday)** when you add or edit it. Such a job carries a small **WEEKLY** stamp. You finish it as usual. At the start of each Saturday, a weekly job that is in **Done** goes back to the bottom of **To do**, due that Saturday (so it is in the Saturday Briefing), with its steps unticked. A weekly job you didn't finish is left alone and shows **OVERDUE**, so a missed week is never hidden. A weekly job never tucks away into Finished tasks. There is nothing to switch on and nothing to schedule: if the NAS was off over the weekend, the job goes back the first time Comp HQ is used afterwards. To stop a job repeating, untick the box.
+
+**Linked jobs, and WAITING.** Open a job and, under Steps, **Linked jobs** is where you say how it goes with another: type a few letters of the other job's title, pick it, and say what you mean — **That one first** (that job has to be finished before this one), **This one first** (this one has to be finished before that one), or **Related** (they belong together, in any order). The job shows them in three groups — **Do first**, **Then** and **Related** — and the other job shows the same link from its side. A job that has an unfinished **Do first** job carries an orange **WAITING** stamp on the Board, My jobs and Team; hover over it (or listen to it) and it says **Waiting on: Order toner**. It goes when that job is Done, and comes back if it is reopened. **WAITING is only a label**: anyone can still take, move, start or finish a waiting job. Press the small **bin** beside a link to unlink the two jobs. Comp HQ won't link a job to itself, link the same two jobs twice, make two jobs wait for each other (even by way of a third), give a job more than 20 links, or link to a job that has just been removed; it tells you which, and changes nothing. A removed job's links come back when it does, and a finished job keeps its links.
 
 The **Team** view has one column for each person, plus **Unassigned**, each showing that person's jobs and how much they have on. It's the quick way to see who can take on more. Drag a job onto someone else's column (or use **Assign to…**) to hand it over.
 
@@ -195,6 +205,18 @@ On the **Board**, **My jobs** and **Team**, a card whose job has steps carries a
 The **History** of a job records a step being added, renamed, removed or restored, but not every tick — each ticked step shows who ticked it right on the step. Steps are not in the Saturday Briefing. **Export everything** includes them as `steps.csv`.
 
 Without JavaScript (for example if a browser blocks it) every one of these still works as an ordinary form that reloads the page: a step's box is ticked and then saved with its **Update** button.
+
+## Using the Knowledge Base
+
+Click **Knowledge Base**. The home page has **New article**, **Categories** and **Archived** across the top. Below them each category is a tile showing its name, how many articles it holds, its first three articles and **All 6 articles →**; an empty category says **No articles yet** and offers a link to add one. **Recently updated** lists the ten articles changed most recently, with who changed them and when.
+
+**A category's page** shows a trail (**Knowledge Base › Office facts**), the category's name with its article count, and one row per article: the title, its opening words, and **Updated by Jo · Sat 12 Sep 2026**. **New article** on this page starts an article already filed in this category.
+
+**Putting articles in order.** Each row has **up and down arrows** and a handle to drag by; the order you choose is the order everyone sees, and the order the export lists them in. A new article goes to the bottom of its category. Editing an article no longer moves it, and putting articles in order is not an edit, so it adds nothing to an article's History and doesn't change **Recently updated**.
+
+**The editor** keeps a bar across the top, with the trail (where you choose the category), **Cancel** and **Publish**, and the row of formatting buttons under it; both stay in view however long the article gets. **Add row**, **Remove row**, **Add column** and **Remove column** appear when your cursor is inside a table. After **Import from Word** a message says what came across — **Came across: 2 headings, 1 list, 1 table, 3 pictures.** — and lists anything that couldn't, each one marked in the article with a red dashed box that says what it was and what to try.
+
+**Pictures from Word.** Every picture in a Word document comes across, including ones that sit beside the text or are grouped in a drawing. The exception is an old Windows drawing format (EMF or WMF, which some clip art, Visio drawings and pasted Excel charts use): browsers can't show those, so Comp HQ marks the place. The fix takes three clicks in Word: right-click the picture, choose **Save as Picture**, choose **PNG**, then drag the PNG into the article. A logo in a page header or footer isn't brought in either, and the message counts it.
 
 ## Using the Calendar
 
@@ -243,7 +265,7 @@ As with HelpScout, this is one way and one time. Only move cards that are still 
 
 ## Keeping a copy of your tasks and events
 
-**Settings → Export everything** now also includes three spreadsheets, `tasks.csv`, `events.csv` and `steps.csv` (every step of every job: who ticked it and when, and whether it was removed), that open straight in Excel with clear column names and readable dates (removed items are included and marked). The zip's own `index.html` is still the place to read your articles offline.
+**Settings → Export everything** now also includes four spreadsheets, `tasks.csv` (with a **Repeats** column for weekly jobs), `events.csv`, `steps.csv` (every step of every job: who ticked it and when, and whether it was removed) and `links.csv` (which jobs are linked, how, who linked them and whether the link was removed), that open straight in Excel with clear column names and readable dates (removed items are included and marked). The zip's own `index.html` is still the place to read your articles offline.
 
 ## Word samples
 

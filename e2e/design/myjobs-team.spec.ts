@@ -235,6 +235,7 @@ test('gates 4.48, 4.49: the Ideas group on My jobs and the Ideas heading on Team
 });
 
 test('standard page checks for My jobs and Team with cards', async ({ page, server, browser }) => {
+  test.setTimeout(90_000); // the container job is slower than the browser job (it took 35 s of 30 s)
   await seeded(page, browser, server.baseURL);
   for (const path of ['/tasks', '/tasks/team']) {
     await page.goto(server.baseURL + path);

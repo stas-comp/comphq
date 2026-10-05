@@ -290,6 +290,7 @@ for (const home of homes) {
     });
 
     test(`gate 5.16: a full list of 50 steps passes the accessibility check, and so does a rename (${home})`, async ({ page, server }) => {
+    test.setTimeout(90_000); // the container job is slower than the browser job (it took 33 s of 30 s)
       const { title } = await openJob(page, server.baseURL, home);
       const jobPath = await steps(page).getAttribute('data-task-id');
       for (let i = 1; i <= 50; i++) {

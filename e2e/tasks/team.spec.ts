@@ -34,6 +34,8 @@ function laneLocator(page: Page, name: string) {
 // SPEC gates 2.24/2.25/2.27/2.30: lane order and contents, grouping,
 // numbering, and workload blocks/text.
 test('Team view: lane order, grouping, numbering, and workload blocks', async ({ page, server, browser }) => {
+  // The container job runs this on a slower machine than the browser job, and a first run there took 33 s of the 30 s allowed.
+  test.setTimeout(90_000);
   const nameA = await signInAsNewPerson(page, server.baseURL, '/tasks/board');
   await ready(page);
 
