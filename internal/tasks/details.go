@@ -27,6 +27,9 @@ type UpdateInput struct {
 	Stage     string
 	DueDate   string // "" clears it
 	PersonIDs []int64
+	// Weekly turns the weekly repeat on or off; nil leaves it as it is
+	// (gates 7.30, 7.37).
+	Weekly *bool
 }
 
 // Update applies every change from the details page in one transaction,
@@ -145,6 +148,11 @@ func (s *Store) Update(ctx context.Context, taskID int64, input UpdateInput, act
 	}
 	if err := updateDoneAtForStageChange(ctx, tx, taskID, oldStage, input.Stage, nowStr); err != nil {
 		return err
+	}
+	if input.Weekly != nil {
+		if err := setWeeklyTx(ctx, tx, taskID, *input.Weekly, actorID, now); err != nil {
+			return err
+		}
 	}
 
 	if err := bumpTasksVersion(ctx, tx); err != nil {
@@ -305,6 +313,22 @@ func (s *Store) activityText(ctx context.Context, action, detail, actorName stri
 		return actorName + " restored this", nil
 	case "undone":
 		return actorName + " undid the removal", nil
+	case "repeat_on":
+		return actorName + " made this repeat every week", nil
+	case "repeat_off":
+		return actorName + " stopped this repeating", nil
+	case "weekly_reset":
+		// Nobody did this, so no person is named: it reads "Comp HQ put this
+		// back in To do for Sat 10 Oct (weekly)" (gate 7.36).
+		var d weeklyResetDetail
+		if err := json.Unmarshal([]byte(detail), &d); err != nil {
+			return "", err
+		}
+		day, err := time.Parse(dateLayout, d.For)
+		if err != nil {
+			return "", err
+		}
+		return "Comp HQ put this back in To do for " + day.Format("Mon 2 Jan") + " (weekly)", nil
 	case "moved":
 		var d movedDetail
 		if err := json.Unmarshal([]byte(detail), &d); err != nil {

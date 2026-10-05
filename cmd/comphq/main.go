@@ -76,7 +76,7 @@ func run() error {
 	// Sidebar order (SPEC A4): Briefing, Knowledge Base, Tasks, Calendar,
 	// Settings.
 	srv.Registry().Add(briefing.Section(srv,
-		briefingTasks{store: &tasks.Store{DB: srv.DB}},
+		briefingTasks{store: &tasks.Store{DB: srv.DB}, today: func() time.Time { return app.Today(cfg.TestMode) }},
 		briefingEvents{store: &calendar.Store{DB: srv.DB}}))
 	srv.Registry().Add(kb.Section(srv))
 	srv.Registry().Add(tasks.Section(srv))
@@ -134,6 +134,13 @@ func run() error {
 	// rollback and an upgrade again anything it created has no place yet.
 	if err := kb.RenumberAll(context.Background(), sqlDB); err != nil {
 		return fmt.Errorf("tidy article order: %w", err)
+	}
+
+	// SPEC B13.5, gate 7.35 (D-95): a weekly job that was Done when a Saturday
+	// came while Comp HQ was off goes back to To do now; the same reset runs at
+	// the top of every request that shows jobs.
+	if _, err := (&tasks.Store{DB: sqlDB}).ResetWeekly(context.Background(), app.Today(cfg.TestMode)); err != nil {
+		return fmt.Errorf("weekly reset: %w", err)
 	}
 
 	if cfg.TestMode {

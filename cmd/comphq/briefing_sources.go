@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"log"
 	"time"
 
 	"github.com/stas-comp/comphq/internal/briefing"
@@ -12,9 +13,27 @@ import (
 // briefingTasks adapts *tasks.Store to briefing.TaskSource (SPEC A8),
 // converting between each section's own shapes — like taskDeadlines,
 // this is the one place allowed to know about both sections (SPEC B2).
-type briefingTasks struct{ store *tasks.Store }
+type briefingTasks struct {
+	store *tasks.Store
+	// today is the app's own idea of today (app.Today), so the Saturday reset
+	// that runs before the Briefing reads jobs agrees with the rest of the app
+	// and with test mode's fixed date.
+	today func() time.Time
+}
+
+// resetWeekly runs the weekly reset (SPEC B13.5): the Briefing is one of the
+// places that shows jobs, and the reset must have caught up before it does.
+func (a briefingTasks) resetWeekly(ctx context.Context) {
+	if a.today == nil {
+		return
+	}
+	if _, err := a.store.ResetWeekly(ctx, a.today()); err != nil {
+		log.Printf("briefing: weekly reset: %v", err)
+	}
+}
 
 func (a briefingTasks) Tasks(ctx context.Context, dueOnOrBefore time.Time) ([]briefing.Task, error) {
+	a.resetWeekly(ctx)
 	rows, err := a.store.BriefingTasks(ctx, dueOnOrBefore)
 	if err != nil {
 		return nil, err
@@ -30,7 +49,10 @@ func (a briefingTasks) Tasks(ctx context.Context, dueOnOrBefore time.Time) ([]br
 	return out, nil
 }
 
-func (a briefingTasks) Version(ctx context.Context) (int64, error) { return a.store.Version(ctx) }
+func (a briefingTasks) Version(ctx context.Context) (int64, error) {
+	a.resetWeekly(ctx)
+	return a.store.Version(ctx)
+}
 
 // briefingEvents adapts *calendar.Store to briefing.EventSource.
 type briefingEvents struct{ store *calendar.Store }

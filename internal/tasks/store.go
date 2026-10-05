@@ -78,6 +78,8 @@ type CreateInput struct {
 	Stage     string // "" defaults to todo (gate 7.10, D-90)
 	DueDate   string // "" for none
 	PersonIDs []int64
+	// Weekly makes it a weekly job from the start (gates 7.30, 7.31).
+	Weekly bool
 }
 
 func validSize(size string) bool {
@@ -175,6 +177,11 @@ func (s *Store) Create(ctx context.Context, input CreateInput, creatorID int64, 
 		id, creatorID, nowStr,
 	); err != nil {
 		return Task{}, err
+	}
+	if input.Weekly {
+		if err := setWeeklyTx(ctx, tx, id, true, creatorID, now); err != nil {
+			return Task{}, err
+		}
 	}
 	if err := bumpTasksVersion(ctx, tx); err != nil {
 		return Task{}, err
@@ -388,7 +395,7 @@ func (s *Store) ListBoard(ctx context.Context, today time.Time, filter BoardFilt
 		SELECT id, title, notes, size, stage, position, due_date, done_at
 		FROM tasks
 		WHERE removed_at IS NULL
-		  AND NOT (stage = 'done' AND done_at IS NOT NULL AND done_at < ?)
+		  AND NOT (stage = 'done' AND done_at IS NOT NULL AND done_at < ? AND repeat <> 'weekly')
 	`
 	args := []any{cutoff}
 	if filter.PersonID != 0 {

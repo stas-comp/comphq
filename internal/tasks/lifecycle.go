@@ -15,6 +15,7 @@ func (s *Store) ListFinished(ctx context.Context, today time.Time) ([]Task, erro
 		SELECT id, title, notes, size, stage, position, due_date, done_at
 		FROM tasks
 		WHERE removed_at IS NULL AND stage = 'done' AND done_at IS NOT NULL AND done_at < ?
+		  AND repeat <> 'weekly'
 		ORDER BY done_at DESC
 	`, cutoff)
 }
