@@ -313,6 +313,16 @@ func (s *Store) activityText(ctx context.Context, action, detail, actorName stri
 		return actorName + " restored this", nil
 	case "undone":
 		return actorName + " undid the removal", nil
+	case "linked", "unlinked":
+		var d linkDetail
+		if err := json.Unmarshal([]byte(detail), &d); err != nil {
+			return "", err
+		}
+		meaning := map[string]string{LinkFirst: "do first", LinkThen: "then", LinkRelated: "related"}[d.Kind]
+		if action == "unlinked" {
+			return actorName + " removed the link to “" + d.OtherTitle + "” (" + meaning + ")", nil
+		}
+		return actorName + " linked this to “" + d.OtherTitle + "” (" + meaning + ")", nil
 	case "repeat_on":
 		return actorName + " made this repeat every week", nil
 	case "repeat_off":

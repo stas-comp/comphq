@@ -24,19 +24,21 @@ type Handlers struct {
 	tasks    CSVSource
 	events   CSVSource
 	steps    CSVSource
+	links    CSVSource
 	srv      *app.Server
 	people   *people.Store
 	articles *kb.ArticleStore
 	images   *images.Store
 }
 
-func Section(srv *app.Server, tasksCSV, eventsCSV, stepsCSV CSVSource) app.Section {
+func Section(srv *app.Server, tasksCSV, eventsCSV, stepsCSV, linksCSV CSVSource) app.Section {
 	imagesStore := &images.Store{DB: srv.DB, DataDir: srv.DataDir}
 	h := &Handlers{
 		srv:      srv,
 		tasks:    tasksCSV,
 		events:   eventsCSV,
 		steps:    stepsCSV,
+		links:    linksCSV,
 		people:   srv.PeopleStore(),
 		articles: &kb.ArticleStore{DB: srv.DB, Images: imagesStore},
 		images:   imagesStore,

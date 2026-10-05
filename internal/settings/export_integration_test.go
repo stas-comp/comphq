@@ -51,7 +51,7 @@ func newTestServer(t *testing.T) (*httptest.Server, *sql.DB) {
 		t.Fatalf("NewServer: %v", err)
 	}
 	srv.Registry().Add(kb.Section(srv))
-	srv.Registry().Add(Section(srv, fakeCSV{{"Title", "Column"}, {"Fix printer", "To do"}}, fakeCSV{{"Title", "Date"}, {"Café night", "Sat 19 Sep 2026"}}, fakeCSV{{"Job", "Step"}, {"Fix printer", "Order toner"}}))
+	srv.Registry().Add(Section(srv, fakeCSV{{"Title", "Column"}, {"Fix printer", "To do"}}, fakeCSV{{"Title", "Date"}, {"Café night", "Sat 19 Sep 2026"}}, fakeCSV{{"Job", "Step"}, {"Fix printer", "Order toner"}}, fakeCSV{{"Job", "Linked job", "Link"}, {"Order toner", "Print newsletter", "do first"}}))
 
 	ts := httptest.NewServer(srv.Routes())
 	t.Cleanup(ts.Close)
@@ -160,6 +160,7 @@ func TestExportHTTPZipContainsIndexArticlesAndDatabase(t *testing.T) {
 		"tasks.csv",
 		"events.csv",
 		"steps.csv",
+		"links.csv", // gate 7.48
 		"articles/Printers/Changing the toner.html",
 		"articles/_Archived/Old policy.html",
 	} {
@@ -190,6 +191,7 @@ func TestExportHTTPZipContainsIndexArticlesAndDatabase(t *testing.T) {
 		"tasks.csv":  "Title,Column\r\nFix printer,To do\r\n",
 		"events.csv": "Title,Date\r\nCafé night,Sat 19 Sep 2026\r\n",
 		"steps.csv":  "Job,Step\r\nFix printer,Order toner\r\n",
+		"links.csv":  "Job,Linked job,Link\r\nOrder toner,Print newsletter,do first\r\n",
 	} {
 		f, err := zr.Open(name)
 		if err != nil {
