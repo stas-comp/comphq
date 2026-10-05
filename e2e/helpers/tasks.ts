@@ -21,3 +21,29 @@ export async function openTaskPage(page: Page, title: string): Promise<void> {
   await page.goto(new URL(href, page.url()).href);
   await ready(page);
 }
+
+/** The signed-in person's id, from their cookie. */
+export async function myPersonID(page: Page, baseURL: string): Promise<string> {
+  const cookie = (await page.context().cookies(baseURL)).find((c) => c.name === 'comphq_person');
+  if (!cookie) throw new Error('not signed in');
+  return cookie.value;
+}
+
+/**
+ * Makes jobs straight through the form's own endpoint (much quicker than
+ * the window for a long column). They are all on `personID` when given.
+ */
+export async function seedJobs(
+  page: Page,
+  baseURL: string,
+  titles: string[],
+  stage: 'idea' | 'todo' | 'doing' | 'done',
+  personID?: string,
+): Promise<void> {
+  for (const title of titles) {
+    const form: Record<string, string> = { title, stage };
+    if (personID) form.person_id = personID;
+    const res = await page.request.post(baseURL + '/tasks', { form, headers: { origin: baseURL }, maxRedirects: 0 });
+    if (res.status() >= 400) throw new Error(`could not make job ${title}: ${res.status()}`);
+  }
+}

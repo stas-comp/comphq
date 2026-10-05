@@ -12,9 +12,8 @@ document.addEventListener('refresh:applied', initSortable)
 
 function initSortable() {
   document.querySelectorAll('.task-card-list').forEach((list) => {
-    Sortable.create(list, {
+    comphqSortable(list, {
       group: 'tasks',
-      animation: 150,
       // Clicking a move button or the "Move to…" select inside a card
       // must never be mistaken for the start of a drag.
       filter: 'button, select',
@@ -44,9 +43,8 @@ function computeMoveParams(item) {
   return { to_bottom: '1' }
 }
 
-// Calls the move endpoint, then re-renders the whole board from its
-// response (a full server-rendered page, since the endpoint redirects
-// there) rather than guessing the new state client-side — positions,
+// Calls the move endpoint, then re-renders the whole board from the
+// server (the page we are on, filter included) rather than guessing the new state client-side — positions,
 // disabled move buttons and everything else stay exactly what the
 // server actually computed.
 async function handleDrop(item) {
@@ -54,18 +52,16 @@ async function handleDrop(item) {
   const taskId = item.dataset.taskId
   const params = new URLSearchParams({ stage, ...computeMoveParams(item) })
 
-  const res = await fetch(`/tasks/${taskId}/move`, {
+  await fetch(`/tasks/${taskId}/move`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: params.toString(),
+    redirect: 'manual',
   })
-  const html = await res.text()
-  const newBoard = new DOMParser().parseFromString(html, 'text/html').querySelector('.task-board')
-  const oldBoard = document.querySelector('.task-board')
-  if (newBoard && oldBoard) {
-    oldBoard.replaceWith(newBoard)
-    initSortable()
-  }
+  // The move endpoint redirects to the bare Board, which would swap in the
+  // unfiltered cards. Re-fetch the page we are on instead, query string and
+  // all, so a filter in use stays applied (gate 7.14).
+  await replaceBoardFromPage()
 }
 
 

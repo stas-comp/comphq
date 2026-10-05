@@ -12,9 +12,8 @@ document.addEventListener('refresh:applied', initMyJobsSortable)
 function initMyJobsSortable() {
   const upNext = document.querySelector('.myjobs-upnext-list')
   if (upNext) {
-    Sortable.create(upNext, {
+    comphqSortable(upNext, {
       group: 'myjobs-take',
-      animation: 150,
       draggable: '.team-task', // not the "Drop a job here" box at the foot
       filter: 'button',
       preventOnFilter: false,
@@ -24,9 +23,8 @@ function initMyJobsSortable() {
   }
   const grabs = document.querySelector('.myjobs-grabs-list')
   if (grabs) {
-    Sortable.create(grabs, {
+    comphqSortable(grabs, {
       group: { name: 'myjobs-take', put: false },
-      animation: 150,
       filter: 'button',
       preventOnFilter: false,
       onStart: () => { document.body.dataset.refreshBusy = '1' },

@@ -12,9 +12,8 @@ function initTeamSortable() {
   document.querySelectorAll('.team-lane').forEach((lane) => {
     const upNext = lane.querySelector('.team-up-next-list')
     if (upNext) {
-      Sortable.create(upNext, {
+      comphqSortable(upNext, {
         group: 'team-assign',
-        animation: 150,
         filter: 'button, select',
         preventOnFilter: false,
         onStart: () => { document.body.dataset.refreshBusy = '1' },
@@ -23,9 +22,8 @@ function initTeamSortable() {
     }
     const working = lane.querySelector('.team-working-list')
     if (working) {
-      Sortable.create(working, {
+      comphqSortable(working, {
         group: 'team-assign',
-        animation: 150,
         // Working on now isn't reorderable (SPEC B4 only describes
         // reordering Up next) — this only ever leaves this list to
         // another lane (an assign), never reshuffles within it.
