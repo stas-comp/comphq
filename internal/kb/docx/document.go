@@ -148,11 +148,15 @@ type parsedDocument struct {
 // text box's own recursive parseBlocks call shares the same running
 // state as the top-level one, rather than starting fresh.
 type docCtx struct {
-	styles         styleSheet
-	hyperlinkRels  map[string]string
-	resolvedImages map[string]resolvedImage
-	images         []Image
-	imageCounter   int
+	styles        styleSheet
+	hyperlinkRels map[string]string
+	// resolveImage reads and sniffs the picture a relationship id points at,
+	// the first time it is asked for, and remembers the answer by target: a
+	// picture that is never referenced is never read, and one used twice is
+	// read once (B13.9 item 8).
+	resolveImage func(relID string) resolvedImage
+	images       []Image
+	imageCounter int
 }
 
 // resolveDrawingSegment turns a decoded <w:drawing> into a segment: a
@@ -195,12 +199,15 @@ func (ctx *docCtx) resolveDrawingSegment(raw drawingXML) segment {
 // "picture" placeholder, never included as image bytes (SPEC B4: "never
 // fetched").
 func (ctx *docCtx) resolvePictureSegment(relID, alt string) segment {
-	resolved, ok := ctx.resolvedImages[relID]
-	if !ok || !resolved.supported {
+	resolved := ctx.resolveImage(relID)
+	if !resolved.supported {
 		return segment{kind: segMedia, missingKind: "picture"}
 	}
 	ctx.imageCounter++
-	token := "cid:docximage" + strconv.Itoa(ctx.imageCounter)
+	// The end marker matters: without it the token for picture 1 is the start
+	// of the token for pictures 10-19, and replacing one rewrites the other
+	// (gate 7.60).
+	token := "cid:docximage-" + strconv.Itoa(ctx.imageCounter) + "-end"
 	ctx.images = append(ctx.images, Image{Token: token, Bytes: resolved.bytes, Alt: alt})
 	return segment{kind: segMedia, imageToken: token, imageAlt: alt}
 }

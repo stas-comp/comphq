@@ -243,7 +243,7 @@ func extractTitle(blocks []block, styles styleSheet, filename string) (string, [
 		}
 		p := b.paragraph
 		if styles.isTitleStyle(p.styleID) && strings.TrimSpace(p.plainText()) != "" {
-			return strings.TrimSpace(p.plainText()), removeBlockAt(blocks, i)
+			return strings.TrimSpace(p.plainText()), removeTitleBlock(blocks, i)
 		}
 	}
 	for i, b := range blocks {
@@ -253,10 +253,29 @@ func extractTitle(blocks []block, styles styleSheet, filename string) (string, [
 		p := b.paragraph
 		tag, isHeading := styles.headingLevel(p.styleID, p.directOutlineLvl)
 		if isHeading && tag == "h2" && strings.TrimSpace(p.plainText()) != "" {
-			return strings.TrimSpace(p.plainText()), removeBlockAt(blocks, i)
+			return strings.TrimSpace(p.plainText()), removeTitleBlock(blocks, i)
 		}
 	}
 	return titleFromFilename(filename), blocks
+}
+
+// removeTitleBlock takes the title paragraph out of the body, but not what
+// else was in it: a picture (or a placeholder for one) sitting in the title's
+// own paragraph, such as a logo, is kept, in a paragraph of its own at the top
+// of the body (gate 7.63, B13.9 item 6). Only its text becomes the title.
+func removeTitleBlock(blocks []block, i int) []block {
+	var kept []segment
+	for _, seg := range blocks[i].paragraph.segments {
+		if seg.kind == segMedia {
+			kept = append(kept, seg)
+		}
+	}
+	out := removeBlockAt(blocks, i)
+	if len(kept) == 0 {
+		return out
+	}
+	top := block{kind: blockParagraph, paragraph: paragraph{segments: kept}}
+	return append([]block{top}, out...)
 }
 
 func removeBlockAt(blocks []block, i int) []block {

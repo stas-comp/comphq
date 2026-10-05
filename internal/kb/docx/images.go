@@ -2,6 +2,7 @@ package docx
 
 import (
 	"net/http"
+	"net/url"
 	"path"
 	"strings"
 )
@@ -111,6 +112,20 @@ func (p *pkgReader) mediaRelationships(mainPart string) (map[string]mediaRelatio
 // regardless of host OS), refusing anything that climbs above that
 // directory's own root.
 func resolveRelativeTarget(basePart, target string) (string, bool) {
+	// Other programs spell targets in ways Word doesn't (gate 7.62, B13.9
+	// item 5): percent-encoded ("my%20picture.png"), and absolute from the
+	// package root ("/word/media/x.png"). Part names are matched without
+	// regard to case by the reader (OPC part names are case-insensitive).
+	if decoded, err := url.PathUnescape(target); err == nil {
+		target = decoded
+	}
+	if strings.HasPrefix(target, "/") {
+		resolved := path.Clean(strings.TrimLeft(target, "/"))
+		if resolved == ".." || strings.HasPrefix(resolved, "../") || resolved == "." {
+			return "", false
+		}
+		return resolved, true
+	}
 	dir := "."
 	if i := strings.LastIndexByte(basePart, '/'); i >= 0 {
 		dir = basePart[:i]

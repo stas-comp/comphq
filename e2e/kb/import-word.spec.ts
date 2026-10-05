@@ -262,6 +262,51 @@ test('a 20-page document with 10 pictures is in the editor within 10 seconds', a
   expect(elapsed, `import took ${elapsed}ms, want <= 10000ms`).toBeLessThanOrEqual(10_000);
 });
 
+// SPEC gates 7.60, 7.62, 7.63, 7.68 (B13.9): every picture comes across.
+async function importAndCountPictures(page: Page, baseURL: string, fixture: string) {
+  await signInAsNewPerson(page, baseURL, '/kb');
+  const category = uniqueName('Pictures');
+  await createCategory(page, baseURL, category);
+  await goToNewArticleIn(page, baseURL, category);
+  await importViaButton(page, path.join(FIXTURES_DIR, fixture));
+  await expect(page.locator('#article-title')).not.toHaveValue('', { timeout: 15_000 });
+  return page.locator('#article-editor .ProseMirror img');
+}
+
+test('gate 7.60: a document with 25 different pictures shows all 25, each loaded, and no placeholder', async ({ page, server }) => {
+  const imgs = await importAndCountPictures(page, server.baseURL, 'pictures-25.docx');
+  await expect(imgs).toHaveCount(25);
+  // Every address is different and every picture really loads (at v1.3 the 10th on were broken).
+  const state = () =>
+    imgs.evaluateAll((els) =>
+      els.map((el) => ({ src: (el as HTMLImageElement).src, ok: (el as HTMLImageElement).complete && (el as HTMLImageElement).naturalWidth > 0 })),
+    );
+  await expect.poll(async () => (await state()).filter((l) => !l.ok).length, { timeout: 15_000 }).toBe(0);
+  expect(new Set((await state()).map((l) => l.src)).size).toBe(25);
+  await expect(page.locator('#article-editor .ProseMirror [data-missing-kind]')).toHaveCount(0);
+  // The message names nothing that was left out.
+  await expect(page.locator('#editor-message')).not.toContainText("couldn't be brought in");
+});
+
+test('gate 7.62: pictures stored under unusual names come across', async ({ page, server }) => {
+  const imgs = await importAndCountPictures(page, server.baseURL, 'pictures-oddnames.docx');
+  await expect(imgs).toHaveCount(3);
+  await expect(page.locator('#article-editor .ProseMirror [data-missing-kind]')).toHaveCount(0);
+});
+
+test('gate 7.63: a picture in the title paragraph is kept at the top of the article', async ({ page, server }) => {
+  const imgs = await importAndCountPictures(page, server.baseURL, 'picture-in-title.docx');
+  await expect(imgs).toHaveCount(2);
+  await expect(page.locator('#article-title')).toHaveValue('Quarterly report');
+  // The first picture comes before the first words of the body.
+  const imageFirst = await page.locator('#article-editor .ProseMirror').evaluate((el) => {
+    const img = el.querySelector('img');
+    const words = Array.from(el.querySelectorAll('p')).find((p) => (p.textContent || '').includes('Some words'));
+    return !!img && !!words && !!(img.compareDocumentPosition(words) & Node.DOCUMENT_POSITION_FOLLOWING);
+  });
+  expect(imageFirst).toBe(true);
+});
+
 // Optional: the owner's own real documents, per PLAN.md P1-33 — imports
 // without error, produces at least one block, and every picture is local.
 const samplesDir = path.join(__dirname, '..', '..', 'samples', 'word');

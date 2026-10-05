@@ -10,6 +10,7 @@ import (
 	"archive/zip"
 	"errors"
 	"io"
+	"strings"
 )
 
 // Limits from SPEC B4 "Import from Word".
@@ -110,12 +111,23 @@ func Convert(r io.ReaderAt, size int64, filename string) (Result, error) {
 	if err != nil {
 		return Result{}, err
 	}
-	resolvedImages := make(map[string]resolvedImage, len(mediaRels))
-	for relID, rel := range mediaRels {
-		resolvedImages[relID] = pkg.resolveImage(rel)
+	// Pictures are read only when the document refers to them, and each target
+	// once, however many places use it (B13.9 item 8).
+	byTarget := map[string]resolvedImage{}
+	resolveImage := func(relID string) resolvedImage {
+		rel, ok := mediaRels[relID]
+		if !ok || rel.external {
+			return resolvedImage{}
+		}
+		if r, done := byTarget[rel.target]; done {
+			return r
+		}
+		r := pkg.resolveImage(rel)
+		byTarget[rel.target] = r
+		return r
 	}
 
-	ctx := &docCtx{styles: sheet, hyperlinkRels: hyperlinkRels, resolvedImages: resolvedImages}
+	ctx := &docCtx{styles: sheet, hyperlinkRels: hyperlinkRels, resolveImage: resolveImage}
 
 	parsed, err := parseBlocks(docXML, ctx)
 	if err != nil {
@@ -143,6 +155,15 @@ type pkgReader struct {
 func (p *pkgReader) findFile(name string) *zip.File {
 	for _, f := range p.zr.File {
 		if f.Name == name {
+			return f
+		}
+	}
+	// OPC part names are case-insensitive: a relationship may say
+	// "media/image1.png" for a part stored as "word/media/IMAGE1.PNG"
+	// (gate 7.62). An exact match always wins; the first case-insensitive
+	// one is the fallback.
+	for _, f := range p.zr.File {
+		if strings.EqualFold(f.Name, name) {
 			return f
 		}
 	}

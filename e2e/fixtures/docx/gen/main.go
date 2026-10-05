@@ -32,6 +32,8 @@ func main() {
 	must(writeGoogleDocsDocx(filepath.Join(outDir, "googledocs.docx")))
 	must(writeBig20PagesDocx(filepath.Join(outDir, "big-20pages.docx")))
 
+	must(writePictureFixtures(outDir))
+
 	must(writeBadFixtures(badDir))
 
 	fmt.Println("wrote docx fixtures to", outDir)

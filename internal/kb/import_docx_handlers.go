@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"regexp"
 	"strings"
 
 	"github.com/stas-comp/comphq/internal/kb/docx"
@@ -66,15 +67,19 @@ func (h *Handlers) handleImportDocx(w http.ResponseWriter, r *http.Request) {
 	}
 
 	bodyHTML := result.HTML
+	notes := result.Notes
 	for _, img := range result.Images {
 		stored, err := h.images.Save(r.Context(), bytes.NewReader(img.Bytes), person.ID)
 		if err != nil {
-			// Leaving the token in place means Sanitize (which drops any
-			// img not already under /images/) removes this one picture
-			// rather than the whole import failing over it.
+			// A picture that can't be saved must not vanish: it is marked in
+			// its place, like one that can't be read, and counted in the
+			// message (gate 7.64, B13.9 item 7). Before v1.4 the token was
+			// left behind and the sanitiser silently dropped the picture.
+			bodyHTML = replaceImgWithPlaceholder(bodyHTML, img.Token)
+			notes = append(notes, "a picture")
 			continue
 		}
-		bodyHTML = strings.ReplaceAll(bodyHTML, img.Token, "/images/"+stored.SHA256+"."+stored.Ext)
+		bodyHTML = strings.ReplaceAll(bodyHTML, `src="`+img.Token+`"`, `src="/images/`+stored.SHA256+"."+stored.Ext+`"`)
 	}
 
 	sanitized := kbhtml.Sanitize(bodyHTML)
@@ -83,6 +88,13 @@ func (h *Handlers) handleImportDocx(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]any{
 		"title": result.Title,
 		"html":  sanitized,
-		"notes": result.Notes,
+		"notes": notes,
 	})
+}
+
+// replaceImgWithPlaceholder swaps the <img> that carries token for the red
+// dashed "picture" box (SPEC B4, gate 1.49).
+func replaceImgWithPlaceholder(html, token string) string {
+	re := regexp.MustCompile(`<img src="` + regexp.QuoteMeta(token) + `"[^>]*>`)
+	return re.ReplaceAllString(html, `<div data-missing-kind="picture"></div>`)
 }
