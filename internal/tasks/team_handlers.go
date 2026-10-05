@@ -35,6 +35,7 @@ func (h *Handlers) handleTeam(w http.ResponseWriter, r *http.Request) {
 	me, today := currentPersonID(r), app.Today(h.srv.TestMode)
 	for i := range lanes {
 		lanes[i].Decorate(me, today)
+		lanes[i].UsePeopleMenu("team")
 	}
 	h.srv.RenderFrame(w, r, http.StatusOK, "tasks-team.html", "Team", teamPageData{
 		CurrentView: "team",

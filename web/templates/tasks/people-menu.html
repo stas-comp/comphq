@@ -6,14 +6,14 @@ Board itself stays light however many people there are. A name that is on
 the job takes them off (from_person), one that isn't puts them on
 (to_person); everyone else on the job is untouched. */}}
 {{define "tasks-people-trigger"}}
-<a class="people-menu-trigger" href="/tasks/{{.ID}}/people" aria-label="People on {{.Title}}" aria-haspopup="true" aria-expanded="false">
+<a class="people-menu-trigger" href="/tasks/{{.ID}}/people{{if and .PeopleRedirect (ne .PeopleRedirect "board")}}?redirect_to={{.PeopleRedirect}}{{end}}" aria-label="People on {{.Title}}" aria-haspopup="true" aria-expanded="false">
 {{if .Assignees}}{{template "part-people" .Assignees}}{{else}}<span class="people-menu-empty">Assign</span>{{end}}
 </a>
 {{end}}
 
 {{define "tasks-people-panel"}}
-<form method="post" action="/tasks/{{.ID}}/assign" class="people-menu-panel board-action">
-<input type="hidden" name="redirect_to" value="board">
+<form method="post" action="/tasks/{{.ID}}/assign" class="people-menu-panel">
+<input type="hidden" name="redirect_to" value="{{.RedirectTo}}">
 <p class="people-menu-heading">Who is on this job?</p>
 {{range .PeopleChoices}}
 <button class="mini people-menu-item" type="submit" name="{{if .On}}from_person{{else}}to_person{{end}}" value="{{.ID}}" aria-pressed="{{if .On}}true{{else}}false{{end}}">
@@ -24,7 +24,7 @@ the job takes them off (from_person), one that isn't puts them on
 {{end}}
 
 {{define "tasks-people.html"}}
-<p><a href="/tasks/board">Back to Board</a></p>
+<p><a href="{{.BackHref}}">{{.BackLabel}}</a></p>
 <h1>People</h1>
 <p>{{.Title}}</p>
 <div class="people-page">

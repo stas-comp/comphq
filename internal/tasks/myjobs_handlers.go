@@ -50,11 +50,14 @@ func (h *Handlers) renderMyJobs(w http.ResponseWriter, r *http.Request, status i
 	today := app.Today(h.srv.TestMode)
 	views := make([]simpleCardView, 0, len(grabs))
 	for _, t := range grabs {
-		views = append(views, newSimpleCardView(t, person.ID, today))
+		v := newSimpleCardView(t, person.ID, today)
+		v.PeopleRedirect = "myjobs"
+		views = append(views, v)
 	}
 
 	lane := LaneForPerson(teamTasks, person)
 	lane.Decorate(person.ID, today)
+	lane.UsePeopleMenu("myjobs")
 	h.srv.RenderFrame(w, r, status, "tasks-myjobs.html", "Tasks", myJobsPageData{
 		WindowClose: app.NewIconButton(app.IconClose, "", false),
 		Initials:    lane.Initials,

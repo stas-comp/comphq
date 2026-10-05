@@ -50,6 +50,7 @@ type boardPageData struct {
 // for style-src (or default-src, which style-src falls back to), so an
 // inline background-color would be silently dropped rather than applied.
 type assigneeView struct {
+	PersonID   int64
 	Name       string
 	Initials   string
 	ColorClass string
@@ -81,6 +82,8 @@ type cardView struct {
 	Done      bool
 	Rank      int // 1-based priority number; only To do cards have one (gate 4.16)
 	Assignees []assigneeView
+	// PeopleRedirect is which screen the people list returns to ("board").
+	PeopleRedirect string
 	// OnIt is whether the person using the app is on this job: only they
 	// get the give-back button (gate 4.19). MeID is who that is.
 	OnIt        bool
@@ -117,6 +120,7 @@ func newCardView(t Task, meID int64, today time.Time) cardView {
 	views := make([]assigneeView, 0, len(t.Assignees))
 	for _, a := range t.Assignees {
 		views = append(views, assigneeView{
+			PersonID:   a.PersonID,
 			Name:       a.Name,
 			Initials:   InitialsFor(a.Name),
 			ColorClass: AvatarClass(a.PersonID, meID),
@@ -141,7 +145,7 @@ func newCardView(t Task, meID int64, today time.Time) cardView {
 	return cardView{
 		ID: t.ID, Title: t.Title, Size: t.Size, SizeLabel: sizeLabels[t.Size], Stage: t.Stage,
 		DueDate: t.DueDate, DueLabel: dueLabel, Overdue: t.Overdue, Done: t.Stage == StageDone,
-		Assignees: views, OnIt: meID != 0 && onJob[meID], MeID: meID,
+		Assignees: views, PeopleRedirect: "board", OnIt: meID != 0 && onJob[meID], MeID: meID,
 		OtherStages: otherStages,
 		StepsTotal:  t.StepsTotal, StepsDone: t.StepsDone,
 	}

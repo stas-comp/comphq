@@ -65,12 +65,11 @@ async function handleDrop(item) {
 }
 
 
-// Remove, give back and the people menu each post to their own endpoint
-// from a plain form (SPEC gates 4.18-4.20), so they work with no script at
-// all. With script, the board changes in place instead: post the form, then
-// re-fetch the page you are on (keeping any filter) and swap in the fresh
-// board — and keep the people menu open on its card, so several names can
-// be picked in a row.
+// Remove and give back each post to their own endpoint from a plain form
+// (SPEC gates 4.18, 4.19), so they work with no script at all. With script,
+// the board changes in place instead: post the form, then re-fetch the page
+// you are on (keeping any filter) and swap in the fresh board. The people
+// circles and their menu are in people-menu.js, shared with Team and My jobs.
 //
 // replaceBoardFromPage is also how the task window refreshes the board after
 // it saves (window.js).
@@ -84,7 +83,7 @@ async function replaceBoardFromPage() {
   initSortable()
 }
 
-async function swapBoardAfter(form, submitter, menuTaskId) {
+async function swapBoardAfter(form, submitter) {
   await fetch(form.action, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -92,10 +91,6 @@ async function swapBoardAfter(form, submitter, menuTaskId) {
     redirect: 'manual',
   })
   await replaceBoardFromPage()
-  if (menuTaskId) {
-    const trigger = document.querySelector(`.task-card[data-task-id="${menuTaskId}"] .people-menu-trigger`)
-    if (trigger) await openPeopleMenu(trigger)
-  }
 }
 
 document.addEventListener('submit', async (event) => {
@@ -103,69 +98,9 @@ document.addEventListener('submit', async (event) => {
   if (!(form instanceof HTMLFormElement) || !form.classList.contains('board-action')) return
   if (!form.closest('.task-board')) return
   event.preventDefault()
-  const card = form.closest('.task-card')
-  const menuTaskId = form.closest('.people-menu') && card ? card.dataset.taskId : null
   try {
-    await swapBoardAfter(form, event.submitter, menuTaskId)
+    await swapBoardAfter(form, event.submitter)
   } catch (err) {
     form.submit() // the plain form does the same job
   }
-})
-
-// The people circles are a link to a page listing everyone. With script the
-// same list is fetched as a fragment and shown as a menu beside the circles;
-// clicking them again, pressing Escape, or clicking elsewhere closes it and
-// puts the keyboard back on the circles.
-function closePeopleMenus(exceptTrigger) {
-  document.querySelectorAll('.task-board .people-menu-panel').forEach((panel) => {
-    const holder = panel.closest('.people-menu')
-    const trigger = holder && holder.querySelector('.people-menu-trigger')
-    if (trigger === exceptTrigger) return
-    panel.remove()
-    if (trigger) trigger.setAttribute('aria-expanded', 'false')
-  })
-}
-
-async function openPeopleMenu(trigger) {
-  closePeopleMenus(trigger)
-  const holder = trigger.closest('.people-menu')
-  if (!holder) return
-  const path = new URL(trigger.getAttribute('href'), location.href).pathname
-  const res = await fetch(path + '?fragment=1')
-  if (!res.ok) throw new Error('could not load the people menu')
-  holder.querySelectorAll('.people-menu-panel').forEach((p) => p.remove())
-  holder.insertAdjacentHTML('beforeend', await res.text())
-  trigger.setAttribute('aria-expanded', 'true')
-  const first = holder.querySelector('.people-menu-item')
-  if (first) first.focus()
-}
-
-document.addEventListener('click', async (event) => {
-  const target = event.target instanceof Element ? event.target : null
-  if (!target) return
-  const trigger = target.closest('.task-board .people-menu-trigger')
-  if (trigger) {
-    if (event.metaKey || event.ctrlKey || event.shiftKey) return // let "open in a new tab" through
-    event.preventDefault()
-    if (trigger.getAttribute('aria-expanded') === 'true') {
-      closePeopleMenus(null)
-    } else {
-      try {
-        await openPeopleMenu(trigger)
-      } catch (err) {
-        window.location.href = trigger.getAttribute('href') // the page does the same job
-      }
-    }
-    return
-  }
-  if (!target.closest('.people-menu-panel')) closePeopleMenus(null)
-})
-
-document.addEventListener('keydown', (event) => {
-  if (event.key !== 'Escape') return
-  const open = document.querySelector('.task-board .people-menu-panel')
-  if (!open) return
-  const trigger = open.closest('.people-menu').querySelector('.people-menu-trigger')
-  closePeopleMenus(null)
-  if (trigger) trigger.focus()
 })

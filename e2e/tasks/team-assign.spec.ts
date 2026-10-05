@@ -160,7 +160,10 @@ testToday('@fresh gate 2.28: drag assigns from Unassigned to a person, and from 
 });
 
 // SPEC gate 2.28: "An 'Assign to…' button does the same without dragging."
-test('gate 2.28: the Assign to… button assigns the same way as dragging', async ({ page, server, browser }) => {
+// As gate 7.06 changes it (D-92, a planned correction, not a weakened test):
+// the button is the Board's people circles, which open the people list. Naming
+// a person there puts them on the job, here from the Unassigned lane.
+test('gate 2.28 (as changed by 7.06, D-92): the people list assigns the same way as dragging', async ({ page, server, browser }) => {
   const nameA = await signInAsNewPerson(page, server.baseURL, '/tasks/board');
   await ready(page);
 
@@ -180,9 +183,8 @@ test('gate 2.28: the Assign to… button assigns the same way as dragging', asyn
   await ready(page);
 
   const unassignedTask = laneLocator(page, 'Unassigned').locator('.team-task', { hasText: title });
-  await unassignedTask.locator('select[name="to_person"]').selectOption({ label: nameA });
-  await unassignedTask.locator('button', { hasText: 'Assign to…' }).click();
-  await ready(page);
+  await unassignedTask.locator('.people-menu-trigger').click();
+  await unassignedTask.locator('.people-menu-item', { hasText: nameA }).click();
 
   await expect(laneLocator(page, nameA).locator('.team-task', { hasText: title })).toHaveCount(1);
   await expect(laneLocator(page, 'Unassigned').locator('.team-task', { hasText: title })).toHaveCount(0);

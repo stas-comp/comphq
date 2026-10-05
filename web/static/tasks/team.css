@@ -92,18 +92,3 @@
 .team-task .inline-form {
   display: flex;
 }
-
-.team-assign-form {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-1);
-}
-
-.team-assign-form select {
-  flex: 1 1 6rem;
-  min-width: 0;
-  max-width: 100%;
-  padding-top: 4px;
-  padding-bottom: 4px;
-  font-size: 13px;
-}

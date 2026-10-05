@@ -205,7 +205,7 @@ testToday('@fresh gate 2.34: take by drag places the job where it was dropped', 
   const firstRow = page.locator('.myjobs-upnext-list .team-task', { hasText: first });
   await dragTaskIntoUpNext(page, grabbed, firstRow);
 
-  const titles = (await page.locator('.myjobs-upnext-list .team-task a').allTextContents()).map((t) => t.trim());
+  const titles = (await page.locator('.myjobs-upnext-list .team-task .task-card-title a').allTextContents()).map((t) => t.trim());
   expect(titles).toEqual([grabbed, first, second]);
 });
 

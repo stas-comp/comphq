@@ -23,18 +23,8 @@
 {{range .WorkingOnNow}}
 <li class="card team-task" data-task-id="{{.ID}}">
 <div class="task-card-row">{{template "tasks-job-title" .}}</div>
-<div class="task-card-row">{{template "part-size" .SizeLabel}}{{template "tasks-job-date" .}}</div>
+<div class="task-card-row">{{template "part-size" .SizeLabel}}{{template "tasks-job-date" .}}<span class="people-menu">{{template "tasks-people-trigger" .}}</span></div>
 {{if .AlsoOn}}<span class="also">Also on it: {{.AlsoOn}}</span>{{end}}
-{{if $lane.AssignOptions}}
-<form method="post" action="/tasks/{{.ID}}/assign" class="team-assign-form">
-<input type="hidden" name="from_person" value="{{$lane.PersonID}}">
-<label class="visually-hidden" for="assign-{{.ID}}-{{$lane.PersonID}}">Assign {{.Title}} to</label>
-<select class="field" id="assign-{{.ID}}-{{$lane.PersonID}}" name="to_person">
-{{range $lane.AssignOptions}}<option value="{{.ID}}">{{.Name}}</option>{{end}}
-</select>
-<button class="mini" type="submit">Assign to…</button>
-</form>
-{{end}}
 </li>
 {{end}}
 </ul>
@@ -46,6 +36,7 @@
 <div class="task-card-row"><span class="rank">{{.Number}}</span>{{template "tasks-job-title" .}}</div>
 <div class="task-card-row">
 {{template "part-size" .SizeLabel}}{{template "tasks-job-date" .}}
+<span class="people-menu">{{template "tasks-people-trigger" .}}</span>
 <div class="task-card-actions">
 <form method="post" action="/tasks/{{.ID}}/move" class="inline-form">
 <input type="hidden" name="stage" value="todo">
@@ -62,16 +53,6 @@
 </div>
 </div>
 {{if .AlsoOn}}<span class="also">Also on it: {{.AlsoOn}}</span>{{end}}
-{{if $lane.AssignOptions}}
-<form method="post" action="/tasks/{{.ID}}/assign" class="team-assign-form">
-<input type="hidden" name="from_person" value="{{$lane.PersonID}}">
-<label class="visually-hidden" for="assign-{{.ID}}-{{$lane.PersonID}}">Assign {{.Title}} to</label>
-<select class="field" id="assign-{{.ID}}-{{$lane.PersonID}}" name="to_person">
-{{range $lane.AssignOptions}}<option value="{{.ID}}">{{.Name}}</option>{{end}}
-</select>
-<button class="mini" type="submit">Assign to…</button>
-</form>
-{{end}}
 </li>
 {{end}}
 </ul>
@@ -83,6 +64,7 @@
 <div class="task-card-row">{{template "tasks-job-title" .}}</div>
 <div class="task-card-row">
 {{template "part-size" .SizeLabel}}{{template "tasks-job-date" .}}
+<span class="people-menu">{{template "tasks-people-trigger" .}}</span>
 <form method="post" action="/tasks/{{.ID}}/move" class="inline-form team-idea-move">
 <input type="hidden" name="stage" value="todo">
 <input type="hidden" name="to_bottom" value="1">
@@ -101,6 +83,7 @@
 {{template "tasks-window" .}}
 <script src="/static/vendor/sortable/Sortable-1.15.7.min.js"></script>
 <script src="/static/tasks/sortable-options.js"></script>
+<script src="/static/tasks/people-menu.js"></script>
 <script src="/static/tasks/team.js"></script>
 <script src="/static/tasks/steps.js"></script>
 <script src="/static/tasks/window.js"></script>

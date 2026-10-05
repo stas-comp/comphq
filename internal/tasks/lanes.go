@@ -81,6 +81,11 @@ type LaneTask struct {
 	// StepsTotal and StepsDone are the job's live steps, for the small 3/7.
 	StepsTotal int
 	StepsDone  int
+	// Assignees are everyone on the job, drawn as the same circles the Board
+	// has (gate 7.06), and PeopleRedirect is the screen the people list
+	// returns to ("team" or "myjobs"). Decorate fills in the colours.
+	Assignees      []assigneeView
+	PeopleRedirect string
 }
 
 // MoveUp and MoveDown are the two icon-only move buttons of an Up next
@@ -124,11 +129,6 @@ type Lane struct {
 	// WorkloadLabel is the blocks' spoken equivalent (SPEC gate 4.10):
 	// "Workload: 7 blocks — large, medium, small".
 	WorkloadLabel string
-	// AssignOptions is every active person this lane's tasks can be
-	// assigned to by drag or "Assign to…" (SPEC gate 2.28) — every
-	// active person except this lane's own (reassigning to the person
-	// who already has it is meaningless); Unassigned excludes no one.
-	AssignOptions []personOption
 }
 
 // BuildLanes groups tasks — already filtered by the caller to
@@ -172,6 +172,21 @@ func (l *Lane) Decorate(meID int64, today time.Time) {
 	for _, group := range [][]LaneTask{l.WorkingOnNow, l.UpNext, l.Ideas} {
 		for i := range group {
 			group[i].DueLabel = shortDueLabel(group[i].DueDate, today)
+			for j := range group[i].Assignees {
+				a := &group[i].Assignees[j]
+				a.ColorClass = AvatarClass(a.PersonID, meID)
+			}
+		}
+	}
+}
+
+// UsePeopleMenu names the screen every card's people circles return to once
+// the list has been used ("team" or "myjobs"), the same list as the Board's
+// (gates 7.06, 7.08, 7.09).
+func (l *Lane) UsePeopleMenu(target string) {
+	for _, group := range [][]LaneTask{l.WorkingOnNow, l.UpNext, l.Ideas} {
+		for i := range group {
+			group[i].PeopleRedirect = target
 		}
 	}
 }
@@ -187,11 +202,6 @@ func shortDueLabel(iso string, today time.Time) string {
 
 func buildLane(personID int64, name string, tasksList []Task, everyone []people.Person, showWorkload bool) Lane {
 	lane := Lane{PersonID: personID, PersonName: name}
-	for _, p := range everyone {
-		if p.ID != personID {
-			lane.AssignOptions = append(lane.AssignOptions, personOption{ID: p.ID, Name: p.Name})
-		}
-	}
 
 	var laneTasks []Task
 	for _, t := range tasksList {
@@ -241,9 +251,16 @@ func laneTask(t Task, personID int64) LaneTask {
 			others = append(others, a.Name)
 		}
 	}
+	views := make([]assigneeView, 0, len(t.Assignees))
+	for _, a := range t.Assignees {
+		views = append(views, assigneeView{
+			PersonID: a.PersonID, Name: a.Name, Initials: InitialsFor(a.Name),
+			ColorClass: AvatarClass(a.PersonID, 0), Removed: a.Removed,
+		})
+	}
 	return LaneTask{
 		ID: t.ID, Title: t.Title, SizeLabel: sizeLabels[t.Size], DueDate: t.DueDate, AlsoOn: strings.Join(others, ", "),
-		StepsTotal: t.StepsTotal, StepsDone: t.StepsDone,
+		StepsTotal: t.StepsTotal, StepsDone: t.StepsDone, Assignees: views,
 	}
 }
 

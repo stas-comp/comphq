@@ -20,6 +20,19 @@ type taskPeopleData struct {
 	ID            int64
 	Title         string
 	PeopleChoices []personChoice
+	// RedirectTo is the screen the list came from ("board", "team" or
+	// "myjobs", gates 7.06-7.09): the assign form returns there, and the
+	// page's back link goes there.
+	RedirectTo string
+	BackHref   string
+	BackLabel  string
+}
+
+// peopleScreens are the screens a people list can be opened from.
+var peopleScreens = map[string][2]string{
+	"board":  {"/tasks/board", "Back to Board"},
+	"team":   {"/tasks/team", "Back to Team"},
+	"myjobs": {"/tasks", "Back to My jobs"},
 }
 
 // handleTaskPeople serves a job's people list (SPEC gate 4.20): the
@@ -56,7 +69,15 @@ func (h *Handlers) handleTaskPeople(w http.ResponseWriter, r *http.Request) {
 	for _, p := range everyone {
 		choices = append(choices, personChoice{ID: p.ID, Name: p.Name, On: onJob[p.ID]})
 	}
-	data := taskPeopleData{ID: task.ID, Title: task.Title, PeopleChoices: choices}
+	screen := r.URL.Query().Get("redirect_to")
+	back, known := peopleScreens[screen]
+	if !known {
+		screen, back = "board", peopleScreens["board"]
+	}
+	data := taskPeopleData{
+		ID: task.ID, Title: task.Title, PeopleChoices: choices,
+		RedirectTo: screen, BackHref: back[0], BackLabel: back[1],
+	}
 
 	if r.URL.Query().Get("fragment") == "1" {
 		h.srv.RenderPartial(w, http.StatusOK, "tasks-people-panel", data)

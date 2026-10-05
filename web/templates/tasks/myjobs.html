@@ -30,6 +30,7 @@ to the task's own page, which the task window opens over this screen. */}}
 <div class="task-card-row">{{template "tasks-job-title" .}}</div>
 <div class="task-card-row">
 {{template "part-size" .SizeLabel}}{{template "tasks-job-date" .}}
+<span class="people-menu">{{template "tasks-people-trigger" .}}</span>
 <span class="acts">
 <form method="post" action="/tasks/{{.ID}}/assign" class="inline-form">
 <input type="hidden" name="from_person" value="{{$lane.PersonID}}">
@@ -56,6 +57,7 @@ to the task's own page, which the task window opens over this screen. */}}
 <div class="task-card-row"><span class="rank">{{.Number}}</span>{{template "tasks-job-title" .}}</div>
 <div class="task-card-row">
 {{template "part-size" .SizeLabel}}{{template "tasks-job-date" .}}
+<span class="people-menu">{{template "tasks-people-trigger" .}}</span>
 <div class="task-card-actions">
 <form method="post" action="/tasks/{{.ID}}/move" class="inline-form">
 <input type="hidden" name="stage" value="todo">
@@ -103,6 +105,7 @@ to the task's own page, which the task window opens over this screen. */}}
 <div class="task-card-row">{{template "tasks-job-title" .}}</div>
 <div class="task-card-row">
 {{template "part-size" .SizeLabel}}{{template "tasks-job-date" .}}
+<span class="people-menu">{{template "tasks-people-trigger" .}}</span>
 <span class="acts">
 <form method="post" action="/tasks/{{.ID}}/move" class="inline-form">
 <input type="hidden" name="stage" value="todo">
@@ -131,6 +134,7 @@ to the task's own page, which the task window opens over this screen. */}}
 <div class="task-card-row">{{template "tasks-job-title" .}}</div>
 <div class="task-card-row">
 {{template "part-size" .SizeLabel}}{{template "tasks-job-date" .}}
+<span class="people-menu">{{template "tasks-people-trigger" .}}</span>
 <span class="acts">
 <form method="post" action="/tasks/{{.ID}}/take" class="inline-form">
 <button class="mini go" type="submit">Take it</button>
@@ -148,6 +152,7 @@ to the task's own page, which the task window opens over this screen. */}}
 {{template "tasks-window" .}}
 <script src="/static/vendor/sortable/Sortable-1.15.7.min.js"></script>
 <script src="/static/tasks/sortable-options.js"></script>
+<script src="/static/tasks/people-menu.js"></script>
 <script src="/static/tasks/myjobs.js"></script>
 <script src="/static/tasks/steps.js"></script>
 <script src="/static/tasks/window.js"></script>

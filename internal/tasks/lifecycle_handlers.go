@@ -22,6 +22,8 @@ type simpleCardView struct {
 	DueLabel  string
 	IsIdea    bool
 	Assignees []assigneeView
+	// PeopleRedirect is which screen the card's people list returns to.
+	PeopleRedirect string
 	// StepsTotal and StepsDone are the job's live steps, for the small 3/7.
 	StepsTotal int
 	StepsDone  int
@@ -31,6 +33,7 @@ func newSimpleCardView(t Task, meID int64, today time.Time) simpleCardView {
 	views := make([]assigneeView, 0, len(t.Assignees))
 	for _, a := range t.Assignees {
 		views = append(views, assigneeView{
+			PersonID:   a.PersonID,
 			Name:       a.Name,
 			Initials:   InitialsFor(a.Name),
 			ColorClass: AvatarClass(a.PersonID, meID),
