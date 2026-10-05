@@ -567,6 +567,15 @@ body.has-datepicker .field-date {
   border-color: var(--color-ink-navy);
 }
 
+/* WAITING (gate 7.42): a job with an unfinished "do first" job. A label, never a
+   lock (D-96): words, in the accent's soft field with navy ink. */
+.stamp-waiting,
+.stamp.waiting {
+  color: var(--color-ink-navy);
+  background: var(--color-accent-soft);
+  border-color: var(--color-signal-orange-deep);
+}
+
 .stamp-yours,
 .stamp.yours {
   color: var(--color-signal-orange-deep);

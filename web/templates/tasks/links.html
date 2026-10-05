@@ -1,0 +1,68 @@
+{{/* Linked jobs (SPEC B13.6, D-96, gates 7.40-7.47): one partial, drawn by the
+job's own page and by the task window alike. Every control is an ordinary form,
+so it all works with no script (gate 7.47); links.js only layers on top. The
+picker has two paths: with script, the box searches as you type and picking a
+job reveals the three kinds; without, the box is a plain GET form (?link_q=)
+that comes back with each match and its three buttons. */}}
+{{define "tasks-links"}}
+<section class="task-links" id="links" aria-labelledby="links-heading" data-task-id="{{.TaskID}}">
+<h2 id="links-heading">Linked jobs</h2>
+{{if .Notice}}<p class="message links-notice" role="alert">{{.Notice}}</p>{{end}}
+{{$taskID := .TaskID}}{{$inWindow := .InWindow}}
+{{if .DoFirst}}
+<h3 class="sub">Do first</h3>
+<ul class="link-list link-first">{{range .DoFirst}}{{template "tasks-link-line" .}}{{end}}</ul>
+{{end}}
+{{if .Then}}
+<h3 class="sub">Then</h3>
+<ul class="link-list link-then">{{range .Then}}{{template "tasks-link-line" .}}{{end}}</ul>
+{{end}}
+{{if .Related}}
+<h3 class="sub">Related</h3>
+<ul class="link-list link-related">{{range .Related}}{{template "tasks-link-line" .}}{{end}}</ul>
+{{end}}
+{{if not .Count}}<p class="links-empty">Nothing is linked to this job yet.</p>{{end}}
+
+<form method="get" action="/tasks/{{.TaskID}}#links" class="link-search" role="search">
+<label for="link-q-{{.TaskID}}">Link a job</label>
+<input class="field" type="search" id="link-q-{{.TaskID}}" name="link_q" value="{{.Query}}" placeholder="Type part of a job's title" autocomplete="off">
+<button class="btn" type="submit">Find</button>
+</form>
+<div class="link-results" aria-live="polite">
+{{if .Query}}
+{{if .Matches}}
+<ul class="link-matches">
+{{range .Matches}}
+<li class="link-match">
+<span class="link-match-title">{{.Title}}</span> <span class="link-match-column">{{.Column}}{{if .Finished}} · Finished{{end}}</span>
+<form method="post" action="/tasks/{{$taskID}}/links" class="link-kinds">
+{{if $inWindow}}<input type="hidden" name="fragment" value="1">{{end}}
+<input type="hidden" name="other_id" value="{{.ID}}">
+<button class="mini" type="submit" name="kind" value="first">That one first</button>
+<button class="mini" type="submit" name="kind" value="then">This one first</button>
+<button class="mini" type="submit" name="kind" value="related">Related</button>
+</form>
+</li>
+{{end}}
+</ul>
+{{else}}
+<p class="links-empty">No other job matches <em>{{.Query}}</em>.</p>
+{{end}}
+{{end}}
+</div>
+</section>
+{{end}}
+
+{{/* One line of a group: the job's title (which opens it), its column, Finished
+when it is done, and the remove icon. */}}
+{{define "tasks-link-line"}}
+<li class="link-line" data-link-id="{{.LinkID}}">
+<a class="link-line-title" href="/tasks/{{.OtherID}}">{{.Title}}</a>
+<span class="link-line-column">{{.Column}}</span>
+{{if .Finished}}<span class="stamp stamp-date link-line-finished">Finished</span>{{end}}
+<form method="post" action="/tasks/{{.TaskID}}/links/{{.LinkID}}/remove" class="inline-form">
+{{if .InWindow}}<input type="hidden" name="fragment" value="1">{{end}}
+{{template "part-icon-button" .Remove}}
+</form>
+</li>
+{{end}}

@@ -48,16 +48,28 @@ func (h *Handlers) renderMyJobs(w http.ResponseWriter, r *http.Request, status i
 	}
 
 	today := app.Today(h.srv.TestMode)
+	ids := make([]int64, 0, len(teamTasks)+len(grabs))
+	for _, t := range teamTasks {
+		ids = append(ids, t.ID)
+	}
+	for _, t := range grabs {
+		ids = append(ids, t.ID)
+	}
+	waiting := h.waitingFor(r.Context(), ids)
 	views := make([]simpleCardView, 0, len(grabs))
 	for _, t := range grabs {
 		v := newSimpleCardView(t, person.ID, today)
 		v.PeopleRedirect = "myjobs"
+		if t.Stage != StageIdea {
+			v.Waiting = waiting[t.ID]
+		}
 		views = append(views, v)
 	}
 
 	lane := LaneForPerson(teamTasks, person)
 	lane.Decorate(person.ID, today)
 	lane.UsePeopleMenu("myjobs")
+	lane.ApplyWaiting(waiting)
 	h.srv.RenderFrame(w, r, status, "tasks-myjobs.html", "Tasks", myJobsPageData{
 		WindowClose: app.NewIconButton(app.IconClose, "", false),
 		Initials:    lane.Initials,

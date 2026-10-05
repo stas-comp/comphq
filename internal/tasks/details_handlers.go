@@ -65,6 +65,8 @@ type detailsPageData struct {
 	Steps      stepsView
 	// Weekly is whether the job repeats every week (gate 7.30).
 	Weekly bool
+	// Links is the Linked jobs section (gates 7.40, 7.41, 7.44).
+	Links linksData
 }
 
 // handleTaskDetails serves a task's own page, unchanged (SPEC gate 4.27:
@@ -134,7 +136,14 @@ func (h *Handlers) renderDetails(w http.ResponseWriter, r *http.Request, id int6
 		return
 	}
 
+	linksData, err := h.buildLinksData(r.Context(), id, r.FormValue("link_q"), wantsFragment(r), "", today)
+	if err != nil {
+		http.Error(w, "internal error", http.StatusInternalServerError)
+		return
+	}
+
 	data := detailsPageData{
+		Links: linksData,
 		ID: task.ID, Title: task.Title, Notes: task.Notes, Size: task.Size, Stage: task.Stage, DueDate: format.DayFirst(task.DueDate),
 		InWindow:  wantsFragment(r),
 		SizeLabel: sizeLabels[task.Size], StageLabel: stageLabels[task.Stage], DueLabel: dueLabel,

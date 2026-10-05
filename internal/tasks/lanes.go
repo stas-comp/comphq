@@ -86,8 +86,10 @@ type LaneTask struct {
 	// returns to ("team" or "myjobs"). Decorate fills in the colours.
 	Assignees      []assigneeView
 	PeopleRedirect string
-	// Weekly shows the WEEKLY stamp (gate 7.30).
-	Weekly bool
+	// Weekly shows the WEEKLY stamp (gate 7.30); Waiting is the WAITING text
+	// ("Waiting on: Order toner", gate 7.42), filled in by ApplyWaiting.
+	Weekly  bool
+	Waiting string
 }
 
 // MoveUp and MoveDown are the two icon-only move buttons of an Up next

@@ -271,6 +271,10 @@ func seedTasks(ctx context.Context, sqlDB *sql.DB, personStore *people.Store, rn
 		return fmt.Errorf("seed steps: %w", err)
 	}
 
+	if err := seedLinks(ctx, store, liveIDs, creator, now); err != nil {
+		return fmt.Errorf("seed links: %w", err)
+	}
+
 	if err := backdateDone(sqlDB, doneAgedIDs, now.AddDate(0, 0, -20)); err != nil {
 		return fmt.Errorf("backdate aged-done tasks: %w", err)
 	}
@@ -278,6 +282,20 @@ func seedTasks(ctx context.Context, sqlDB *sql.DB, personStore *people.Store, rn
 		return fmt.Errorf("mark tasks removed: %w", err)
 	}
 
+	return nil
+}
+
+// seedLinks links neighbouring live jobs in pairs, rotating through the three
+// kinds, so the speed layer measures the Board, My jobs and Team with real
+// links and real WAITING stamps on them (gate 4.53's limits, B13.6). Pairs
+// never share a job, so no "do first" circle is possible.
+func seedLinks(ctx context.Context, store *tasks.Store, ids []int64, actor int64, now time.Time) error {
+	kinds := []string{tasks.LinkFirst, tasks.LinkThen, tasks.LinkRelated}
+	for i := 0; i+1 < len(ids); i += 2 {
+		if err := store.AddLink(ctx, ids[i], ids[i+1], kinds[(i/2)%len(kinds)], actor, now); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 

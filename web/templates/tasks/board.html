@@ -54,6 +54,7 @@ toast.js takes it away after 10 seconds. */}}
 <div class="task-card-row">
 {{if .DueLabel}}<span class="date task-card-due{{if .Overdue}} overdue{{end}}">{{.DueLabel}}</span>{{if .Overdue}}<span class="stamp stamp-overdue task-overdue-stamp">OVERDUE</span>{{end}}{{end}}
 {{if .Weekly}}<span class="stamp weekly">WEEKLY</span>{{end}}
+{{template "tasks-waiting" .}}
 <span class="people-menu">{{template "tasks-people-trigger" .}}</span>
 </div>
 <div class="task-card-row">
@@ -107,5 +108,6 @@ toast.js takes it away after 10 seconds. */}}
 <script src="/static/app/toast.js"></script>
 <script src="/static/tasks/board.js"></script>
 <script src="/static/tasks/steps.js"></script>
+<script src="/static/tasks/links.js"></script>
 <script src="/static/tasks/window.js"></script>
 {{end}}

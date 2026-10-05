@@ -49,6 +49,8 @@ editing face (fragment). Same field ids in both. */}}
 
 {{template "tasks-steps" .Steps}}
 
+{{template "tasks-links" .Links}}
+
 <form method="post" action="/tasks/{{.ID}}/remove" class="task-remove-form">
 <button class="btn" type="submit">Remove task</button>
 </form>
@@ -64,4 +66,5 @@ editing face (fragment). Same field ids in both. */}}
 
 <script src="/static/vendor/sortable/Sortable-1.15.7.min.js"></script>
 <script src="/static/tasks/steps.js"></script>
+<script src="/static/tasks/links.js"></script>
 {{end}}

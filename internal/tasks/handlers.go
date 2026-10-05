@@ -88,9 +88,11 @@ type cardView struct {
 	// DueLabel is the due date as a card shows it ("Wed 23 Sep").
 	DueLabel  string
 	Overdue   bool
-	// Weekly shows the WEEKLY stamp (gate 7.30).
-	Weekly bool
-	Done      bool
+	// Weekly shows the WEEKLY stamp (gate 7.30). Waiting, when set, is what the
+	// WAITING stamp says on hover and aloud: "Waiting on: Order toner" (7.42).
+	Weekly  bool
+	Waiting string
+	Done    bool
 	Rank      int // 1-based priority number; only To do cards have one (gate 4.16)
 	Assignees []assigneeView
 	// PeopleRedirect is which screen the people list returns to ("board").
@@ -246,9 +248,19 @@ func (h *Handlers) renderBoard(w http.ResponseWriter, r *http.Request, status in
 		return
 	}
 
+	ids := make([]int64, 0, len(tasks))
+	for _, t := range tasks {
+		ids = append(ids, t.ID)
+	}
+	waiting := h.waitingFor(r.Context(), ids) // one query for the whole board (gate 4.53)
+
 	byStage := make(map[string][]cardView, len(Stages))
 	for _, t := range tasks {
-		byStage[t.Stage] = append(byStage[t.Stage], newCardView(t, currentPersonID(r), today))
+		card := newCardView(t, currentPersonID(r), today)
+		if t.Stage != StageDone {
+			card.Waiting = waiting[t.ID]
+		}
+		byStage[t.Stage] = append(byStage[t.Stage], card)
 	}
 
 	columns := make([]boardColumn, 0, len(Stages))

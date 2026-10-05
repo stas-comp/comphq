@@ -22,8 +22,9 @@ type simpleCardView struct {
 	DueLabel  string
 	IsIdea    bool
 	Assignees []assigneeView
-	// Weekly shows the WEEKLY stamp (gate 7.30).
-	Weekly bool
+	// Weekly shows the WEEKLY stamp (gate 7.30); Waiting is the WAITING text.
+	Weekly  bool
+	Waiting string
 	// PeopleRedirect is which screen the card's people list returns to.
 	PeopleRedirect string
 	// StepsTotal and StepsDone are the job's live steps, for the small 3/7.

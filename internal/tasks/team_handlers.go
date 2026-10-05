@@ -33,9 +33,15 @@ func (h *Handlers) handleTeam(w http.ResponseWriter, r *http.Request) {
 
 	lanes := BuildLanes(tasks, activePeople)
 	me, today := currentPersonID(r), app.Today(h.srv.TestMode)
+	ids := make([]int64, 0, len(tasks))
+	for _, tk := range tasks {
+		ids = append(ids, tk.ID)
+	}
+	waiting := h.waitingFor(r.Context(), ids)
 	for i := range lanes {
 		lanes[i].Decorate(me, today)
 		lanes[i].UsePeopleMenu("team")
+		lanes[i].ApplyWaiting(waiting)
 	}
 	h.srv.RenderFrame(w, r, http.StatusOK, "tasks-team.html", "Team", teamPageData{
 		CurrentView: "team",

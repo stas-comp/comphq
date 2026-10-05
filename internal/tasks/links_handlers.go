@@ -58,19 +58,33 @@ func (h *Handlers) handleRemoveLink(w http.ResponseWriter, r *http.Request) {
 	h.afterLinkChange(w, r, id, err)
 }
 
-// afterLinkChange answers a link action: back to the job's page on success,
-// or the page again with the refusal's own words.
+// afterLinkChange answers a link action. From a page: back to the job's page on
+// success, or the page again with the refusal's own words. From the window or
+// the script (fragment=1): the Linked jobs section as it now is, with the
+// refusal's words in it, so the screen changes without a reload.
 func (h *Handlers) afterLinkChange(w http.ResponseWriter, r *http.Request, id int64, err error) {
 	var loop *LinkLoopError
+	refused := errors.As(err, &loop) || errors.Is(err, ErrLinkSelf) || errors.Is(err, ErrLinkExists) || errors.Is(err, ErrLinkTooMany) ||
+		errors.Is(err, ErrLinkOtherRemoved) || errors.Is(err, ErrLinkKind) || errors.Is(err, ErrLinkNotFound)
 	switch {
-	case err == nil:
-		http.Redirect(w, r, "/tasks/"+strconv.FormatInt(id, 10), http.StatusFound)
 	case errors.Is(err, ErrTaskNotFound):
 		http.NotFound(w, r)
-	case errors.As(err, &loop), errors.Is(err, ErrLinkSelf), errors.Is(err, ErrLinkExists), errors.Is(err, ErrLinkTooMany),
-		errors.Is(err, ErrLinkOtherRemoved), errors.Is(err, ErrLinkKind), errors.Is(err, ErrLinkNotFound):
-		h.renderDetails(w, r, id, http.StatusOK, err.Error(), nil, nil, nil)
-	default:
+	case err != nil && !refused:
 		http.Error(w, "internal error", http.StatusInternalServerError)
+	case wantsFragment(r):
+		notice := ""
+		if err != nil {
+			notice = err.Error()
+		}
+		data, derr := h.buildLinksData(r.Context(), id, "", true, notice, app.Today(h.srv.TestMode))
+		if derr != nil {
+			http.Error(w, "internal error", http.StatusInternalServerError)
+			return
+		}
+		h.srv.RenderPartial(w, http.StatusOK, "tasks-links", data)
+	case err == nil:
+		http.Redirect(w, r, "/tasks/"+strconv.FormatInt(id, 10), http.StatusFound)
+	default:
+		h.renderDetails(w, r, id, http.StatusOK, err.Error(), nil, nil, nil)
 	}
 }

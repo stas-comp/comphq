@@ -173,3 +173,119 @@ a.mini {
   width: 14px;
   height: 14px;
 }
+
+/* Linked jobs (gates 7.40-7.47): the same quiet section as Steps, under it. */
+.task-links {
+  margin: var(--space-6) 0;
+}
+
+.task-links .sub {
+  margin: var(--space-3) 0 var(--space-1);
+}
+
+.link-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-1);
+}
+
+.link-line {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-1) 0;
+}
+
+.link-line-title {
+  flex: 1;
+  min-width: 0;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.link-line-column {
+  font: 500 11px var(--font-mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.link-line .inline-form {
+  display: flex;
+}
+
+.link-search {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
+}
+
+.link-search label {
+  font-weight: 700;
+}
+
+.link-search .field {
+  flex: 1 1 14rem;
+  min-width: 0;
+}
+
+.links-empty {
+  margin: var(--space-2) 0;
+  color: var(--color-text-muted);
+}
+
+.link-matches {
+  list-style: none;
+  margin: var(--space-2) 0 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-2);
+}
+
+.link-match {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+}
+
+.link-match-title {
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.link-match-column {
+  font: 500 11px var(--font-mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.link-match-pick {
+  all: unset;
+  cursor: pointer;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+}
+
+.link-match-pick:hover,
+.link-match-pick:focus-visible {
+  background: var(--color-accent-wash);
+  outline: 2px solid var(--color-accent-soft);
+}
+
+.link-kinds {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.link-picked {
+  flex-basis: 100%;
+  margin: var(--space-2) 0 0;
+}
