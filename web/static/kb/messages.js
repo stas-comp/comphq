@@ -23,6 +23,19 @@ window.ComphqMessages = {
   searchFoot(count) {
     return count + (count === 1 ? ' article' : ' articles') + ' · press Enter to see all results'
   },
+  // SPEC gate 7.75: the import summary's first line, from what the converted
+  // document holds: "Came across: 2 headings, 1 list, 1 table, 3 pictures."
+  cameAcross(counts) {
+    const parts = []
+    const add = (n, one, many) => {
+      if (n > 0) parts.push(n + ' ' + (n === 1 ? one : many))
+    }
+    add(counts.headings, 'heading', 'headings')
+    add(counts.lists, 'list', 'lists')
+    add(counts.tables, 'table', 'tables')
+    add(counts.pictures, 'picture', 'pictures')
+    return 'Came across: ' + (parts.length > 0 ? parts.join(', ') : 'the text') + '.'
+  },
   docxImportSummary(notes) {
     const noun = notes.length === 1 ? 'thing' : 'things'
     return notes.length + ' ' + noun + " couldn't be brought in: " + notes.join(', ') + '.'
@@ -59,7 +72,8 @@ window.ComphqUI = {
   },
   // The import summary (gate 4.43): a bordered notice with an IMPORTED
   // stamp, what came in, anything that couldn't, and a way to dismiss it.
-  showImported(fileName, notes) {
+  // counts is what the document holds (headings, lists, tables, pictures).
+  showImported(fileName, notes, counts) {
     const el = document.getElementById('editor-message')
     if (!el) return
     el.textContent = ''
@@ -72,13 +86,18 @@ window.ComphqUI = {
     const lead = document.createElement('b')
     lead.textContent = fileName
     text.append(lead, ' ' + window.ComphqMessages.docxImported('').trim())
+    const list = document.createElement('ul')
+    if (counts) {
+      const came = document.createElement('li')
+      came.textContent = window.ComphqMessages.cameAcross(counts)
+      list.appendChild(came)
+    }
     if (notes && notes.length > 0) {
-      const list = document.createElement('ul')
       const item = document.createElement('li')
       item.textContent = window.ComphqMessages.docxImportSummary(notes)
       list.appendChild(item)
-      text.appendChild(list)
     }
+    if (list.children.length > 0) text.appendChild(list)
     const dismiss = document.createElement('button')
     dismiss.type = 'button'
     dismiss.className = 'mini quiet'

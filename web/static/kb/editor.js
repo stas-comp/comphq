@@ -67,9 +67,22 @@ document.addEventListener('DOMContentLoaded', () => {
       editor.commands.setContent(data.html)
       titleInput.value = data.title
       markDirty()
-      window.ComphqUI.showImported(file.name, data.notes)
+      window.ComphqUI.showImported(file.name, data.notes, countImported(data.html))
     } catch (err) {
       window.ComphqUI.showMessage('That file could not be imported.')
+    }
+  }
+
+  // What the converted document holds, for the import summary's "Came across"
+  // line (gate 7.75): headings, lists (not the lists inside them), tables and
+  // pictures actually shown (a marked box is not a picture that came across).
+  function countImported(html) {
+    const doc = new DOMParser().parseFromString(html, 'text/html')
+    return {
+      headings: doc.querySelectorAll('h1, h2, h3').length,
+      lists: Array.from(doc.querySelectorAll('ul, ol')).filter((l) => !l.parentElement.closest('ul, ol')).length,
+      tables: doc.querySelectorAll('table').length,
+      pictures: doc.querySelectorAll('img').length,
     }
   }
 
@@ -164,10 +177,17 @@ document.addEventListener('DOMContentLoaded', () => {
     'btn-add-col': () => editor.can().addColumnAfter(),
     'btn-remove-col': () => editor.can().deleteColumn(),
   }
+  // They are shown only while the cursor is in a table (gate 7.73); out of
+  // one they are disabled as well as hidden.
+  const tableTools = document.getElementById('table-tools')
   const updateTableButtons = () => {
+    let inTable = false
     for (const [id, canRun] of Object.entries(tableButtons)) {
-      document.getElementById(id).disabled = !canRun()
+      const can = canRun()
+      document.getElementById(id).disabled = !can
+      if (can) inTable = true
     }
+    tableTools.hidden = !inTable
   }
   editor.on('selectionUpdate', updateTableButtons)
   editor.on('transaction', updateTableButtons)

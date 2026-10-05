@@ -183,18 +183,56 @@
   white-space: nowrap;
 }
 
+/* The editor's page (SPEC B13.10, gates 7.73): the mockup's `.editor` column,
+   with its head and toolbar kept in view while a long article scrolls. The
+   head sits just under the top bar and the toolbar just under the head
+   (`--edit-head-height` is the head's one height), both on the paper so the
+   article never shows through them. */
 .article-form {
+  --edit-head-height: 56px;
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
+  gap: 14px;
   max-width: 820px;
-  margin: var(--space-4) 0;
+  margin: 0 0 var(--space-4);
+}
+
+.edit-head {
+  position: sticky;
+  top: var(--topbar-height);
+  z-index: 6;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-sizing: border-box;
+  min-height: var(--edit-head-height);
+  background: var(--color-paper);
+}
+
+.edit-head .kb-crumbs {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.edit-head .kb-crumbs select.field {
+  max-width: 16rem;
+  padding-top: 5px;
+  padding-bottom: 5px;
+  font-size: 14px;
 }
 
 /* The editor (gate 4.43): the formatting controls in one bordered bar,
    Import from Word a primary button with its icon at the right-hand end;
    the title in large capitals over the document, which is a white sheet. */
 .editor-toolbar {
+  position: sticky;
+  top: calc(var(--topbar-height) + var(--edit-head-height));
+  z-index: 5;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -203,6 +241,14 @@
   border: 1.5px solid var(--color-border-strong);
   border-radius: 10px;
   padding: 6px;
+}
+
+.editor-toolbar .table-tools {
+  display: contents;
+}
+
+.editor-toolbar .table-tools[hidden] {
+  display: none;
 }
 
 .editor-toolbar .sep {
@@ -264,11 +310,6 @@
 .imported ul {
   margin: 4px 0 0;
   padding-left: 18px;
-}
-
-.editor-actions {
-  display: flex;
-  gap: var(--space-2);
 }
 
 .kb-article-list {

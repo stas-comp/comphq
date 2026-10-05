@@ -63,3 +63,19 @@ test('gate 7.77: a category page uses the mockup’s trail, button and card surf
   await expect(page.locator('.kb-head h1')).toHaveCSS('font-family', /Big Shoulders Display/);
   await expect(page.locator('.kb-article-title').first()).toHaveCSS('font-family', /Atkinson Hyperlegible Next/);
 });
+
+// SPEC gate 7.73 (B13.10): the editor's head and column against the mockup's.
+test('gate 7.73: the editor’s head, buttons and column are the mockup’s', async ({ page, server, mockup }) => {
+  await setup(page, server.baseURL);
+  await page.goto(server.baseURL + '/kb/new');
+  await page.waitForSelector('body[data-editor-ready]');
+
+  await expectMatchesMockup(mockup, page, { mockup: '.edit-head', screen: 'editor', app: '.edit-head' }, ['display', 'align-items', 'column-gap']);
+  await expectMatchesMockup(mockup, page, { mockup: '.edit-head .crumbs', screen: 'editor', app: '.edit-head .kb-crumbs' }, ['font-size', 'color', 'flex-grow']);
+  await expectMatchesMockup(mockup, page, { mockup: '.edit-head .btn:not(.primary)', screen: 'editor', app: '#btn-cancel' }, [...TEXT, ...BOX, 'padding']);
+  await expectMatchesMockup(mockup, page, { mockup: '.edit-head .btn.primary', screen: 'editor', app: '#btn-publish' }, [...TEXT, ...BOX, 'padding']);
+  await expectMatchesMockup(mockup, page, { mockup: '.editor', screen: 'editor', app: '.article-form' }, ['row-gap', 'max-width']);
+  // Sticky under the top bar, and the toolbar under the head.
+  await expect(page.locator('.edit-head')).toHaveCSS('position', 'sticky');
+  await expect(page.locator('.editor-toolbar')).toHaveCSS('position', 'sticky');
+});

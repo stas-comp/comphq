@@ -322,10 +322,12 @@ test('gates 7.61, 7.65, 7.66: groups, canvases, VML groups and fills all come ac
   // The EMF is marked with its own box, which says what it was and how to fix it.
   const box = page.locator('#article-editor .ProseMirror [data-missing-kind="drawing"]');
   await expect(box).toHaveCount(1);
-  const text = await box.evaluate((el) => getComputedStyle(el, '::after').content);
-  expect(text).toContain("A drawing in an old Windows picture format couldn't be brought in.");
-  expect(text).toContain('Save as Picture');
-  expect(text).toContain('PNG');
+  // (Gate 7.74 splits the box into the mockup's bold sentence, ::before, and the tip under it, ::after.)
+  const sentence = await box.evaluate((el) => getComputedStyle(el, '::before').content);
+  const tip = await box.evaluate((el) => getComputedStyle(el, '::after').content);
+  expect(sentence).toContain("A drawing in an old Windows picture format couldn't be brought in.");
+  expect(tip).toContain('Save as Picture');
+  expect(tip).toContain('PNG');
   await expect(page.locator('#article-editor .ProseMirror [data-missing-kind="shape"]')).toHaveCount(0);
 
   // And the message counts both: the old drawing, and the picture in the page header.

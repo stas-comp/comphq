@@ -24,10 +24,9 @@
    Word, a picture in an unsupported format, a chart, a SmartArt diagram,
    a textless shape, an equation or an embedded object (gate 1.49) — is
    marked in place the same way, both in the editor and in the published
-   article. Each data-missing-kind value gets its own label text below;
-   what to actually do about it (open the file in Word, try the import
-   again) belongs in the one-off status message shown alongside it
-   (ComphqMessages), not in this permanent in-place label. */
+   article. Each data-missing-kind value gets its own sentence and tip
+   below; the one-off status message shown alongside an import
+   (ComphqMessages) says how many there were. */
 .ProseMirror div[data-missing-kind],
 .kb-article-body div[data-missing-kind] {
   display: grid;
@@ -43,46 +42,99 @@
   text-align: left;
 }
 
+/* Every box is the mockup's `.missing`: a bold sentence saying what it was
+   (::before) and a tip underneath (::after) (gate 7.74). The tip says what to
+   do about it; the one-off message above the editor says how many (gate 1.49).
+   The wording of the EMF/WMF box is gate 7.65's (D-99). */
+.ProseMirror div[data-missing-kind]::before,
+.kb-article-body div[data-missing-kind]::before {
+  display: block;
+  font-weight: 700;
+}
+
+.ProseMirror div[data-missing-kind]::after,
+.kb-article-body div[data-missing-kind]::after {
+  display: block;
+}
+
+.ProseMirror div[data-missing-kind="picture"]::before,
+.kb-article-body div[data-missing-kind="picture"]::before {
+  content: "A picture couldn't be brought in.";
+}
+
 .ProseMirror div[data-missing-kind="picture"]::after,
-.kb-article-body div[data-missing-kind="picture"]::after,
+.kb-article-body div[data-missing-kind="picture"]::after {
+  content: "Tip: add the picture again with the Picture button, or paste it here. Or delete this box.";
+}
+
+.ProseMirror div[data-missing-kind="external"]::before,
+.kb-article-body div[data-missing-kind="external"]::before {
+  content: "A picture from another website couldn't be copied.";
+}
+
 .ProseMirror div[data-missing-kind="external"]::after,
 .kb-article-body div[data-missing-kind="external"]::after {
-  content: "Picture not shown.";
+  content: "Tip: save the picture to your computer, then add it with the Picture button. Or delete this box.";
+}
+
+.ProseMirror div[data-missing-kind="chart"]::before,
+.kb-article-body div[data-missing-kind="chart"]::before {
+  content: "A chart from the Word document couldn't be brought in.";
 }
 
 .ProseMirror div[data-missing-kind="chart"]::after,
 .kb-article-body div[data-missing-kind="chart"]::after {
-  content: "Chart not shown.";
+  content: "Tip: in Word, take a screenshot of the chart (Windows key + Shift + S) and paste it here. Or delete this box.";
+}
+
+.ProseMirror div[data-missing-kind="diagram"]::before,
+.kb-article-body div[data-missing-kind="diagram"]::before {
+  content: "A diagram from the Word document couldn't be brought in.";
 }
 
 .ProseMirror div[data-missing-kind="diagram"]::after,
 .kb-article-body div[data-missing-kind="diagram"]::after {
-  content: "Diagram not shown.";
+  content: "Tip: in Word, take a screenshot of the diagram (Windows key + Shift + S) and paste it here. Or delete this box.";
+}
+
+.ProseMirror div[data-missing-kind="shape"]::before,
+.kb-article-body div[data-missing-kind="shape"]::before {
+  content: "A shape from the Word document couldn't be brought in.";
 }
 
 .ProseMirror div[data-missing-kind="shape"]::after,
 .kb-article-body div[data-missing-kind="shape"]::after {
-  content: "Shape not shown.";
+  content: "Tip: in Word, take a screenshot of the shape (Windows key + Shift + S) and paste it here. Or delete this box.";
 }
 
-/* An EMF or WMF picture (Visio drawings, Excel charts pasted as pictures, clip
-   art): browsers can't show them, so the box says what it was and how to fix
-   it (gate 7.65, D-99). P7-17 draws this as the mockup's bold sentence with a
-   tip underneath. */
+.ProseMirror div[data-missing-kind="drawing"]::before,
+.kb-article-body div[data-missing-kind="drawing"]::before {
+  content: "A drawing in an old Windows picture format couldn't be brought in.";
+}
+
 .ProseMirror div[data-missing-kind="drawing"]::after,
 .kb-article-body div[data-missing-kind="drawing"]::after {
-  content: "A drawing in an old Windows picture format couldn't be brought in.\A Tip: in Word, right-click it \2192  Save as Picture \2192  PNG, then drag the PNG into this article.";
-  white-space: pre-line;
+  content: "Tip: in Word, right-click it 92  Save as Picture 92  PNG, then drag the PNG into this article.";
+}
+
+.ProseMirror div[data-missing-kind="equation"]::before,
+.kb-article-body div[data-missing-kind="equation"]::before {
+  content: "An equation from the Word document couldn't be brought in.";
 }
 
 .ProseMirror div[data-missing-kind="equation"]::after,
 .kb-article-body div[data-missing-kind="equation"]::after {
-  content: "Equation not shown.";
+  content: "Tip: in Word, take a screenshot of the equation (Windows key + Shift + S) and paste it here. Or delete this box.";
+}
+
+.ProseMirror div[data-missing-kind="object"]::before,
+.kb-article-body div[data-missing-kind="object"]::before {
+  content: "An embedded object from the Word document couldn't be brought in.";
 }
 
 .ProseMirror div[data-missing-kind="object"]::after,
 .kb-article-body div[data-missing-kind="object"]::after {
-  content: "Object not shown.";
+  content: "Tip: in Word, take a screenshot of it (Windows key + Shift + S) and paste it here. Or delete this box.";
 }
 
 /* Table looks (ink header row, hairline rows) are kb.css's; the editor only
