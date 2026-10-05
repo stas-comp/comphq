@@ -50,7 +50,7 @@ test.describe('Knowledge Base speed (SPEC gate 1.33)', () => {
     await signInAsNewPerson(page, server.baseURL, '/kb');
     await ready(page);
 
-    const categoryHref = await page.locator('.kb-tile').first().getAttribute('href');
+    const categoryHref = await page.locator('.kb-tile h2 a').first().getAttribute('href');
     const articleHref = await page.locator('.kb-recent-list a[href^="/kb/articles/"]').first().getAttribute('href');
     if (!categoryHref || !articleHref) {
       throw new Error('seeded KB home is missing the expected category/article links');

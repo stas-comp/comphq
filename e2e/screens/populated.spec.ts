@@ -193,6 +193,13 @@ test('@fresh screenshots: the screens in use, and the task window in each state'
   await page.goto(base + res.headers()['location']);
   await ready(page);
   await shot(page, 'kb-article');
+  // The home and a category's own page (gates 7.70-7.72), which the mockup never drew.
+  await page.goto(base + '/kb');
+  await ready(page);
+  await shot(page, 'kb-home');
+  await page.goto(`${base}/kb/categories/${categoryID}`);
+  await ready(page);
+  await shot(page, 'kb-category');
   await page.goto(base + '/kb');
   await ready(page);
   await page.fill('#search-box', 'toner');

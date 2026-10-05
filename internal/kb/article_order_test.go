@@ -354,3 +354,57 @@ func TestExportListsArticlesInTheCategorysOrder(t *testing.T) {
 		t.Errorf("export order = %v, want the category's own order, not by title", titles)
 	}
 }
+
+// SPEC gates 7.70, 7.72 (B13.10): what the home's tiles and a category's rows
+// read from the store.
+func TestFirstByCategoryFollowsTheCategoryOrderAndStopsAtThree(t *testing.T) {
+	f := newOrderFixture(t)
+	cat := f.category("Tiles")
+	other := f.category("Other")
+	var arts []Article
+	for _, title := range []string{"A", "B", "C", "D"} {
+		arts = append(arts, f.publish(cat, title))
+	}
+	f.publish(other, "Solo")
+	if err := f.store.Move(context.Background(), arts[3].ID, MoveInput{BeforeID: arts[0].ID}); err != nil {
+		t.Fatal(err)
+	}
+	got, err := f.store.FirstByCategory(3)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var titles []string
+	for _, a := range got[cat] {
+		titles = append(titles, a.Title)
+	}
+	if want := []string{"D", "A", "B"}; !reflect.DeepEqual(titles, want) {
+		t.Errorf("tile for the category = %v, want %v", titles, want)
+	}
+	if len(got[other]) != 1 || got[other][0].Title != "Solo" {
+		t.Errorf("tile for the other category = %v", got[other])
+	}
+}
+
+func TestListByCategoryCarriesOpeningWordsAndWhoUpdatedIt(t *testing.T) {
+	f := newOrderFixture(t)
+	cat := f.category("Rows")
+	a, err := f.store.Publish(context.Background(), ArticleInput{
+		CategoryID: cat, Title: "Doors", BodyHTML: "<h2>Heading</h2><p>Open the <b>front</b> door.</p>",
+	}, f.person)
+	if err != nil {
+		t.Fatal(err)
+	}
+	list, err := f.store.ListByCategory(cat)
+	if err != nil || len(list) != 1 || list[0].ID != a.ID {
+		t.Fatalf("list = %v, %v", list, err)
+	}
+	if list[0].Opening != "Open the front door." {
+		t.Errorf("Opening = %q", list[0].Opening)
+	}
+	if list[0].UpdatedByName == "" {
+		t.Error("UpdatedByName is empty")
+	}
+	if !strings.Contains(list[0].UpdatedAt, " 20") { // "Mon 5 Oct 2026"
+		t.Errorf("UpdatedAt = %q, want the app's date style", list[0].UpdatedAt)
+	}
+}

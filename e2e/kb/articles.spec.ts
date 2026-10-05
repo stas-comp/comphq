@@ -77,7 +77,8 @@ test('the Knowledge Base home recent list shows who updated it and when', async 
 
   const recentItem = page.locator('.kb-recent-list li', { hasText: title });
   await expect(recentItem).toContainText(title);
-  await expect(recentItem).toContainText(`updated by ${name}`);
+  // Gate 7.71 changes "updated by Jo, date" to "Jo · date" (a planned correction of gate 1.13's wording).
+  await expect(recentItem).toContainText(`${name} ·`);
 });
 
 test('editing a published article records a new version and shows the new text', async ({ page, server }) => {

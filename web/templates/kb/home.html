@@ -1,28 +1,54 @@
+{{/* The Knowledge Base home (SPEC B13.10, gates 7.70, 7.71): the mockup never
+drew this page, so it is built from the mockup's own parts: a heading row with
+buttons, a tile per category on the card surface, and Recently updated as a
+panel with the same head the Briefing's panels have. */}}
 {{define "kb-home.html"}}
+<div class="kb-head">
 <h1>Knowledge Base</h1>
-<p><a href="/kb/categories">Manage categories</a> · <a href="/kb/new">New article</a> · <a href="/kb/archived">Archived articles</a></p>
+<div class="kb-head-actions">
+<a class="btn primary" href="/kb/new">New article</a>
+<a class="btn" href="/kb/categories">Categories</a>
+<a class="btn" href="/kb/archived">Archived</a>
+</div>
+</div>
 
-{{if .Categories}}
+{{if .Tiles}}
 <div class="kb-tiles">
-{{range .Categories}}
-<a class="kb-tile" href="/kb/categories/{{.ID}}">
-<h2>{{.Name}}</h2>
-<p>{{.ArticleCount}} article{{if ne .ArticleCount 1}}s{{end}}</p>
-</a>
+{{range .Tiles}}
+<section class="kb-tile card" aria-labelledby="kb-tile-{{.ID}}">
+<div class="kb-tile-head">
+<h2 id="kb-tile-{{.ID}}"><a href="/kb/categories/{{.ID}}">{{.Name}}</a></h2>
+<span class="count">{{.ArticleCount}} article{{if ne .ArticleCount 1}}s{{end}}</span>
+</div>
+{{if .First}}
+<ul class="kb-tile-articles">
+{{range .First}}<li><a href="/kb/articles/{{.ID}}">{{.Title}}</a></li>{{end}}
+</ul>
+<a class="kb-tile-all" href="/kb/categories/{{.ID}}">All {{.ArticleCount}} article{{if ne .ArticleCount 1}}s{{end}} →</a>
+{{else}}
+<p class="kb-tile-empty">No articles yet. <a href="/kb/new?category={{.ID}}">Add one</a></p>
+{{end}}
+</section>
 {{end}}
 </div>
 {{else}}
-<p>No categories yet. <a href="/kb/categories">Add one</a> to get started.</p>
+<p class="kb-empty">No categories yet. <a class="btn" href="/kb/categories">Add one</a> to get started.</p>
 {{end}}
 
-<h2>Recently updated</h2>
+<section class="panel kb-recent" aria-labelledby="kb-recent-heading">
+<div class="panel-head"><h2 id="kb-recent-heading">Recently updated</h2><span class="count">the 10 newest</span></div>
 {{if .Recent}}
 <ul class="kb-recent-list">
 {{range .Recent}}
-<li><a href="/kb/articles/{{.ID}}">{{.Title}}</a> — updated by {{.UpdatedByName}}, {{.UpdatedAt}}</li>
+<li>
+<a class="kb-recent-title" href="/kb/articles/{{.ID}}">{{.Title}}</a>
+<span class="kb-recent-category">{{.CategoryName}}</span>
+<span class="kb-recent-by">{{if .UpdatedByName}}{{.UpdatedByName}} · {{end}}<span class="date">{{.UpdatedAt}}</span></span>
+</li>
 {{end}}
 </ul>
 {{else}}
-<p>No articles yet.</p>
+<p class="kb-empty">No articles yet. <a class="btn primary" href="/kb/new">New article</a></p>
 {{end}}
+</section>
 {{end}}

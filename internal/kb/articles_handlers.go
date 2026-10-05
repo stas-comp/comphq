@@ -54,7 +54,17 @@ func (h *Handlers) handleNewArticle(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "internal error", http.StatusInternalServerError)
 		return
 	}
-	data, err := newArticleFormData(0, 0, "", "", 0, categories, "")
+	// A category's own page starts an article already filed in it (gate 7.72);
+	// a category that doesn't exist is ignored, and the choice stays open.
+	var preselect int64
+	if id, err := strconv.ParseInt(r.URL.Query().Get("category"), 10, 64); err == nil {
+		for _, c := range categories {
+			if c.ID == id {
+				preselect = id
+			}
+		}
+	}
+	data, err := newArticleFormData(0, 0, "", "", preselect, categories, "")
 	if err != nil {
 		http.Error(w, "internal error", http.StatusInternalServerError)
 		return

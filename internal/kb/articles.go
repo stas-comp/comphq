@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/stas-comp/comphq/internal/app/format"
 	kbhtml "github.com/stas-comp/comphq/internal/kb/html"
 	"github.com/stas-comp/comphq/internal/kb/images"
 )
@@ -214,17 +215,29 @@ func (s *ArticleStore) Get(id int64) (Article, error) {
 	return a, err
 }
 
-// CategoryArticle is one row of a category's published article listing.
+// OpeningWordsLimit is about how many characters of an article's opening
+// words a category's page shows (gate 7.72).
+const OpeningWordsLimit = 140
+
+// CategoryArticle is one row of a category's published article listing. The
+// title is all the home page's tiles use; the category's own page also shows
+// the opening words and who last updated the article, and when.
 type CategoryArticle struct {
-	ID    int64
-	Title string
+	ID            int64
+	Title         string
+	Opening       string
+	UpdatedByName string
+	UpdatedAt     string // "Sat 12 Sep 2026"
 }
 
 // ListByCategory returns a category's published articles in their own order
-// (gate 7.55, D-98).
+// (gate 7.55, D-98), each with its opening words and last update (gate 7.72).
 func (s *ArticleStore) ListByCategory(categoryID int64) ([]CategoryArticle, error) {
 	rows, err := s.DB.Query(
-		`SELECT id, title FROM kb_articles WHERE category_id = ? AND status = 'published' ORDER BY position IS NULL, position, id`,
+		`SELECT a.id, a.title, a.body_html, a.updated_at, COALESCE(p.name, '')
+		 FROM kb_articles a LEFT JOIN people p ON p.id = a.updated_by
+		 WHERE a.category_id = ? AND a.status = 'published'
+		 ORDER BY a.position IS NULL, a.position, a.id`,
 		categoryID,
 	)
 	if err != nil {
@@ -235,10 +248,46 @@ func (s *ArticleStore) ListByCategory(categoryID int64) ([]CategoryArticle, erro
 	var out []CategoryArticle
 	for rows.Next() {
 		var a CategoryArticle
-		if err := rows.Scan(&a.ID, &a.Title); err != nil {
+		var body, updatedAt string
+		if err := rows.Scan(&a.ID, &a.Title, &body, &updatedAt, &a.UpdatedByName); err != nil {
 			return nil, err
 		}
+		a.Opening = kbhtml.OpeningWords(body, OpeningWordsLimit)
+		if t, err := time.Parse(time.RFC3339, updatedAt); err == nil {
+			a.UpdatedAt = format.Date(t)
+		} else {
+			a.UpdatedAt = updatedAt
+		}
 		out = append(out, a)
+	}
+	return out, rows.Err()
+}
+
+// FirstByCategory returns the first n published articles of every category,
+// in each category's own order, keyed by category id: what the home page's
+// tiles show (gate 7.70). One query for all of them.
+func (s *ArticleStore) FirstByCategory(n int) (map[int64][]CategoryArticle, error) {
+	rows, err := s.DB.Query(
+		`SELECT category_id, id, title FROM (
+		   SELECT category_id, id, title,
+		          ROW_NUMBER() OVER (PARTITION BY category_id ORDER BY position IS NULL, position, id) AS rn
+		   FROM kb_articles WHERE status = 'published'
+		 ) WHERE rn <= ? ORDER BY category_id, rn`,
+		n,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	out := map[int64][]CategoryArticle{}
+	for rows.Next() {
+		var categoryID int64
+		var a CategoryArticle
+		if err := rows.Scan(&categoryID, &a.ID, &a.Title); err != nil {
+			return nil, err
+		}
+		out[categoryID] = append(out[categoryID], a)
 	}
 	return out, rows.Err()
 }

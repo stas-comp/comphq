@@ -1,39 +1,147 @@
-.kb-tiles {
+/* The Knowledge Base home and a category's page (SPEC B13.10, gates 7.70-7.72).
+   The mockup never drew them, so they use only its parts: the heading row, the
+   card surface, the panel head, the `.count` and `.date` styles. */
+.kb-head {
   display: flex;
-  flex-wrap: wrap;
+  align-items: center;
   gap: var(--space-4);
-  margin: var(--space-4) 0 var(--space-8);
+  flex-wrap: wrap;
+  margin: 0 0 var(--space-4);
+}
+
+.kb-head h1 {
+  margin: 0;
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.kb-head h1 .count {
+  font: 500 13px var(--font-mono);
+  letter-spacing: normal;
+  text-transform: none;
+  color: var(--color-text-muted);
+}
+
+.kb-head-actions {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.kb-empty {
+  margin: var(--space-4) 0;
+  color: var(--color-text-muted);
+}
+
+.kb-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: var(--space-4);
+  margin: 0 0 var(--space-8);
 }
 
 .kb-tile {
-  display: block;
-  background: var(--color-white);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  padding: var(--space-4);
-  min-width: 12rem;
+  align-content: start;
+  gap: 10px;
+  padding: 14px 16px;
+}
+
+.kb-tile-head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+  border-bottom: 3px solid var(--color-ink-navy);
+  padding-bottom: 6px;
+}
+
+.kb-tile-head h2 {
+  margin: 0;
+  flex: 1;
+  min-width: 0;
+  font-size: 24px;
+  overflow-wrap: anywhere;
+}
+
+.kb-tile-head h2 a {
   color: inherit;
   text-decoration: none;
 }
 
-.kb-tile h2 {
-  margin: 0 0 var(--space-1);
-  font-size: var(--font-size-h3);
+.kb-tile-head .count {
+  font: 500 13px var(--font-mono);
+  color: var(--color-text-muted);
+  white-space: nowrap;
 }
 
-.kb-tile p {
+.kb-tile-articles {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.kb-tile-articles a,
+.kb-tile-all {
+  color: var(--color-ink-text);
+  overflow-wrap: anywhere;
+}
+
+.kb-tile-all {
+  font-weight: 700;
+  color: var(--color-ink-navy);
+}
+
+.kb-tile-empty {
   margin: 0;
   color: var(--color-text-muted);
 }
 
+.kb-recent {
+  max-width: 900px;
+}
+
 .kb-recent-list {
   list-style: none;
+  margin: 0;
   padding: 0;
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
 }
 
 .kb-recent-list li {
-  padding: var(--space-2) 0;
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  padding: 10px 14px;
   border-bottom: 1px solid var(--color-border);
+}
+
+.kb-recent-list li:last-child {
+  border-bottom: 0;
+}
+
+.kb-recent-title {
+  flex: 1 1 14rem;
+  min-width: 0;
+  font-weight: 700;
+  color: var(--color-ink-text);
+  overflow-wrap: anywhere;
+}
+
+.kb-recent-category {
+  font: 500 11px var(--font-mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.kb-recent-by {
+  font-size: 14px;
+  color: var(--color-text-muted);
 }
 
 .create-category-form {
@@ -165,12 +273,72 @@
 
 .kb-article-list {
   list-style: none;
+  margin: 0;
   padding: 0;
+  max-width: 900px;
+  display: grid;
+  gap: 8px;
 }
 
+/* A row on the card surface: the handle on the left, the title with its
+   opening words and who last updated it, and the move icons on the right
+   (gate 7.55). The title stays a direct child of the row, and the grid places
+   the rest around it. */
 .kb-article-list li {
-  padding: var(--space-2) 0;
-  border-bottom: 1px solid var(--color-border);
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-areas:
+    'handle title actions'
+    'handle opening actions'
+    'handle by actions';
+  column-gap: var(--space-3);
+  row-gap: 2px;
+  align-items: center;
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+.kb-article-handle {
+  grid-area: handle;
+  cursor: grab;
+  color: var(--color-text-muted);
+  user-select: none;
+  padding: 0 var(--space-1);
+}
+
+.kb-article-title {
+  grid-area: title;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--color-ink-text);
+  overflow-wrap: anywhere;
+}
+
+.kb-article-opening {
+  grid-area: opening;
+  margin: 0;
+  font-size: 14px;
+  color: var(--color-ink-text);
+  overflow-wrap: anywhere;
+}
+
+.kb-article-by {
+  grid-area: by;
+  margin: 0;
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+.kb-article-actions {
+  grid-area: actions;
+  display: flex;
+  gap: 4px;
+}
+
+.kb-article-actions .inline-form {
+  display: flex;
 }
 
 /* An article (gates 4.39-4.41), drawn as docs/design/mockup.html draws
@@ -433,34 +601,4 @@
 
 .search-instead {
   margin: var(--space-4) 0 0;
-}
-
-/* A category's article list, in its own order (gate 7.55): each row has its
-   move icons. P7-16 gives the whole page its new look. */
-.kb-article-list li {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-}
-
-.kb-article-list li > a {
-  flex: 1;
-  min-width: 0;
-  overflow-wrap: anywhere;
-}
-
-.kb-article-actions {
-  display: flex;
-  gap: 4px;
-}
-
-.kb-article-actions .inline-form {
-  display: flex;
-}
-
-.kb-article-handle {
-  cursor: grab;
-  color: var(--color-text-muted);
-  user-select: none;
-  padding: 0 var(--space-1);
 }

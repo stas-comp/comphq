@@ -1,14 +1,22 @@
+{{/* A category's page (SPEC B13.10, gate 7.72): never drawn in the mockup, so
+built from its parts: the crumbs, a heading with a count and a primary button,
+and rows on the card surface. Each row keeps its move icons and drag handle
+(gate 7.55). */}}
 {{define "kb-category.html"}}
-<p><a href="/kb">Back to Knowledge Base</a></p>
-<h1>{{.Category.Name}}</h1>
-<p><a href="/kb/new">New article</a></p>
+<nav class="kb-crumbs" aria-label="Breadcrumb"><a href="/kb">Knowledge Base</a> › <span aria-current="page">{{.Category.Name}}</span></nav>
+<div class="kb-head">
+<h1>{{.Category.Name}} <span class="count">{{.Category.ArticleCount}} article{{if ne .Category.ArticleCount 1}}s{{end}}</span></h1>
+<div class="kb-head-actions"><a class="btn primary" href="/kb/new?category={{.Category.ID}}">New article</a></div>
+</div>
 
 {{if .Articles}}
 <ul class="kb-article-list" data-refresh-fragment-selector=".kb-article-list">
 {{range .Articles}}
 <li data-article-id="{{.ID}}">
 <span class="kb-article-handle" data-drag-handle aria-hidden="true" title="Drag to put in order">⠿</span>
-<a href="/kb/articles/{{.ID}}">{{.Title}}</a>
+<a class="kb-article-title" href="/kb/articles/{{.ID}}">{{.Title}}</a>
+{{if .Opening}}<p class="kb-article-opening">{{.Opening}}</p>{{end}}
+<p class="kb-article-by">{{if .UpdatedByName}}Updated by {{.UpdatedByName}} · {{end}}<span class="date">{{.UpdatedAt}}</span></p>
 <span class="kb-article-actions">
 <form method="post" action="/kb/articles/{{.ID}}/move" class="inline-form">
 <input type="hidden" name="direction" value="up">
@@ -26,6 +34,6 @@
 <script src="/static/app/sortable-options.js"></script>
 <script src="/static/kb/category.js"></script>
 {{else}}
-<p>No articles in this category yet.</p>
+<p class="kb-empty">No articles in this category yet. <a class="btn primary" href="/kb/new?category={{.Category.ID}}">Write the first one</a></p>
 {{end}}
 {{end}}
