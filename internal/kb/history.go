@@ -104,7 +104,8 @@ func (s *ArticleStore) Restore(ctx context.Context, articleID int64, versionNo i
 
 	var currentVersion int
 	var status string
-	if err := tx.QueryRowContext(ctx, `SELECT version_no, status FROM kb_articles WHERE id = ?`, articleID).Scan(&currentVersion, &status); err != nil {
+	var oldCategory int64
+	if err := tx.QueryRowContext(ctx, `SELECT version_no, status, category_id FROM kb_articles WHERE id = ?`, articleID).Scan(&currentVersion, &status, &oldCategory); err != nil {
 		return Article{}, err
 	}
 	newVersion := currentVersion + 1
@@ -115,6 +116,13 @@ func (s *ArticleStore) Restore(ctx context.Context, articleID int64, versionNo i
 		version.CategoryID, version.Title, version.BodyHTML, newVersion, personID, now, articleID,
 	); err != nil {
 		return Article{}, err
+	}
+	// A restore into another category goes to the bottom of that category
+	// (gate 7.57); into the same one it keeps its place.
+	if status == "published" && oldCategory != version.CategoryID {
+		if err := moveToBottomOfCategory(ctx, tx, articleID, oldCategory, version.CategoryID); err != nil {
+			return Article{}, err
+		}
 	}
 	if _, err := tx.ExecContext(ctx,
 		`INSERT INTO kb_article_versions (article_id, version_no, title, category_id, body_html, action, restored_from_version, edited_by, edited_at)
@@ -191,8 +199,21 @@ func (s *ArticleStore) setStatus(ctx context.Context, articleID, personID int64,
 		if _, err := tx.ExecContext(ctx, `DELETE FROM kb_search_words WHERE article_id = ?`, articleID); err != nil {
 			return err
 		}
-	} else if err := rewriteSearchRows(ctx, tx, articleID, title, bodyHTML); err != nil {
-		return err
+		// It leaves its category's order, which closes up.
+		if _, err := tx.ExecContext(ctx, `UPDATE kb_articles SET position = NULL WHERE id = ?`, articleID); err != nil {
+			return err
+		}
+		if err := renumberCategory(ctx, tx, categoryID); err != nil {
+			return err
+		}
+	} else {
+		if err := rewriteSearchRows(ctx, tx, articleID, title, bodyHTML); err != nil {
+			return err
+		}
+		// Brought back from Archived: the bottom of its category (gate 7.57).
+		if err := moveToBottomOfCategory(ctx, tx, articleID, 0, categoryID); err != nil {
+			return err
+		}
 	}
 
 	return tx.Commit()

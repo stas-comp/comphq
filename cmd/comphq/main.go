@@ -129,6 +129,13 @@ func run() error {
 		return fmt.Errorf("rebuild search word list: %w", err)
 	}
 
+	// SPEC B13.8, gate 7.59 (D-98): the articles' order is tidied at every
+	// start-up, for the same reason: 1.3.0 doesn't write it, so after a
+	// rollback and an upgrade again anything it created has no place yet.
+	if err := kb.RenumberAll(context.Background(), sqlDB); err != nil {
+		return fmt.Errorf("tidy article order: %w", err)
+	}
+
 	if cfg.TestMode {
 		// Hundreds of existing tests render pages without caring about
 		// backups; a fresh test server's app_meta has no last_backup_at

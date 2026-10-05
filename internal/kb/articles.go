@@ -83,10 +83,15 @@ func (s *ArticleStore) Publish(ctx context.Context, input ArticleInput, personID
 	if input.ID == 0 {
 		action = "created"
 		article.VersionNo = 1
+		// A new article goes to the bottom of its category (gate 7.57).
+		position, err := nextPosition(ctx, tx, input.CategoryID)
+		if err != nil {
+			return Article{}, err
+		}
 		res, err := tx.ExecContext(ctx,
-			`INSERT INTO kb_articles (category_id, title, body_html, status, version_no, created_by, created_at, updated_by, updated_at)
-			 VALUES (?, ?, ?, 'published', 1, ?, ?, ?, ?)`,
-			input.CategoryID, title, withBlocks, personID, now, personID, now,
+			`INSERT INTO kb_articles (category_id, title, body_html, status, version_no, created_by, created_at, updated_by, updated_at, position)
+			 VALUES (?, ?, ?, 'published', 1, ?, ?, ?, ?, ?)`,
+			input.CategoryID, title, withBlocks, personID, now, personID, now, position,
 		)
 		if err != nil {
 			return Article{}, err
@@ -97,7 +102,8 @@ func (s *ArticleStore) Publish(ctx context.Context, input ArticleInput, personID
 		}
 	} else {
 		var currentVersion int
-		if err := tx.QueryRowContext(ctx, `SELECT version_no FROM kb_articles WHERE id = ?`, input.ID).Scan(&currentVersion); err != nil {
+		var oldCategory int64
+		if err := tx.QueryRowContext(ctx, `SELECT version_no, category_id FROM kb_articles WHERE id = ?`, input.ID).Scan(&currentVersion, &oldCategory); err != nil {
 			return Article{}, err
 		}
 		if !input.Override && currentVersion != input.ExpectedVersion {
@@ -109,6 +115,13 @@ func (s *ArticleStore) Publish(ctx context.Context, input ArticleInput, personID
 			input.CategoryID, title, withBlocks, article.VersionNo, personID, now, input.ID,
 		); err != nil {
 			return Article{}, err
+		}
+		// Editing no longer moves an article (gate 7.56); moving it to another
+		// category puts it at the bottom of that one (gate 7.57).
+		if oldCategory != input.CategoryID {
+			if err := moveToBottomOfCategory(ctx, tx, input.ID, oldCategory, input.CategoryID); err != nil {
+				return Article{}, err
+			}
 		}
 	}
 
@@ -207,11 +220,11 @@ type CategoryArticle struct {
 	Title string
 }
 
-// ListByCategory returns a category's published articles, most recently
-// updated first.
+// ListByCategory returns a category's published articles in their own order
+// (gate 7.55, D-98).
 func (s *ArticleStore) ListByCategory(categoryID int64) ([]CategoryArticle, error) {
 	rows, err := s.DB.Query(
-		`SELECT id, title FROM kb_articles WHERE category_id = ? AND status = 'published' ORDER BY updated_at DESC`,
+		`SELECT id, title FROM kb_articles WHERE category_id = ? AND status = 'published' ORDER BY position IS NULL, position, id`,
 		categoryID,
 	)
 	if err != nil {

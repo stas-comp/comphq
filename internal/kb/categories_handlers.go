@@ -32,7 +32,7 @@ func (h *Handlers) renderCategories(w http.ResponseWriter, r *http.Request, stat
 // page, listing its published articles.
 type categoryPageData struct {
 	Category Category
-	Articles []CategoryArticle
+	Articles []OrderedArticle
 }
 
 func (h *Handlers) handleViewCategory(w http.ResponseWriter, r *http.Request) {
@@ -57,7 +57,7 @@ func (h *Handlers) handleViewCategory(w http.ResponseWriter, r *http.Request) {
 	}
 	h.srv.RenderFrame(w, r, http.StatusOK, "kb-category.html", category.Name, categoryPageData{
 		Category: category,
-		Articles: articles,
+		Articles: WithNeighbours(articles),
 	})
 }
 

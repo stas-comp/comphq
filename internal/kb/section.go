@@ -52,6 +52,7 @@ func Section(srv *app.Server) app.Section {
 			mux.HandleFunc("GET /kb/articles/{id}/history", h.handleArticleHistory)
 			mux.HandleFunc("GET /kb/articles/{id}/versions/{n}", h.handleViewVersion)
 			mux.HandleFunc("POST /kb/articles/{id}/versions/{n}/restore", h.handleRestoreVersion)
+			mux.HandleFunc("POST /kb/articles/{id}/move", h.handleMoveArticle)
 			mux.HandleFunc("POST /kb/articles/{id}/archive", h.handleArchiveArticle)
 			mux.HandleFunc("POST /kb/articles/{id}/unarchive", h.handleUnarchiveArticle)
 			mux.HandleFunc("GET /kb/archived", h.handleArchivedList)

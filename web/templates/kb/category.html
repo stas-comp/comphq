@@ -4,11 +4,27 @@
 <p><a href="/kb/new">New article</a></p>
 
 {{if .Articles}}
-<ul class="kb-article-list">
+<ul class="kb-article-list" data-refresh-fragment-selector=".kb-article-list">
 {{range .Articles}}
-<li><a href="/kb/articles/{{.ID}}">{{.Title}}</a></li>
+<li data-article-id="{{.ID}}">
+<span class="kb-article-handle" data-drag-handle aria-hidden="true" title="Drag to put in order">⠿</span>
+<a href="/kb/articles/{{.ID}}">{{.Title}}</a>
+<span class="kb-article-actions">
+<form method="post" action="/kb/articles/{{.ID}}/move" class="inline-form">
+<input type="hidden" name="direction" value="up">
+{{template "part-icon-button" .MoveUp}}
+</form>
+<form method="post" action="/kb/articles/{{.ID}}/move" class="inline-form">
+<input type="hidden" name="direction" value="down">
+{{template "part-icon-button" .MoveDown}}
+</form>
+</span>
+</li>
 {{end}}
 </ul>
+<script src="/static/vendor/sortable/Sortable-1.15.7.min.js"></script>
+<script src="/static/app/sortable-options.js"></script>
+<script src="/static/kb/category.js"></script>
 {{else}}
 <p>No articles in this category yet.</p>
 {{end}}

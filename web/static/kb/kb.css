@@ -434,3 +434,33 @@
 .search-instead {
   margin: var(--space-4) 0 0;
 }
+
+/* A category's article list, in its own order (gate 7.55): each row has its
+   move icons. P7-16 gives the whole page its new look. */
+.kb-article-list li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.kb-article-list li > a {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.kb-article-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.kb-article-actions .inline-form {
+  display: flex;
+}
+
+.kb-article-handle {
+  cursor: grab;
+  color: var(--color-text-muted);
+  user-select: none;
+  padding: 0 var(--space-1);
+}

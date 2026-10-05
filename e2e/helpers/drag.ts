@@ -5,11 +5,15 @@ import type { Locator, Page } from '@playwright/test';
 // instead of a guessed sleep, and a retried gesture. Every Tasks drag test
 // goes through here.
 
-async function waitForChosen(page: Page, taskId: string, timeout: number): Promise<boolean> {
+// SortableJS marks the element being carried with sortable-chosen once a drag
+// has really started; waiting for that beats guessing a pause. The card is
+// found by its id attribute, not by the locator: once the drag starts there
+// are two elements that match it (the card and the copy under the pointer).
+async function waitForChosen(page: Page, selector: string, timeout: number): Promise<boolean> {
   try {
     await page.waitForFunction(
-      (id) => document.querySelector(`[data-task-id="${id}"]`)?.classList.contains('sortable-chosen'),
-      taskId,
+      (sel) => document.querySelector(sel)?.classList.contains('sortable-chosen'),
+      selector,
       { timeout },
     );
     return true;
@@ -23,12 +27,13 @@ const pointer = new WeakMap<Page, { x: number; y: number }>();
 
 /** Presses on a card's title and moves just far enough that the drag has begun. */
 export async function beginDrag(page: Page, card: Locator): Promise<void> {
-  const taskId = await card.getAttribute('data-task-id');
-  if (!taskId) throw new Error('beginDrag: not a card');
+  const selector = await card.evaluate((el) =>
+    el.hasAttribute('data-task-id') ? `[data-task-id="${el.getAttribute('data-task-id')}"]` : `[data-article-id="${el.getAttribute('data-article-id')}"]`,
+  );
   for (let attempt = 1; attempt <= 4; attempt++) {
     try {
       await card.scrollIntoViewIfNeeded();
-      const box = await card.locator('.task-card-title').first().boundingBox();
+      const box = await card.locator('.task-card-title, [data-drag-handle]').first().boundingBox();
       if (!box) throw new Error('beginDrag: card has no title box');
       const x = box.x + box.width / 2;
       const y = box.y + box.height / 2;
@@ -43,7 +48,7 @@ export async function beginDrag(page: Page, card: Locator): Promise<void> {
       await page.waitForTimeout(300);
       continue;
     }
-    if (await waitForChosen(page, taskId, 3000)) return;
+    if (await waitForChosen(page, selector, 3000)) return;
     await page.mouse.up();
   }
   throw new Error('beginDrag: the drag never started after retries');

@@ -34,7 +34,7 @@ func (s *ArticleStore) ListForExport(ctx context.Context) (categories []ExportCa
 		FROM kb_articles a
 		JOIN kb_categories c ON c.id = a.category_id
 		WHERE a.status = 'published'
-		ORDER BY c.sort_order, a.title
+		ORDER BY c.sort_order, a.position IS NULL, a.position, a.id
 	`)
 	if err != nil {
 		return nil, nil, err

@@ -111,6 +111,39 @@ func parseArticleAndVersion(r *http.Request) (id int64, n int, err error) {
 
 // handleArchiveArticle removes an article from its category and search
 // (SPEC gate 1.24).
+// handleMoveArticle serves gate 7.55's reordering, by drag (before_id or
+// after_id: the article it was dropped beside) or by the move icons
+// (direction=up or down). It answers with the category's page, which is what
+// a form submission shows and what the drag's script swaps in. Reordering is
+// not an edit (gate 7.56): no History, no new version, no change to Updated.
+func (h *Handlers) handleMoveArticle(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil {
+		http.Error(w, "invalid id", http.StatusBadRequest)
+		return
+	}
+	article, err := h.articles.Get(id)
+	if err == sql.ErrNoRows {
+		http.NotFound(w, r)
+		return
+	}
+	if err != nil {
+		http.Error(w, "internal error", http.StatusInternalServerError)
+		return
+	}
+	in := MoveInput{Direction: r.FormValue("direction")}
+	in.BeforeID, _ = strconv.ParseInt(r.FormValue("before_id"), 10, 64)
+	in.AfterID, _ = strconv.ParseInt(r.FormValue("after_id"), 10, 64)
+	switch err := h.articles.Move(r.Context(), id, in); err {
+	case nil, ErrArticleNotInOrder:
+		// A list that changed under us (somebody archived or moved the
+		// neighbour) is simply shown as it is now.
+		http.Redirect(w, r, "/kb/categories/"+strconv.FormatInt(article.CategoryID, 10), http.StatusFound)
+	default:
+		http.Error(w, "internal error", http.StatusInternalServerError)
+	}
+}
+
 func (h *Handlers) handleArchiveArticle(w http.ResponseWriter, r *http.Request) {
 	h.setArticleStatus(w, r, h.articles.Archive)
 }
