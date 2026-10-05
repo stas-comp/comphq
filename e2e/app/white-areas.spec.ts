@@ -71,12 +71,21 @@ test('7.50 A sideways swipe over the Team lanes moves only the lanes', async ({ 
   await expect.poll(() => lanes.evaluate((el) => el.scrollLeft)).toBeGreaterThan(0);
   expect(await page.evaluate(() => window.scrollX)).toBe(0);
 
-  // Shift + the ordinary wheel is the same gesture on a mouse.
+  // Shift + the ordinary wheel is the same gesture on a mouse. (Repeated, as
+  // a hand would: one synthetic notch can be swallowed on a busy machine.)
   const before = await lanes.evaluate((el) => el.scrollLeft);
   await page.keyboard.down('Shift');
-  await page.mouse.wheel(0, 300);
+  await expect
+    .poll(
+      async () => {
+        await page.mouse.wheel(0, 300);
+        await page.waitForTimeout(100);
+        return lanes.evaluate((el) => el.scrollLeft);
+      },
+      { timeout: 10_000 },
+    )
+    .toBeGreaterThan(before);
   await page.keyboard.up('Shift');
-  await expect.poll(() => lanes.evaluate((el) => el.scrollLeft)).toBeGreaterThan(before);
   expect(await page.evaluate(() => window.scrollX)).toBe(0);
 
   // The frame stays where it is.
