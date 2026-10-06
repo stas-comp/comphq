@@ -102,7 +102,10 @@ checksum_data_dir() {
 run_upgrade_rollback_test() {
   local current_image="$1"
   local prev_tag
-  prev_tag="$(git -C "$ROOT" tag -l 'v*.*.*' | sort -V | tail -1)"
+  # The highest tag lower than the version being built (IMAGE_TAG), as the rule
+  # above says; with the tag for this very version already pushed (the release
+  # run), "the latest tag" would be this build compared with itself.
+  prev_tag="$(git -C "$ROOT" tag -l 'v*.*.*' | grep -vx "v${IMAGE_TAG}" | sort -V | tail -1)"
   if [ -z "$prev_tag" ]; then
     log "  skipped: no released tag exists yet"
     return 0

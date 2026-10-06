@@ -152,7 +152,7 @@ export async function dragCardTo(
       // place, and SortableJS may scroll), so re-measure the target on every
       // turn instead of trusting where it was when the drag began.
       settled = false;
-      const deadline = Date.now() + (opts.restart === false ? 10_000 : 4000);
+      const deadline = Date.now() + (opts.restart === false ? 25_000 : 4000); // (a drag that can't be repeated waits longer: a slow CI runner once let go too soon)
       for (let i = 0; Date.now() < deadline && !settled; i++) {
         const t = await target();
         await page.mouse.move(t.x + (i % 2), t.y);
