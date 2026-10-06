@@ -314,10 +314,15 @@ test('gate 2.04: a task can be moved with keyboard only', async ({ page, server 
   await addTask(page, b, stage);
   expect(relativeOrder(await columnOrder(page, stage), [a, b])).toEqual([a, b]);
 
-  const moveUpButton = page.locator('.task-card', { hasText: b }).getByRole('button', { name: `Move ${b} up` });
-  await moveUpButton.focus();
-  await page.keyboard.press('Enter');
-  await ready(page);
+  // The shared server's To do column also gets jobs from other tests, so a job of theirs can sit between
+  // A and B, and one press moves B above that job only; the keyboard presses are repeated until B is above A.
+  for (let press = 0; press < 6; press++) {
+    if (relativeOrder(await columnOrder(page, stage), [a, b])[0] === b) break;
+    const moveUpButton = page.locator('.task-card', { hasText: b }).getByRole('button', { name: `Move ${b} up` });
+    await moveUpButton.focus();
+    await page.keyboard.press('Enter');
+    await ready(page);
+  }
 
   expect(relativeOrder(await columnOrder(page, stage), [a, b])).toEqual([b, a]);
 });
