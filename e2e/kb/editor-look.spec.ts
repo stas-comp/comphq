@@ -161,6 +161,7 @@ test('gate 7.74: every kind of box for what could not come across is a bold sent
       expect(Number(parts.sentence.weight), `${kind} sentence is bold`).toBeGreaterThanOrEqual(700);
       expect(parts.tip.content, `${kind} tip`).toMatch(/^"Tip: /);
       expect(Number(parts.tip.weight), `${kind} tip is not bold`).toBeLessThan(700);
+      if (kind === 'drawing') expect(parts.tip.content, 'the arrows in the EMF tip are real arrows').toContain('→');
     }
     await axeCheck(page);
   }

@@ -114,7 +114,7 @@
 
 .ProseMirror div[data-missing-kind="drawing"]::after,
 .kb-article-body div[data-missing-kind="drawing"]::after {
-  content: "Tip: in Word, right-click it 92  Save as Picture 92  PNG, then drag the PNG into this article.";
+  content: "Tip: in Word, right-click it \2192  Save as Picture \2192  PNG, then drag the PNG into this article.";
 }
 
 .ProseMirror div[data-missing-kind="equation"]::before,
