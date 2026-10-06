@@ -23,15 +23,21 @@ test('gate 7.10: a job made with no column chosen goes to the bottom of To do', 
   await signInAsNewPerson(page, server.baseURL, '/tasks/board');
   const first = uniqueName('First job');
   const second = uniqueName('Second job');
+  const todo = page.locator('.task-column[data-stage="todo"] .task-card');
+  const before = await todo.locator('.task-card-title').allInnerTexts();
   for (const title of [first, second]) {
     await openNewTask(page);
     await page.fill('#new-task-title', title);
     await page.click('.add-task-form button[type="submit"]');
     await ready(page);
   }
-  const todo = page.locator('.task-column[data-stage="todo"] .task-card');
-  const titles = await todo.locator('.task-card-title').allInnerTexts();
-  expect(titles.findIndex((t) => t.includes(second))).toBe(titles.findIndex((t) => t.includes(first)) + 1);
+  // The server is shared with other tests, which add jobs of their own at the bottom too, so only
+  // the jobs that were there before and the two made here are compared: the two come last, in order.
+  const titles = (await todo.locator('.task-card-title').allInnerTexts()).filter(
+    (t) => before.includes(t) || t.includes(first) || t.includes(second),
+  );
+  expect(titles.slice(-2).map((t) => (t.includes(first) ? 'first' : t.includes(second) ? 'second' : t))).toEqual(['first', 'second']);
+  expect(titles.slice(0, -2)).toEqual(before.filter((t) => titles.includes(t)));
   await expect(page.locator('.task-column[data-stage="idea"] .task-card', { hasText: first })).toHaveCount(0);
 
   // An idea can still be chosen.
