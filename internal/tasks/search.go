@@ -9,7 +9,8 @@ import (
 	"strings"
 	"time"
 	"unicode"
-	"unicode/utf8"
+
+	"github.com/stas-comp/comphq/internal/app/wordmatch"
 )
 
 // Job search (SPEC B13.4, gates 7.20-7.26, D-94). On Tasks pages the top
@@ -28,21 +29,8 @@ const (
 	minSearchLetters = 2
 )
 
-// SearchWords takes words the way the article search does (B4): runs of
-// Unicode letters and digits. A query shorter than two characters in total
-// finds nothing, so it returns no words.
-func SearchWords(query string) []string {
-	var words []string
-	total := 0
-	for _, w := range strings.FieldsFunc(query, func(r rune) bool { return !unicode.IsLetter(r) && !unicode.IsDigit(r) }) {
-		words = append(words, w)
-		total += utf8.RuneCountInString(w)
-	}
-	if total < minSearchLetters {
-		return nil
-	}
-	return words
-}
+// SearchWords takes words the way the article search does (B4); see wordmatch.
+func SearchWords(query string) []string { return wordmatch.Words(query) }
 
 // JobHit is one search result, ready for the panel (as JSON) or the results
 // page. Title and Passage are HTML-escaped, with the matched words wrapped in
@@ -169,34 +157,10 @@ func (s *Store) SearchJobs(ctx context.Context, query string, excludeID int64, t
 	return hits, nil
 }
 
-// lowerRunes folds each rune on its own, so the result has exactly as many
-// runes as the original and an index in one is an index in the other.
-func lowerRunes(s string) []rune {
-	r := []rune(s)
-	for i := range r {
-		r[i] = unicode.ToLower(r[i])
-	}
-	return r
-}
+// lowerRunes and indexRunes are the shared word match (internal/app/wordmatch).
+func lowerRunes(s string) []rune { return wordmatch.Lower(s) }
 
-func indexRunes(hay, needle []rune) int {
-	if len(needle) == 0 || len(needle) > len(hay) {
-		return -1
-	}
-	for i := 0; i+len(needle) <= len(hay); i++ {
-		match := true
-		for j := range needle {
-			if hay[i+j] != needle[j] {
-				match = false
-				break
-			}
-		}
-		if match {
-			return i
-		}
-	}
-	return -1
-}
+func indexRunes(hay, needle []rune) int { return wordmatch.Index(hay, needle) }
 
 // span is a half-open range of rune indexes.
 type span struct{ from, to int }

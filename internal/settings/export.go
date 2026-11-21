@@ -75,10 +75,17 @@ func (h *Handlers) handleExport(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	for _, f := range []struct {
+	csvFiles := []struct {
 		name string
 		src  CSVSource
-	}{{"tasks.csv", h.tasks}, {"events.csv", h.events}, {"steps.csv", h.steps}, {"links.csv", h.links}} {
+	}{{"tasks.csv", h.tasks}, {"events.csv", h.events}, {"steps.csv", h.steps}, {"links.csv", h.links}}
+	for _, e := range h.extra {
+		csvFiles = append(csvFiles, struct {
+			name string
+			src  CSVSource
+		}{e.Name, e.Source})
+	}
+	for _, f := range csvFiles {
 		csvRows, err := f.src.ExportRows(ctx)
 		if err != nil {
 			return

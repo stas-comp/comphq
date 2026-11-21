@@ -23,15 +23,21 @@ type Handlers struct {
 	categories *CategoryStore
 	articles   *ArticleStore
 	images     *images.Store
+	// jobs fills the article page's "Jobs using this article" (D-105); nil
+	// means no jobs.
+	jobs JobsUsing
 }
 
-func Section(srv *app.Server) app.Section {
+func Section(srv *app.Server, opts ...SectionOption) app.Section {
 	imagesStore := &images.Store{DB: srv.DB, DataDir: srv.DataDir}
 	h := &Handlers{
 		srv:        srv,
 		categories: &CategoryStore{DB: srv.DB},
 		articles:   &ArticleStore{DB: srv.DB, Images: imagesStore},
 		images:     imagesStore,
+	}
+	for _, opt := range opts {
+		opt(h)
 	}
 	return app.Section{
 		MigrationName: "kb", // migrations/kb/0001_search.sql (P1-08), 0002_categories.sql (P1-17), 0003_article_versions.sql (P1-19), 0004_images.sql (P1-21)

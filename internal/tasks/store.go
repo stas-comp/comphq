@@ -71,6 +71,10 @@ var (
 // Store reads and writes tasks, their assignees and their activity.
 type Store struct {
 	DB *sql.DB
+	// Articles finds Knowledge Base articles for the links on a job (D-105).
+	// Tasks never imports the Knowledge Base; cmd/comphq fills this in. Nil
+	// means there are no articles.
+	Articles ArticleFinder
 }
 
 // CreateInput is what adding a task takes (SPEC gate 2.02).

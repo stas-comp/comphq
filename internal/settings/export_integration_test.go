@@ -51,7 +51,9 @@ func newTestServer(t *testing.T) (*httptest.Server, *sql.DB) {
 		t.Fatalf("NewServer: %v", err)
 	}
 	srv.Registry().Add(kb.Section(srv))
-	srv.Registry().Add(Section(srv, fakeCSV{{"Title", "Column"}, {"Fix printer", "To do"}}, fakeCSV{{"Title", "Date"}, {"Café night", "Sat 19 Sep 2026"}}, fakeCSV{{"Job", "Step"}, {"Fix printer", "Order toner"}}, fakeCSV{{"Job", "Linked job", "Link"}, {"Order toner", "Print newsletter", "do first"}}))
+	srv.Registry().Add(Section(srv, fakeCSV{{"Title", "Column"}, {"Fix printer", "To do"}}, fakeCSV{{"Title", "Date"}, {"Café night", "Sat 19 Sep 2026"}}, fakeCSV{{"Job", "Step"}, {"Fix printer", "Order toner"}}, fakeCSV{{"Job", "Linked job", "Link"}, {"Order toner", "Print newsletter", "do first"}},
+		ExportFile{Name: "job-articles.csv", Source: fakeCSV{{"Job", "Article"}, {"Fix printer", "Changing the toner"}}},
+		ExportFile{Name: "job-places.csv", Source: fakeCSV{{"Job", "Name", "Folder path"}, {"Fix printer", "Lists", `\NAS\COSMOS`}}}))
 
 	ts := httptest.NewServer(srv.Routes())
 	t.Cleanup(ts.Close)
@@ -161,6 +163,8 @@ func TestExportHTTPZipContainsIndexArticlesAndDatabase(t *testing.T) {
 		"events.csv",
 		"steps.csv",
 		"links.csv", // gate 7.48
+		"job-articles.csv", // gate 8.20
+		"job-places.csv",   // gate 8.20
 		"articles/Printers/Changing the toner.html",
 		"articles/_Archived/Old policy.html",
 	} {

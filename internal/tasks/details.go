@@ -324,6 +324,24 @@ func (s *Store) activityText(ctx context.Context, action, detail, actorName stri
 			return actorName + " removed the link to “" + d.OtherTitle + "” (" + meaning + ")", nil
 		}
 		return actorName + " linked this to “" + d.OtherTitle + "” (" + meaning + ")", nil
+	case "article_linked", "article_unlinked":
+		var d articleDetail
+		if err := json.Unmarshal([]byte(detail), &d); err != nil {
+			return "", err
+		}
+		if action == "article_unlinked" {
+			return actorName + " removed the article “" + d.Title + "”", nil
+		}
+		return actorName + " linked the article “" + d.Title + "”", nil
+	case "place_added", "place_removed":
+		var d placeDetail
+		if err := json.Unmarshal([]byte(detail), &d); err != nil {
+			return "", err
+		}
+		if action == "place_removed" {
+			return actorName + " removed the COSMOS place “" + d.Name + "”", nil
+		}
+		return actorName + " added the COSMOS place “" + d.Name + "”", nil
 	case "repeat_on":
 		return actorName + " made this repeat every week", nil
 	case "repeat_off":

@@ -20,7 +20,16 @@ type CSVSource interface {
 	ExportRows(ctx context.Context) ([][]string, error)
 }
 
+// ExportFile is one more spreadsheet in Export everything: its file name and
+// where its rows come from. v1.6 adds the job-articles, job-places and
+// Questions files this way (SPEC B14).
+type ExportFile struct {
+	Name   string
+	Source CSVSource
+}
+
 type Handlers struct {
+	extra    []ExportFile
 	tasks    CSVSource
 	events   CSVSource
 	steps    CSVSource
@@ -31,7 +40,7 @@ type Handlers struct {
 	images   *images.Store
 }
 
-func Section(srv *app.Server, tasksCSV, eventsCSV, stepsCSV, linksCSV CSVSource) app.Section {
+func Section(srv *app.Server, tasksCSV, eventsCSV, stepsCSV, linksCSV CSVSource, extra ...ExportFile) app.Section {
 	imagesStore := &images.Store{DB: srv.DB, DataDir: srv.DataDir}
 	h := &Handlers{
 		srv:      srv,
@@ -39,6 +48,7 @@ func Section(srv *app.Server, tasksCSV, eventsCSV, stepsCSV, linksCSV CSVSource)
 		events:   eventsCSV,
 		steps:    stepsCSV,
 		links:    linksCSV,
+		extra:    extra,
 		people:   srv.PeopleStore(),
 		articles: &kb.ArticleStore{DB: srv.DB, Images: imagesStore},
 		images:   imagesStore,

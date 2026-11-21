@@ -426,3 +426,73 @@ func TestReadmeImagesExist(t *testing.T) {
 		t.Error("README.md has no pictures; the Setup section should show the finished window")
 	}
 }
+
+// TestSectionsDoNotImportEachOther is SPEC B2's independence rule (and
+// PLAN-v1.6 §2.4): Tasks, the Knowledge Base, the Calendar, the Briefing and
+// Questions never import each other. They meet only through the small
+// interfaces each declares and cmd/comphq wires. The one standing exception
+// is Settings, which reads the Knowledge Base for Export everything and
+// Content check (SPEC B5). Test files count too.
+func TestSectionsDoNotImportEachOther(t *testing.T) {
+	root := repoRoot(t)
+	sections := []string{"tasks", "kb", "calendar", "briefing", "questions", "settings"}
+	allowed := map[string]map[string]bool{"settings": {"kb": true}}
+	importRe := regexp.MustCompile(`"github\.com/stas-comp/comphq/internal/([a-z]+)(?:/[a-z/]*)?"`)
+	for _, section := range sections {
+		dir := filepath.Join(root, "internal", section)
+		if _, err := os.Stat(dir); err != nil {
+			continue // a section that isn't built yet
+		}
+		err := filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
+			if err != nil || d.IsDir() || !strings.HasSuffix(path, ".go") {
+				return err
+			}
+			data, err := os.ReadFile(path)
+			if err != nil {
+				return err
+			}
+			for _, m := range importRe.FindAllStringSubmatch(string(data), -1) {
+				other := m[1]
+				if other == section || allowed[section][other] {
+					continue
+				}
+				for _, s := range sections {
+					if s == other {
+						rel, _ := filepath.Rel(root, path)
+						t.Errorf("%s imports the %s section (SPEC B2: sections never import each other; wire an interface in cmd/comphq)", filepath.ToSlash(rel), other)
+					}
+				}
+			}
+			return nil
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+}
+
+// TestQuestionsDependsOnlyOnPeopleDbAndApp is SPEC B14.6: the Questions
+// section imports nothing from the other sections or the Knowledge Base's
+// packages, only people, db and app.
+func TestQuestionsDependsOnlyOnPeopleDbAndApp(t *testing.T) {
+	root := repoRoot(t)
+	dir := filepath.Join(root, "internal", "questions")
+	if _, err := os.Stat(dir); err != nil {
+		t.Skip("the Questions section isn't built yet")
+	}
+	importRe := regexp.MustCompile(`"github\.com/stas-comp/comphq/internal/([a-z]+)(?:/[a-z/]*)?"`)
+	allowed := map[string]bool{"people": true, "db": true, "app": true, "brand": true, "questions": true}
+	filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
+		if err != nil || d.IsDir() || !strings.HasSuffix(path, ".go") {
+			return err
+		}
+		data, _ := os.ReadFile(path)
+		for _, m := range importRe.FindAllStringSubmatch(string(data), -1) {
+			if !allowed[m[1]] {
+				rel, _ := filepath.Rel(root, path)
+				t.Errorf("%s imports internal/%s; Questions may depend only on people, db and app", filepath.ToSlash(rel), m[1])
+			}
+		}
+		return nil
+	})
+}

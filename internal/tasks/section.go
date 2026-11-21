@@ -14,11 +14,23 @@ type Handlers struct {
 	people *people.Store
 }
 
-func Section(srv *app.Server) app.Section {
+// SectionOption changes how Section is wired.
+type SectionOption func(*Handlers)
+
+// WithArticleFinder lets jobs link Knowledge Base articles (D-105). cmd/comphq
+// passes the Knowledge Base's implementation, so Tasks never imports it.
+func WithArticleFinder(f ArticleFinder) SectionOption {
+	return func(h *Handlers) { h.tasks.Articles = f }
+}
+
+func Section(srv *app.Server, opts ...SectionOption) app.Section {
 	h := &Handlers{
 		srv:    srv,
 		tasks:  &Store{DB: srv.DB},
 		people: srv.PeopleStore(),
+	}
+	for _, opt := range opts {
+		opt(h)
 	}
 	return app.Section{
 		MigrationName: "tasks",
@@ -37,6 +49,7 @@ func Section(srv *app.Server) app.Section {
 			mux.HandleFunc("GET /tasks/removed", h.handleRemoved)
 			mux.HandleFunc("GET /tasks/search", h.handleSearchPage)
 			mux.HandleFunc("GET /tasks/search.json", h.handleSearchJSON)
+			mux.HandleFunc("GET /tasks/articles.json", h.handleArticlesJSON)
 			mux.HandleFunc("GET /tasks/{id}", h.withWeeklyReset(h.handleTaskDetails))
 			mux.HandleFunc("GET /tasks/{id}/people", h.handleTaskPeople)
 			mux.HandleFunc("POST /tasks/{id}", h.handleUpdateTask)
@@ -47,6 +60,10 @@ func Section(srv *app.Server) app.Section {
 			mux.HandleFunc("POST /tasks/{id}/remove", h.handleRemoveTask)
 			mux.HandleFunc("POST /tasks/{id}/links", h.handleAddLink)
 			mux.HandleFunc("POST /tasks/{id}/links/{linkID}/remove", h.handleRemoveLink)
+			mux.HandleFunc("POST /tasks/{id}/articles", h.handleAddArticle)
+			mux.HandleFunc("POST /tasks/{id}/articles/{linkID}/remove", h.handleRemoveArticle)
+			mux.HandleFunc("POST /tasks/{id}/places", h.handleAddPlace)
+			mux.HandleFunc("POST /tasks/{id}/places/{placeID}/remove", h.handleRemovePlace)
 			mux.HandleFunc("POST /tasks/{id}/restore", h.handleRestoreTask)
 			mux.HandleFunc("GET /tasks/{id}/steps", h.handleStepsList)
 			mux.HandleFunc("POST /tasks/{id}/steps", h.handleAddStep)

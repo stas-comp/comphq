@@ -44,6 +44,48 @@ func (a taskDeadlines) DueTasks(ctx context.Context, from, to time.Time) ([]cale
 	return out, nil
 }
 
+// articleFinder adapts the Knowledge Base's article store to tasks.ArticleFinder
+// (SPEC B14.2): the titles and categories jobs show for their linked articles.
+type articleFinder struct{ store *kb.ArticleStore }
+
+func toTaskArticle(a kb.ArticleRef) tasks.ArticleRef {
+	return tasks.ArticleRef{ID: a.ID, Title: a.Title, Category: a.Category, Archived: a.Archived}
+}
+
+func (a articleFinder) FindByTitle(ctx context.Context, q string, limit int) []tasks.ArticleRef {
+	found := a.store.FindByTitle(ctx, q, limit)
+	out := make([]tasks.ArticleRef, len(found))
+	for i, r := range found {
+		out[i] = toTaskArticle(r)
+	}
+	return out
+}
+
+func (a articleFinder) Articles(ctx context.Context, ids []int64) map[int64]tasks.ArticleRef {
+	found := a.store.Articles(ctx, ids)
+	out := make(map[int64]tasks.ArticleRef, len(found))
+	for id, r := range found {
+		out[id] = toTaskArticle(r)
+	}
+	return out
+}
+
+// jobsUsingArticle adapts the Tasks store to kb.JobsUsing: the jobs an
+// article's page lists under "Jobs using this article".
+type jobsUsingArticle struct{ store *tasks.Store }
+
+func (j jobsUsingArticle) JobsForArticle(ctx context.Context, articleID int64) []kb.JobRef {
+	jobs, err := j.store.JobsUsingArticle(ctx, articleID)
+	if err != nil {
+		return nil
+	}
+	out := make([]kb.JobRef, len(jobs))
+	for i, job := range jobs {
+		out[i] = kb.JobRef{ID: job.ID, Title: job.Title, StageLabel: job.StageLabel, Finished: job.Finished}
+	}
+	return out
+}
+
 // version is set by ldflags at release build time (SPEC P1-03 behaviour).
 var version = "dev"
 
@@ -82,10 +124,16 @@ func run() error {
 	srv.Registry().Add(briefing.Section(srv,
 		briefingTasks{store: &tasks.Store{DB: srv.DB}, today: func() time.Time { return app.Today(cfg.TestMode) }},
 		briefingEvents{store: &calendar.Store{DB: srv.DB}}))
-	srv.Registry().Add(kb.Section(srv))
-	srv.Registry().Add(tasks.Section(srv))
+	// Tasks and the Knowledge Base meet only here (SPEC B2, D-105): each
+	// declares the small interface it needs and the other's store fills it in.
+	articleStore := &kb.ArticleStore{DB: srv.DB}
+	jobStore := &tasks.Store{DB: srv.DB}
+	srv.Registry().Add(kb.Section(srv, kb.WithJobsUsing(jobsUsingArticle{store: jobStore})))
+	srv.Registry().Add(tasks.Section(srv, tasks.WithArticleFinder(articleFinder{store: articleStore})))
 	srv.Registry().Add(calendar.Section(srv, taskDeadlines{store: &tasks.Store{DB: srv.DB}}))
-	srv.Registry().Add(settings.Section(srv, &tasks.Store{DB: srv.DB}, &calendar.Store{DB: srv.DB}, &tasks.StepsCSV{DB: srv.DB}, &tasks.LinksCSV{DB: srv.DB}))
+	srv.Registry().Add(settings.Section(srv, &tasks.Store{DB: srv.DB}, &calendar.Store{DB: srv.DB}, &tasks.StepsCSV{DB: srv.DB}, &tasks.LinksCSV{DB: srv.DB},
+		settings.ExportFile{Name: "job-articles.csv", Source: &tasks.ArticlesCSV{DB: srv.DB, Articles: articleFinder{store: articleStore}}},
+		settings.ExportFile{Name: "job-places.csv", Source: &tasks.PlacesCSV{DB: srv.DB}}))
 
 	sectionMigrations := make(map[string][]db.Migration)
 	pending := false
