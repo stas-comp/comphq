@@ -189,7 +189,7 @@ run_upgrade_rollback_test() {
   # article while rolled back (gate 6.34, SPEC B12.5): v1.2.0 writes
   # kb_search but has never heard of kb_search_words. And, as v1.3.0 does
   # not know articles have an order, one into the ordered category (gate 7.59).
-  BASE_URL="http://127.0.0.1:8080" npx playwright test --project=smoke --grep "@steps-rolledback|@search-seed-rolledback|@order-rolledback|@weekly-rolledback|@links-rolledback"
+  COMPHQ_PREV_VERSION="${prev_tag#v}" BASE_URL="http://127.0.0.1:8080" npx playwright test --project=smoke --grep "@steps-rolledback|@search-seed-rolledback|@order-rolledback|@weekly-rolledback|@links-rolledback"
   docker compose -f "$up_compose_prev" -p "$up_project" down
 
   log "  phase 4: upgrade again, and every step and half-typed search word is still there"

@@ -44,12 +44,29 @@ test('@weekly-seed two weekly jobs made under the new build', async ({ page, ser
   }
 });
 
-// Run against the PREVIOUS release's app, which has no weekly jobs.
-test('@weekly-rolledback the previous release shows them as ordinary jobs, and one can be finished', async ({ page, server }) => {
+// "1.4.0" >= "1.3.0": compares dotted release numbers part by part.
+function atLeast(version: string, min: string): boolean {
+  const a = version.split('.').map(Number);
+  const b = min.split('.').map(Number);
+  for (let i = 0; i < Math.max(a.length, b.length); i++) {
+    const d = (a[i] ?? 0) - (b[i] ?? 0);
+    if (d !== 0) return d > 0;
+  }
+  return true;
+}
+
+// Run against the PREVIOUS release's app. container-test.sh passes its version
+// as COMPHQ_PREV_VERSION. Weekly jobs arrived in 1.4.0: a release before that
+// has never heard of them and must show them as ordinary jobs (gate 7.39, when
+// the previous release was 1.3.0); 1.4.0 and later must still show them as
+// weekly. Either way the job opens and can be finished there.
+test('@weekly-rolledback the previous release opens them (as ordinary jobs before 1.4.0), and one can be finished', async ({ page, server }) => {
+  const prev = process.env.COMPHQ_PREV_VERSION ?? '';
+  const prevKnowsWeekly = prev !== '' && atLeast(prev, '1.4.0');
   await signInAsNewPerson(page, server.baseURL, '/tasks/board');
   const hrefA = await hrefOf(page, server.baseURL, A);
   const hrefB = await hrefOf(page, server.baseURL, B);
-  await expect(page.locator('.stamp.weekly')).toHaveCount(0);
+  await expect(page.locator('.task-card', { hasText: B }).locator('.stamp.weekly')).toHaveCount(prevKnowsWeekly ? 1 : 0);
 
   // A opens and can be edited like any job.
   await page.goto(server.baseURL + hrefA);
