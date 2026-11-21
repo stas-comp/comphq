@@ -2,6 +2,45 @@
 
 Non-obvious choices made while building Comp HQ, in the format required by `PLAN.md` §2.4: one short paragraph each, headed `D-NN Title (task ID, date)`.
 
+## D-111 v1.6 ships as one update, after MC HQ's 1.5.0 (planning, 21 Nov 2026) (planned, P8-00, 2026-11-21)
+
+As with v1.4 (D-89): one release, with six feature groups that can each be left out if one gets stuck (`PLAN-v1.6.md` §2.3). It's built on 1.5.0 so that MC HQ and Comp HQ get it together, and every rollback gate means 1.5.0. The planning files are kept apart from MC HQ's uncommitted work until 1.5.0 is released.
+
+## D-110 Questions is a new section; anyone answers and anyone marks answered (owner request 5; owner's answer 17 Nov 2026) (planned, P8-00, 2026-11-21)
+
+There are no roles (A3), so the subprefect answers like anyone. Marking answered is a separate press, because a first answer is often not the final one. The text is plain, with no editor, so the section stays small. Waiting questions show in the Briefing for everyone, as the owner chose, as a fourth section. Each section's top search box searches that section (D-94), now with three "instead" links. The sidebar and Briefing tests that list sections are corrected. SPEC B14.6.
+
+## D-109 US federal holidays are worked out inside Comp HQ, with the Postal Service's weekend rule (owner request 8; owner's answer 17 Nov 2026) (planned, P8-00, 2026-11-21)
+
+No download and no internet (A2, intent). The 11 federal holidays follow fixed rules, so a small pure package can compute any year. The office cares about mail, and the Postal Service treats weekend holidays differently from other federal offices. A Saturday holiday is a no-mail Saturday, with mail as normal on the Friday that federal offices observe. A Sunday holiday means no mail on the Monday. This matters to a Saturday team: Christmas 2027 and New Year's Day 2028 are Saturdays. Holidays show in the Briefing's existing This week and Coming up sections (from 2 weeks ahead), and add no section of their own. Holidays aren't stored, so there's nothing to export or migrate. SPEC B14.5.
+
+## D-108 A yearly job is one job that waits, shows ahead, and is put away again (owner request 6; owner's answer 17 Nov 2026) (planned, P8-00, 2026-11-21)
+
+The owner chose "appears ahead, then waits" over a list someone starts by hand.
+- **Waiting is computed** (`shows_from > today`), not a fifth column or stage. A new stage would   break every list on rollback to 1.5.0, and computing it needs no clock job.
+- **Put away after 14 days in Done**, the moment an ordinary job would go to Finished tasks. So a   finished yearly job stays visible for a while, and Undo and Reopen still make sense.
+- **Next year is counted from the due date**, not from when it was finished, and the anchor date   keeps 29 February.
+- **People stay on it** from year to year (like weekly jobs). With nobody on it, it shows in Up for   grabs.
+- **The weekly tick-box becomes a Repeats choice**, since a job can't be both. This changes gate   7.30's wording, and gate 7.20's list of Tasks pages gains Yearly jobs.
+
+SPEC B14.4.
+
+## D-107 Steps on My jobs are tick-only; Working on now opens by default (owner request 2) (planned, P8-00, 2026-11-21)
+
+"Show up on My jobs" means seeing and ticking. Adding and editing stay in the job's window, so My jobs doesn't grow a second editor. Jobs you're working on show their steps open, because that's what you're doing. Up next and Up for grabs stay compact, with **Show steps**. The open or closed choice is kept per computer in browser storage, which is a convenience only, so losing it just means the defaults. SPEC B14.3.
+
+## D-106 The Add task window keeps new steps, articles and places on the page until one save (owner request 1) (planned, P8-00, 2026-11-21)
+
+The alternative was to save the job first and then switch the window to it. That needs less code, but it's two steps for something the staff asked to be one. The lists live in the form, and `POST /tasks` writes everything in one transaction through the same store checks as the single-item routes, so no limit can be got round and a refusal leaves nothing behind. Without JavaScript, steps come from a one-per-line box. SPEC B14.3.
+
+## D-105 Articles and COSMOS places on a job; Tasks and the Knowledge Base meet through interfaces (owner requests 4 and 7) (planned, P8-00, 2026-11-21)
+
+COSMOS is a shared folder (owner, 17 Nov 2026). Browsers won't open `file:` or UNC links from an `http://` page, so a place is a folder path with a **Copy** button, not a link. The path is checked loosely (UNC or drive letter) because COSMOS's real layout isn't known. Linking an article isn't an edit of it. Tasks needs article titles, and an article's page needs its jobs. Importing each other would break B2, so each section declares the small interface it needs, and `cmd/comphq` wires the other's implementation in. Limits of 20 each match linked jobs (D-96). SPEC B14.2.
+
+## D-104 Done is in finishing order and can't be reordered by hand (owner request 3) (planned, P8-00, 2026-11-21)
+
+The staff asked for the newest finished job on top, always. A hand-made order in Done had no use: nobody prioritises finished work. So the Board orders Done by `done_at`, newest first. A drop anywhere in Done lands at the top, and Done cards lose their move icons. This changes gate 2.04 and gate 4.11's icons inside Done only. `position` is still written there, so the move code needs no special case, and nothing changes in storage. SPEC B14.1.
+
 ## D-103 MC HQ is Comp HQ with a brand setting, not a separate copy (owner request, 2026-11-14)
 
 Another department asked for its own copy, called MC HQ, in red, on the same NAS and managed by the same owner. A separate copy (fork) would be quicker on day one, but every later fix would have to be made twice and the two would drift apart. So it is one app and one image, and `COMPHQ_BRAND=mc` in the install file makes an installation MC HQ (empty or `comp` is Comp HQ, unchanged; anything else stops the app with a clear message). `internal/brand` holds what differs: the name, the word over HQ, the icon folder, the manifest, the export file prefix, the window-frame colour and the exported pages' link colour. Templates read it through a `brand` template function, so the head-icons partial, which is called without data, can use it too. The colours stay in theme.css: every page's `<html>` carries `data-brand`, and a `:root[data-brand="mc"]` block gives existing tokens new values (no token is added or renamed, so no section stylesheet changes). The owner chose crimson in place of the ink navy and asked for a colour that goes with it in place of the orange: gold, the traditional partner of crimson. The bluish greys (muted text, sidebar text, one avatar, the Medium size chip) are warmed to sit with the crimson. Every text and background pair is at least as readable as Comp HQ's (the theme.css comment lists them). The danger red is kept: it is much lighter than the crimson and only appears on pale pink stamps and banners. MC HQ's icon is drawn from `tools/icons/mchq.design.svg` into `web/static/theme/icons/mc/` by the same renderer, and the icon tests run for both brands. Internal names (the binary, the database file, the image, the Go module) stay `comphq`: nobody sees them. `deploy/truenas-mchq.yaml` uses its own `mchq` dataset and port 8081.

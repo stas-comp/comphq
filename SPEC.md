@@ -1,6 +1,6 @@
 # Comp HQ — Specification
 
-**Status:** Part A approved by the owner · 14 September 2026
+**Status:** Part A approved by the owner · 14 September 2026 · Phase 8 (v1.6) approved 21 November 2026
 **Based on:** `docs/intent/staff-hq.md` (confirmed by the owner, 14 September 2026)
 
 This document has two parts:
@@ -28,6 +28,10 @@ The interview left seven questions open. Here is what you decided, plus a few th
 | — | Word documents | Articles can come from Word. **Import from Word** turns a Word document (.docx) into an article in the editor, keeping its headings, lists, tables and pictures, ready to check and publish. It works one way: once imported, the article is edited in Comp HQ. |
 | — | Where updates come from | New versions of the app are delivered through your existing **GitHub** account, **stas-comp** (a website that stores the app's code and publishes updates). Staff never need it, and the app never needs it to run. It's only used when an update is installed. |
 | — | "Not secure" label | Office-network apps like this one don't use the padlock certificate that public websites use, because certificates expire and break things. The app window may show a small **"Not secure"** note. It's expected and harmless on your own network. Stability wins here. |
+| — | COSMOS (17 Nov 2026, v1.6) | COSMOS is a **shared folder** on the office network. A job holds COSMOS places as folder paths with a **Copy** button, because web pages aren't allowed to open network folders. |
+| — | Public holidays (17 Nov 2026, v1.6) | **US federal holidays**, worked out inside the app. Weekend holidays follow the Postal Service's practice: a Saturday holiday is a no-mail Saturday with mail as normal on the Friday, and a Sunday holiday is a no-mail Monday. |
+| — | Yearly jobs (17 Nov 2026, v1.6) | A yearly job **appears ahead, then waits**: it shows in To do a set number of weeks before it's due, and goes back to waiting after it's finished. |
+| — | Questions (17 Nov 2026, v1.6) | Unanswered questions show in the **Saturday Briefing** for everyone. |
 | — | App name (14 Sep 2026, while planning the build) | The app is called **Comp HQ**, not Staff HQ, everywhere: the wordmark, window name, messages, README, and the names you see in TrueNAS and GitHub (`comphq`). Only the name changed; every gate means the same as before. The build folder on the build computer keeps its old name. |
 
 ---
@@ -44,6 +48,7 @@ It has four sections:
 2. **Knowledge Base**: your library of how-to articles and office facts, with search that takes you straight to the right paragraph.
 3. **Tasks**: a board where anyone can post jobs, assign them, put them in priority order, and follow them through to done.
 4. **Calendar**: events and deadlines, including yearly, monthly and weekly repeats. Each event has its own setting for how early it appears in the briefing.
+5. *(v1.6)* **Questions**: anyone can ask the department a question, and anyone can answer it (A8a).
 
 Everything is stored on the NAS. It works with no internet connection, costs nothing to run, and uses no AI.
 
@@ -109,6 +114,7 @@ Everything is stored on the NAS. It works with no internet connection, costs not
 **What it looks and feels like**
 - A bold dark sidebar on the left holds the Comp HQ wordmark and the sections: Briefing, Knowledge Base, Tasks, Calendar, and Settings at the bottom. The current section is lit up in the accent colour.
 - A slim bar across the top holds the search box (always there) and "You: Sam · Change".
+- *(v1.6)* The sidebar gains **Questions**, between Calendar and Settings (gate 8.70).
 - *(v1.3)* The sidebar and the top bar stay in place while the page scrolls, so every section, Settings and the search box are always in view, however long the page (gates 6.01–6.05, B12.1).
 - The name picker is a full screen reading **"Who's using this computer?"**, with each name as a large button in alphabetical order, and a smaller **"My name isn't here"** link underneath.
 
@@ -123,6 +129,7 @@ Everything is stored on the NAS. It works with no internet connection, costs not
 - A staff member can **Import from Word**: choose a Word document (.docx), or drag one onto the editor. It appears in the editor with its headings, bold and italic, lists, links, tables and pictures, ready to check and publish. Pictures are saved on the NAS. Anything that can't come across, such as a chart, is marked in place so it can be fixed. Importing into an existing article keeps the old version in its history.
 - *(v1.4)* A staff member can put the articles in a category in order, by dragging or with move up and move down. Editing an article no longer moves it to the top.
 - *(v1.4)* Import from Word brings over every picture a web page can show: floating pictures, grouped pictures and pictures from other programs included. Pictures in old Windows drawing formats (EMF, WMF) are marked with a tip saying how to bring them over by hand.
+- *(v1.6)* A staff member can see, at the bottom of an article, which jobs use it (gate 8.18).
 - A staff member can edit any article, see its history (who changed it and when), view an older version, and restore it.
 - A staff member can archive an article, which hides it from browsing and search. They can also see all archived articles and restore any of them.
 - A staff member can search from any page and see the matching passage with their search words highlighted. Clicking a result opens the article scrolled to that passage, with it highlighted.
@@ -142,6 +149,10 @@ Everything is stored on the NAS. It works with no internet connection, costs not
 - *(v1.4)* A staff member can **link** two jobs: one must be finished before the other ("do first"), or they're simply related. A job waiting on another shows a **WAITING** stamp, but nothing stops anyone working on it.
 - *(v1.4)* A staff member can **search jobs** from the top bar on any Tasks page, finished jobs included.
 - *(v1.4)* A staff member who removes a job by mistake can press **Undo** in the message that appears, and the job goes back exactly where it was.
+- *(v1.6)* A staff member can add a job's **steps**, **articles** and **COSMOS places** right in the Add task window, so a job is set up in one go.
+- *(v1.6)* A staff member can link **Knowledge Base articles** to a job, and add **COSMOS places** (shared folder paths, with a Copy button to paste into File Explorer).
+- *(v1.6)* A staff member can see and tick a job's steps on **My jobs** without opening the job.
+- *(v1.6)* A staff member can make a job **repeat every year**. It waits out of sight on the **Yearly jobs** page and appears in To do a chosen number of weeks before it's due. Once finished, it goes back to waiting for next year.
 - A staff member can move a task between **Ideas**, **To do**, **In progress** and **Done**, by dragging or with buttons.
 - A staff member can put **To do** in priority order: drag cards up or down, or use "Move up / Move down". The top card is the most important, and the order is the same on every computer.
 - A staff member can assign any task to anyone, and change it later.
@@ -161,6 +172,8 @@ Everything is stored on the NAS. It works with no internet connection, costs not
 **What it looks and feels like**
 - Four columns side by side. Cards show the title, people's initials in coloured circles, and the due date. A bold **OVERDUE** stamp appears when a task is past its date.
 - The **To do** header says "Top = most important".
+- *(v1.6)* **Done** is always in finishing order, the most recently finished on top. It can't be reordered by hand.
+- *(v1.6)* A **YEARLY** stamp joins WEEKLY and WAITING.
 - Cards that have sat in Done for more than 14 days quietly leave the board, which keeps it tidy. *(v1.4: weekly jobs never do; they go back to To do on Saturday instead.)*
 - *(v1.4)* Two new stamps join TODAY, OVERDUE and YOURS: **WEEKLY** on a weekly job, and **WAITING** on a job whose "do first" job isn't done yet.
 - **Team view:** one column per person, with an **Unassigned** column first. Each column starts with the person's name and a row of blocks showing their workload (small job = 1 block, medium = 2, large = 4). Below that are **Working on now** (their In progress jobs) and **Up next** (their To do jobs, numbered in priority order). There are no warning colours or limits: the person in charge decides who can take more.
@@ -175,6 +188,7 @@ Everything is stored on the NAS. It works with no internet connection, costs not
 - A staff member can cancel just one occurrence.
 - A staff member can remove an event, and restore it from **Removed events**.
 - A staff member can see task due dates on the calendar, and click one to open the task.
+- *(v1.6)* A staff member can see **US federal holidays** on the calendar, each saying whether there's mail that day, so the person handling the mail knows what to expect (gates 8.60–8.67).
 
 **What it looks and feels like**
 - A clean month grid. Events are solid accent-coloured chips. Task deadlines are outlined chips with a tick-box icon, so the two are never confused.
@@ -187,6 +201,8 @@ Everything is stored on the NAS. It works with no internet connection, costs not
 - **Must be done today** (on other days: "Must be done this Saturday"): every unfinished task due on or before the Friday after that Saturday, including overdue ones. That Saturday is the last chance before they're due.
 - **This week**: events happening from today up to that Friday.
 - **Coming up**: later events whose "show ahead" time has started. For example, a campaign on 31 October with 6 weeks' notice first appears on the briefing for Saturday 19 September.
+- *(v1.6)* **Holidays** appear in This week, and in Coming up from 2 weeks ahead, each saying whether there's mail.
+- *(v1.6)* **Questions waiting for an answer**: a fourth section listing unanswered questions, oldest first (gate 8.77).
 
 **What a staff member can do**
 - A staff member sees the briefing as soon as they open Comp HQ.
@@ -198,6 +214,21 @@ Everything is stored on the NAS. It works with no internet connection, costs not
 - Three bold sections, each item a card with a stamp: **TODAY**, **OVERDUE**, **MON 21 SEP**, **IN 5 WEEKS**.
 - Event notes show on the card, so "Exams Monday — print exam papers today" is right there.
 - Empty sections say something friendly, for example "Nothing due before next Saturday."
+
+## A8a. Questions *(v1.6)*
+
+**What a staff member can do**
+- A staff member can ask a question, with optional details, for example "Is Op5000 and PMT retired, or are we still enrolling people?".
+- A staff member can answer any question, as many times as needed. The subprefect answers the same way as anyone else: there are still no roles (A3).
+- A staff member can mark a question **answered**, or put it back to waiting.
+- A staff member can change the words of a question or answer, remove an answer (with Undo), and remove a question and restore it from **Removed questions**.
+- A staff member can search questions and their answers from the top bar on the Questions pages.
+- A staff member sees questions still waiting for an answer in the Saturday Briefing.
+
+**What it looks and feels like**
+- One page with **Ask a question** at the top, then **Waiting for an answer**, then **Answered**.
+- A question's own page reads like a short conversation: the question, then each answer with who wrote it and when, then a box to add another.
+- Questions and answers are plain text with line breaks. No formatting, pictures or attachments.
 
 ## A9. Settings
 
@@ -673,6 +704,113 @@ and the decisions log records each one.
 - **O7.5** Look at the Knowledge Base home, a category and the editor. Put a category's articles in order. Import the Word document that lost pictures before. Confirm it all looks and feels better, and every picture is there or clearly marked.
 - **O7.6** Scroll around the Board, Team and a long article. Confirm there are no white areas. If you still see one, note the page and what you did, and it becomes a fix.
 
+### Phase 8 — Done in order, articles and folders on jobs, steps from the start, yearly jobs, holidays, and Questions (v1.6)
+
+**Status: approved by the owner, 21 November 2026.** Planned in `PLAN-v1.6.md`. The split into pieces was approved on 17 November. The requests and the owner's four answers are
+in `docs/intent/v1.6-requests.md`.
+
+Phase 8 is the staff's second round of requests (numbered 1–8 in that document). It has six
+pieces, built in this order, each of which can be tested on its own: Done in finishing order,
+articles and COSMOS places on a job, steps from the Add task window and on My jobs, yearly jobs,
+US public holidays, and a new **Questions** section. It ships as one update, **v1.6.0**, after
+MC HQ's 1.5.0. Everything in it works the same in Comp HQ and MC HQ (D-103), each with its own
+data. The design is in B14. A few earlier gates change meaning; gate 8.90 lists them.
+
+**Done in finishing order** *(request 3)*
+- **8.01** The **Done** column on the Board lists jobs by when they were finished, the most recently finished at the top. This holds after a refresh, on every computer, and with a filter in use.
+- **8.02** A job finished by dragging it into Done (dropped anywhere in the column), with its **Done** button, or from My jobs, appears at the top of Done straight away, without a refresh.
+- **8.03** Done can't be put in a hand-made order. Cards in Done have no move up or move down icons, and a card dragged up or down within Done goes back to its place. Dragging a card out of Done still reopens it, as before.
+- **8.04** A job that is reopened and finished again goes back to the top, with its new finishing time. Weekly and yearly jobs in Done follow the same order.
+- **8.05** **Finished tasks** still lists newest-finished first (gate 2.08, unchanged). No stored information changes for this piece, so upgrading from 1.5.0 and rolling back to it need nothing extra.
+
+**Articles and COSMOS places on a job** *(requests 4 and 7)*
+- **8.10** A job's window and its page have an **Articles and places** section under Linked jobs, with two controls: **Link an article** and **Add a COSMOS place**.
+- **8.11** Typing part of an article's title into **Link an article** lists up to 10 matching published articles, each with its category. Articles already linked to this job and archived articles are not offered. Picking one links it straight away.
+- **8.12** Each linked article shows its current title, which opens the article, and its category. An article archived after it was linked stays on the job, marked **Archived**, and still opens.
+- **8.13** **Add a COSMOS place** takes a **Folder path** (required, for example `\\NAS\COSMOS\Mailings\2026`) and a **Name** (optional, up to 80 characters, for example "Mailing lists 2026"). With no name, the last folder in the path is shown as the name.
+- **8.14** Each place shows its name, its full path in a typewriter-style font, and a **Copy** button. Pressing **Copy** puts the exact path on the clipboard, and the button reads **Copied** for 2 seconds. This works in the installed app window on the NAS's ordinary address (no padlock). A short line under the section says: "Paste a path into File Explorer's address bar to open the folder."
+- **8.15** A folder path is refused with a plain message, and nothing changes, when it is empty, longer than 400 characters, or doesn't start with `\\` or a drive letter such as `S:\` ("That doesn't look like a folder path. It should start with \\ (like \\NAS\COSMOS) or a drive letter (like S:\COSMOS)."). Forward slashes are accepted and turned into backslashes, and spaces at either end are trimmed.
+- **8.16** These are also refused with a plain message, and nothing changes: the same article twice on one job; the same folder path twice on one job; more than 20 articles or more than 20 places on one job; and adding to a job somebody has just removed.
+- **8.17** An article or place is taken off a job with the **remove** icon (gate 4.11). History on the job records each change, with the title or name as it was then: "Sam linked the article 'Mailing SOP'", "Sam removed the COSMOS place 'Mailing lists 2026'". Nothing is permanently deleted (A3).
+- **8.18** An article's page shows **Jobs using this article** at the bottom, listing every job that links it: the job's title (which opens the job), its column, and **Finished** when it's done. Removed jobs aren't listed. With no jobs, the panel isn't shown. Linking or unlinking is not an edit of the article: it makes no new version and doesn't change **Recently updated**.
+- **8.19** Without JavaScript, linking and unlinking articles (with a search form on the job's page) and adding and removing places all work as ordinary forms. The path is shown as text that can be selected and copied by hand.
+- **8.20** **Export everything** includes `job-articles.csv` (job, article, linked by, when, removed) and `job-places.csv` (job, name, folder path, added by, when, removed).
+- **8.21** Articles and places on jobs survive an upgrade from 1.5.0 and a rollback to 1.5.0. The rolled-back app doesn't show them, and upgrading again finds them all still there.
+
+**Steps from the Add task window, and on My jobs** *(requests 1 and 2)*
+- **8.30** The **Add task** window has a **Steps** area under the description, and the **Articles and places** area, both working like a job's window. A step is typed and added with Enter or **Add**. The box clears and stays ready for the next one. Before saving, the new steps can be reworded, put in order (arrows or dragging) and removed.
+- **8.31** Pressing **Add task** saves the job with its steps (in the order shown), its articles and its places, all at once. Opening the new job shows them all. History shows one line for the new job: "Sam added this job (with 5 steps)".
+- **8.32** If anything can't be saved (no title, a step over 200 characters, more than 50 steps, a bad folder path, more than 20 articles or places), nothing is saved. The window shows the plain message, with everything typed still there.
+- **8.33** **Cancel** and closing the window save nothing. If steps, articles or places have been added, it first asks "Discard this new job?".
+- **8.34** Without JavaScript, the Add task page has a **Steps** box where each line becomes a step, in order, and blank lines are ignored. Articles and places are added on the job's page after saving, and the page says so.
+- **8.35** On My jobs, each card in **Working on now** that has steps shows its steps under it, already open. Each step's box can be ticked and unticked right there, showing who ticked it and when (as gate 5.03), and the card's **3/7** count updates at once.
+- **8.36** Cards in **Up next** and **Up for grabs** that have steps show **Show steps · 3/7**, which opens the same list under the card. **Hide steps** closes it. Any card can be opened or closed, and it stays that way through the 60-second refresh and after a reload on that computer.
+- **8.37** A tick on My jobs is the same tick as in the job's window. It shows on the Board, Team and the job's window, and on other computers within 60 seconds. Adding, rewording, reordering and removing steps stay in the job's window: the list on My jobs ends with an **Edit steps** link that opens it.
+- **8.38** Without JavaScript, the step boxes on My jobs are ordinary forms that tick the step and come back to My jobs, and **Show steps** is a link that reloads My jobs with that card open.
+- **8.39** With the test library loaded, plus 20 of the current person's jobs each holding 50 steps, My jobs still meets gate 4.53's speed limit.
+
+**Yearly jobs** *(request 6)*
+- **8.40** The weekly tick-box (gate 7.30) becomes a **Repeats** choice, in the Add task window and in the job's edit form: **No**, **Every week (back in To do each Saturday)** or **Every year**. Every week works exactly as gates 7.31–7.37 say.
+- **8.41** Choosing **Every year** shows **Show it in To do __ weeks before it's due**, from 1 to 52 weeks (6 if not changed). A yearly job needs a due date. Without one it's refused with "A yearly job needs a due date." A yearly job always belongs in To do, whatever starting column was chosen.
+- **8.42** A yearly job is **waiting** while its show date (the due date minus the weeks' notice) is still ahead. A waiting job isn't on the Board, My jobs, Up for grabs, Team or the Briefing. Saving one says when it will appear: "Saved. It will appear in To do on Sat 24 Oct 2026."
+- **8.43** A **Yearly jobs** page lists every yearly job, waiting or not, in order of due date. Each shows its due date, its weeks' notice, its people, and either "Appears Sat 24 Oct" or "In To do now". Clicking one opens its window, where everything can be changed. The page is linked from every Tasks page, beside Finished tasks and Removed tasks.
+- **8.44** On its show date, a waiting job appears at the bottom of **To do**, due on its date, with its people. If nobody is on it, it's in **Up for grabs**. From then on it behaves like any job: it shows OVERDUE after its date, and it's in the Briefing when due before next Saturday.
+- **8.45** A finished yearly job stays in Done for 14 days, like any job. Then, instead of going to Finished tasks, it goes back to waiting. Its due date moves on one year from its old due date, not from the day it was finished, and its steps are unticked. A job due on 29 February is due on 28 February in other years, and on 29 February again in leap years. If the new show date has already passed (a very long notice), it goes straight into To do.
+- **8.46** An unfinished yearly job is never moved on or doubled up. It stays where it is, showing OVERDUE, until someone finishes it.
+- **8.47** Both changes happen even if Comp HQ was switched off at the time. They catch up the first time anyone opens Comp HQ afterwards, once only. History records them: "Comp HQ put this away until Sat 24 Oct 2027 (yearly)" and "Comp HQ put this in To do, due Tue 1 Dec 2026 (yearly)". "Comp HQ" never appears in any list of names (as gate 7.36).
+- **8.48** Changing a waiting job's due date or weeks' notice changes its show date. If the new show date is today or already past, the job appears in To do straight away. Changing **Repeats** to **No** makes it an ordinary job, in To do at once.
+- **8.49** A yearly job's card shows a **YEARLY** stamp on the Board, My jobs and Team, and in the Briefing. The Calendar shows a waiting job's due date like any job's, so the year ahead can be seen.
+- **8.50** Job search (gate 7.21) finds waiting jobs, marked "Yearly · appears Sat 24 Oct". A removed yearly job never appears in To do. When it's restored, or brought back with Undo, it carries on as before.
+- **8.51** Moving jobs up and down in To do, by dragging or with the arrows, works as if waiting jobs weren't there. A move never lands next to a waiting job or appears to do nothing.
+- **8.52** In **Export everything**, `tasks.csv` shows "yearly" in its **Repeats** column and gains a **Notice (weeks)** column.
+- **8.53** Yearly jobs survive an upgrade from 1.5.0 and a rollback to 1.5.0. The rolled-back app shows them as ordinary jobs, and waiting ones appear in To do with their future due dates. On upgrading again, each one that hasn't been changed in 1.5.0 is yearly again, and waiting ones are hidden again.
+
+**US public holidays** *(request 8)*
+- **8.60** The Calendar (month view and the 12-week list) shows the 11 US federal holidays in every year: New Year's Day (1 January), Martin Luther King Jr. Day (3rd Monday in January), Presidents' Day (3rd Monday in February), Memorial Day (last Monday in May), Juneteenth (19 June, from 2021), Independence Day (4 July), Labor Day (1st Monday in September), Columbus Day (2nd Monday in October), Veterans Day (11 November), Thanksgiving Day (4th Thursday in November) and Christmas Day (25 December).
+- **8.61** A holiday shows as a **holiday chip** that can't be mistaken for an event (solid) or a job (outlined). It reads, for example, **Thanksgiving Day · No mail**, and it's listed before that day's events.
+- **8.62** When a holiday falls at the weekend, the post office follows its own rule, and the Calendar shows it:
+  - **On a Sunday:** the Sunday shows the holiday, and the Monday shows **Christmas Day (observed) · No mail**.
+  - **On a Saturday:** the Saturday shows **Independence Day · No mail**, and the Friday before it shows **Independence Day (observed) · Mail as normal**.
+  - Example: Christmas Day 2027 is a Saturday. Fri 24 Dec 2027 shows "(observed) · Mail as normal", and Sat 25 Dec shows "No mail". New Year's Day 2028 is also a Saturday, so Fri 31 Dec 2027 shows "New Year's Day (observed) · Mail as normal".
+- **8.63** Pointing at a holiday chip, or moving to it with the keyboard, shows a short explanation and a screen reader reads it. On a no-mail day: "Federal holiday. Post offices are closed and there is no mail delivery." On a Friday observed day: "Federal offices are closed today, but post offices are open and mail is delivered as normal."
+- **8.64** Holidays can't be edited, moved or removed, and clicking one doesn't open the event editor. Clicking an empty part of that day still starts a new event (gate 6.21).
+- **8.65** The Saturday Briefing shows holidays between today and Friday in **This week**, with a **HOLIDAY** stamp. It shows them in **Coming up** from 2 weeks ahead, labelled like events, for example "Thanksgiving Day · No mail · IN 12 DAYS". When the Saturday itself is a no-mail day, This week says so: "Independence Day · No mail today".
+- **8.66** Holidays are worked out by Comp HQ itself, with no internet. Their dates for 2026 to 2030, observed days included, match the official US federal holiday lists exactly (B14.7).
+- **8.67** Holidays aren't stored, so they aren't in Export everything, aren't searchable, and nothing changes on upgrade or rollback.
+
+**Questions** *(request 5)*
+- **8.70** The sidebar has a new **Questions** section, between Calendar and Settings, with its own icon.
+- **8.71** At the top of Questions, **Ask a question** has a box for the question (required, up to 300 characters) and an optional **More details** box (up to 2,000 characters, line breaks kept). Pressing **Ask** posts it with the asker's name and the date.
+- **8.72** The Questions page lists **Waiting for an answer** first, newest first, then **Answered**, most recently answered first. Each line shows the question, who asked and when, and how many answers it has. Answered shows the 50 most recent, then **Show all**.
+- **8.73** A question's page shows the question, its details, and its answers oldest first, each with who wrote it and when. An **Add an answer** box (up to 2,000 characters) sits under them. Anyone can answer, any number of times.
+- **8.74** Anyone can press **Mark answered**. The question then shows "Answered · marked by Jane, Sat 21 Nov" and moves to Answered. **Not answered yet** puts it back. Adding an answer doesn't mark a question answered on its own.
+- **8.75** Anyone can change the words of a question or an answer. It then shows "edited by Sam, Sat 21 Nov".
+- **8.76** Removing an answer shows **Undo** for 10 seconds (as gate 7.15). Removing a question moves it to **Removed questions**, where it can be restored. Nothing is permanently deleted (A3).
+- **8.77** The Saturday Briefing gains a fourth section, **Questions waiting for an answer**, after Coming up. It lists up to 5 waiting questions, oldest first, then "and 3 more", which opens Questions. Each shows who asked, when, and how many answers it has, and clicking one opens it. With none, it says "No questions waiting for an answer." Answered questions never appear there.
+- **8.78** On the Questions pages, the top search box reads **Search questions**. It finds questions where every typed word appears in the question, its details or its answers, and the last word may be half-typed. Waiting and answered questions are both found, with waiting ones first. Removed ones aren't found. Results appear as you type, and Enter shows a full results page. The results end with **Search articles instead** and **Search jobs instead**. Article and job results gain **Search questions instead**.
+- **8.79** A new question, answer or change shows on the Questions page and in the Briefing on other computers within 60 seconds, or straight away when the window is clicked back into.
+- **8.80** Everything in 8.71–8.78 works without JavaScript, as ordinary forms and pages.
+- **8.81** **Export everything** includes `questions.csv` (question, details, asked by, when, answered, marked answered by, when, removed) and `answers.csv` (question, answer, by, when, edited by, when, removed).
+- **8.82** Questions survive an upgrade from 1.5.0 and a rollback to 1.5.0. The rolled-back app has no Questions section, and upgrading again finds every question and answer still there.
+- **8.83** With 1,000 questions and 3,000 answers added to the test library, the Questions page and a question's page are ready within 1.5 seconds, and search answers within 1 second.
+
+**Still true afterwards**
+- **8.90** Every gate from Phases 1 to 7 (1.01–7.91) still passes, unchanged, at the same thresholds, with these exceptions, each recorded in `docs/decisions.md`:
+  - Gate 2.04's "dragging within a column reorders it", and the move icons of gate 4.11, no longer apply inside Done (8.03).
+  - Gate 7.30's tick-box becomes the **Repeats** choice (8.40).
+  - Gates that list the sidebar's sections gain **Questions** (8.70), and gates that list the Briefing's sections gain its fourth section (8.77).
+  - Gate 7.20's list of Tasks pages gains **Yearly jobs**, and gate 7.24's **Search articles instead** gains **Search questions instead** beside it (8.78).
+  - Gates 2.08 and 7.34 apply to yearly jobs as 8.45 says.
+- **8.91** Every screen, the new ones included, passes the accessibility check, works from 1024 × 700 up to full HD without sideways scrolling, and meets gate 4.53's speed limits, with the test library extended by 200 yearly jobs, 1,000 questions and 3,000 answers. The same is true with MC HQ's brand setting.
+
+**👤 Owner checks — end of Phase 8**
+- **O8.1** Finish two jobs on the Board and confirm the newest is on top. Then add a real job with three steps, an article and a COSMOS place from the **Add task** window in one go.
+- **O8.2** On an office computer, press **Copy** on a real COSMOS place and paste it into File Explorer's address bar. Confirm the folder opens.
+- **O8.3** On My jobs, tick steps on a job you're working on. Confirm it's quicker than opening the job.
+- **O8.4** Set up one real yearly job (for example the Christmas card mailing). Confirm it's on **Yearly jobs**, not in Up for grabs, and that the date it will appear makes sense.
+- **O8.5** With the person who handles the mail, look at November and December and next July on the Calendar. Confirm the holiday chips and the "No mail" and "Mail as normal" wording are clear.
+- **O8.6** Post the real question "Is Op5000 and PMT retired, or are we still enrolling people?". Have someone answer it and mark it answered. Confirm it showed in the Briefing while it was waiting.
+
 ## A12. What's not included
 
 From the confirmed intent:
@@ -705,6 +843,11 @@ Decided while writing this spec (any of these could be added later if real use s
 - *(v1.4)* A separate priority order for each person's own list. Reordering on My jobs changes the one shared order (D-91).
 - *(v1.4)* Turning EMF and WMF drawings, charts and SmartArt from Word into pictures, and bringing over page headers and footers (D-99).
 - *(v1.4)* A new look for the Categories, Archived and History pages of the Knowledge Base. The owner asked for the home page, category pages and editor (D-100).
+- *(v1.6)* Opening a COSMOS folder by clicking it (web pages aren't allowed to open network folders), checking that a folder path really exists, and changing a place in place (remove it and add it again). Showing articles or places on job cards.
+- *(v1.6)* Adding, rewording, reordering or removing steps from My jobs (that stays in the job's window), and opening steps on the Board or Team.
+- *(v1.6)* Yearly jobs on other patterns ("every two years", "first Monday of December"), and a fresh copy of a yearly job each year. Linked jobs (Do first) in the Add task window.
+- *(v1.6)* Other countries' or states' holidays, choosing which holidays show, adding your own holidays (add a yearly event instead), and days that aren't federal holidays (Christmas Eve, the day after Thanksgiving). If Congress adds a federal holiday, an update adds it.
+- *(v1.6)* For Questions: notifications, asking a named person, picking a "best answer", votes, comments on answers, formatting or pictures, and turning an answer into an article with one click. Search covering questions from the Knowledge Base's own search box (each section's box searches that section, D-94).
 
 ## A13. Your hands-on moments
 
@@ -762,6 +905,8 @@ internal/tasks/         board, ordering, activity, finished/removed
 internal/calendar/      events, exceptions, recurrence expansion (pure functions)
 internal/briefing/      pure Build(...) function + page; reads tasks & calendar only via small query interfaces
 internal/settings/      people screen, export orchestration, backup status, content check, setup page, about
+internal/questions/     (v1.6) questions and answers, Removed questions, search, the Briefing's query interface
+internal/calendar/holidays/  (v1.6) US federal holidays and observed days (pure functions)
 web/templates/<section>/  web/static/<section>/  web/static/vendor/  web/static/theme/
 migrations/<section>/   numbered SQL files per section
 e2e/                    Playwright tests, fixtures, test-library seeder
@@ -772,6 +917,7 @@ docs/decisions.md       short technical decision log
 
 **Boundaries:**
 - Sections never import each other's internals. Allowed dependencies: every section → `people`, `db`, `app`. `briefing` → the query interfaces exported by `tasks` and `calendar`. `settings` → the export and status interfaces of the other sections.
+- *(v1.6)* `briefing` also reads `questions` through its query interface, and `calendar`'s holidays through `calendar`'s. Tasks and the Knowledge Base point at each other (B14.2) only through small interfaces that each declares for itself and `cmd/comphq` wires in at start-up, so neither imports the other.
 - Each section registers its routes, navigation entry and migrations with `app`. Adding a section means adding one package and one registration line.
 - **All theme values** (colours, fonts, radii, spacing) live as CSS custom properties in `web/static/theme/theme.css`. Swapping the accent colour means editing one file.
 - User-facing wording lives in the templates, not scattered through Go code.
@@ -809,12 +955,20 @@ The database default for `stage` stays `idea` (expand-only, B6). From v1.4 the s
 `id` · `task_id` → tasks · `other_task_id` → tasks · `kind` (`before`|`related`) · `created_by` → people · `created_at` · `removed_by` (nullable) · `removed_at` (nullable)
 `before` means `task_id` must be finished before `other_task_id`. A `related` link is stored once, with `task_id < other_task_id`, and shown on both jobs. At most one live (non-removed) link joins any two jobs, enforced by the store. Indexed on `task_id` and on `other_task_id`. B13.6 has the rules.
 
+*(v1.6)* `tasks.repeat` also takes `yearly`, and tasks gain `notice_days` (nullable), `repeat_anchor` (`MM-DD`, nullable) and `shows_from` (local date, nullable). A yearly job is waiting while `shows_from` is after today (B14.4).
+
+**task_articles** *(v1.6)*
+`id` · `task_id` → tasks · `article_id` (a Knowledge Base article; no cross-section foreign key) · `created_by` → people · `created_at` · `removed_by` (nullable) · `removed_at` (nullable). Indexed on `task_id` and `article_id`. B14.2.
+
+**task_places** *(v1.6)*
+`id` · `task_id` → tasks · `name` (≤ 80, may be empty) · `path` (≤ 400, normalised to backslashes) · `position` · `created_by` · `created_at` · `removed_by` (nullable) · `removed_at` (nullable). Indexed on `task_id`. B14.2.
+
 **task_assignees**
 `task_id` · `person_id` (composite primary key)
 
 **task_activity**
 `id` · `task_id` · `person_id` · `action` (`created`|`moved`|`assigned`|`unassigned`|`due_changed`|`size_changed`|`edited`|`reopened`|`removed`|`restored`|`step_added`|`step_renamed`|`step_removed`|`step_restored`) · `detail` (short JSON) · `at`
-The four `step_*` actions arrive in v1.2. v1.4 adds `linked`, `unlinked`, `repeat_on`, `repeat_off` and `weekly_reset`, plus `undone` for a removal undone from the message (B13.3, B13.5, B13.6). There is deliberately **no** action for ticking a step (D-71): a job with twenty steps would otherwise bury its own history, and who ticked what is carried on the step itself.
+The four `step_*` actions arrive in v1.2. v1.4 adds `linked`, `unlinked`, `repeat_on`, `repeat_off` and `weekly_reset`, plus `undone` for a removal undone from the message (B13.3, B13.5, B13.6). v1.6 adds `article_linked`, `article_unlinked`, `place_added`, `place_removed`, `yearly_wait` and `yearly_shown`, and a `created` row may carry `"steps": N` (B14.2–B14.4). There is deliberately **no** action for ticking a step (D-71): a job with twenty steps would otherwise bury its own history, and who ticked what is carried on the step itself.
 
 **task_checklist_items** *(v1.2)*
 `id` · `task_id` → tasks · `text` (plain text, ≤ 200 characters) · `position` (integer, unique per task among non-removed rows) · `done_by` → people (nullable) · `done_at` (nullable) · `removed_at` (nullable) · `created_by` · `created_at` · `updated_by` · `updated_at`
@@ -826,6 +980,12 @@ Adding a table is rollback-safe on its own (B6): v1.1.0 never selects from it, s
 
 **event_exceptions**
 `event_id` · `original_date` (composite primary key) · `kind` (`moved`|`cancelled`) · `new_start_date` · `new_end_date` · `new_start_time` · `new_end_time` (nullable) · `updated_by` · `updated_at`
+
+**questions** *(v1.6)*
+`id` · `text` (≤ 300) · `details` (≤ 2,000) · `asked_by` → people · `asked_at` · `answered_by` · `answered_at` (both nullable; null = waiting) · `edited_by` · `edited_at` (nullable) · `removed_by` · `removed_at` (nullable). B14.6.
+
+**question_answers** *(v1.6)*
+`id` · `question_id` → questions · `text` (≤ 2,000) · `created_by` → people · `created_at` · `edited_by` · `edited_at` (nullable) · `removed_by` · `removed_at` (nullable). Indexed on `question_id`.
 
 **app_meta**
 Key/value store: `last_backup_at`, `last_backup_ok`, `last_backup_error`, `min_app_version`.
@@ -1911,3 +2071,322 @@ As B7, per gate:
 | 7.60–7.68 | `internal/kb/docx` unit fixtures (above), the integration test asserting every `src`, E2E import of the new fixtures, the `samples/word` sweep, and the gate 1.52 timing. |
 | 7.70–7.77 | B9.9's layers: computed styles against the mockup for every part the mockup draws (edit head, toolbar, title, `.missing`, the import summary, crumbs); the token and drift rules on the new templates; axe; and screenshots of all three screens in `reports/screens/` for O7.5. |
 | 7.90–7.91 | The full suite, unchanged except the planned rewrites named in 7.90, each pointed at its D-entry in its commit message. |
+
+## B14. The staff's second requests (v1.6, gates 8.01–8.91)
+
+Six pieces with fixed ids, built in this order: `done-order` → `job-references` →
+`steps-everywhere` → `yearly-jobs` → `public-holidays` → `questions`. Each piece is a vertical
+slice: storage, store tests, screens, E2E, export and the rollback step all land before the next
+piece starts. The build plan (`PLAN-v1.6.md`) and `PROGRESS.md` name tasks by these ids. B4's
+rules (expand-only migrations, the change counter, plain messages, store-enforced limits, no
+outbound calls) apply throughout.
+
+**Release.** v1.6.0, built on top of 1.5.0 (MC HQ, D-103). Every "rollback" gate means rolling
+back to 1.5.0, in the container test's existing upgrade/rollback step, which already compares
+with the highest tag below this version. New migrations: `tasks/0005_references.sql`,
+`tasks/0006_yearly.sql`, `questions/0001_questions.sql`. All add-only.
+
+### B14.1 `done-order`: Done in finishing order (gates 8.01–8.05)
+
+- **Server.** The board query orders Done by `done_at DESC, id DESC` instead of `position`. Every
+  other column keeps `position`. `position` is still written for Done (the move code needs no
+  special case), but nothing reads it there. A move into Done ignores `before_id`/`after_id`.
+  `done_at` is already set by `updateDoneAtForStageChange` and by `Create` for a job made in Done,
+  so no data changes. The tiebreak on `id` keeps two jobs finished in the same second in a stable
+  order.
+- **Board script.** The Done list is a SortableJS list with `sort: false`. It still accepts drops
+  from other columns, and cards can still be dragged out. After a drop into Done, the dropped card
+  is moved to the top of the list on the client before the server answers, so 8.02 holds with no
+  visible jump, and the usual re-fetch confirms it.
+- **Cards.** The Done cards' partial leaves out the move up and move down icons. Give back and
+  remove stay as they are. Team and My jobs don't show Done (B4), so they need nothing beyond
+  8.02's "from My jobs" case, which is the existing Done button.
+
+### B14.2 `job-references`: articles and COSMOS places on a job (gates 8.10–8.21)
+
+**Storage** (`tasks/0005_references.sql`, B3):
+- `task_articles`: `id`, `task_id` → tasks, `article_id` (no foreign key across sections; see
+  below), `created_by` → people, `created_at`, `removed_by`, `removed_at`. Indexed on `task_id`
+  and on `article_id`.
+- `task_places`: `id`, `task_id` → tasks, `name` (≤ 80, may be empty), `path` (≤ 400),
+  `position`, `created_by`, `created_at`, `removed_by`, `removed_at`. Indexed on `task_id`.
+
+**Crossing between Tasks and the Knowledge Base without breaking B2.** Sections never import each
+other. Each side declares the small interface it needs, in its own package, and `cmd/comphq`
+wires the other section's implementation in at start-up:
+- `tasks.ArticleFinder`: `FindByTitle(ctx, q string, limit int) []ArticleRef` (published only)
+  and `Articles(ctx, ids []int64) map[int64]ArticleRef`. `ArticleRef` has `ID`, `Title`,
+  `Category`, `Archived`. It's implemented by `kb`.
+- `kb.JobsUsing`: `JobsForArticle(ctx, articleID int64) []JobRef`. `JobRef` has `ID`, `Title`,
+  `StageLabel`, `Finished`. It leaves out removed jobs and removed links, and is implemented by
+  `tasks`.
+
+A nil implementation (as in a section's own unit tests) means "no articles" or "no jobs". Neither
+section's tests need the other. The title match uses the same Unicode-folding word match as job
+search (D-94): every word must appear, and the last word may be half-typed. The best match comes
+first, title-prefix matches before others, then alphabetical.
+
+**Endpoints**, all on the job, all bumping the tasks change counter, all writing activity on the
+job with the title or name at the time in `detail` (as `step_*` rows do):
+- `GET /tasks/articles.json?q=&task=`: the picker. It calls `ArticleFinder` and drops articles
+  already linked to `task`.
+- `POST /tasks/{id}/articles` (`article_id`) and `POST /tasks/{id}/articles/{linkID}/remove`.
+  Activity: `article_linked`, `article_unlinked`.
+- `POST /tasks/{id}/places` (`name`, `path`) and `POST /tasks/{id}/places/{placeID}/remove`.
+  Activity: `place_added`, `place_removed`.
+- Every 8.15/8.16 refusal is checked in the store, inside the write transaction (as D-96).
+- Path normalising: trim, then `/` → `\`. Valid when it matches `^\\\\[^\\]+\\` (a UNC path with
+  at least a server and something after it) or `^[A-Za-z]:\\`. Duplicate paths are compared
+  case-insensitively, because Windows paths are.
+- The no-name display name is the last non-empty path segment.
+
+**The section** is one partial, drawn by the window and the job's page alike, placed under Linked
+jobs and built like it (D-96): plain forms, posted by a small script that swaps the section in
+as a fragment. Without JavaScript, the article picker is a GET form (`?article_q=`), as
+`?link_q=` is. **Copy** reuses `web/static/settings/copy.js`, which already works on a page
+without a padlock (where `navigator.clipboard` isn't available). Move it to `web/static/app/` if
+two sections now need it, and keep the Setup page's tests passing.
+
+**The article's side.** `kb`'s article page asks `JobsUsing` and draws **Jobs using this
+article** under the article body when the list isn't empty. It doesn't touch `version_no`,
+`updated_at` or the versions table (8.18).
+
+**Export.** `job-articles.csv`: Job, Article, Linked by, Linked, Removed. The article title comes
+through `ArticleFinder.Articles`, so archived titles are included. `job-places.csv`: Job, Name,
+Folder path, Added by, Added, Removed.
+
+### B14.3 `steps-everywhere`: steps in the Add task window and on My jobs (gates 8.30–8.39)
+
+**The add form.** `tasks-new-form` gains the Steps area and the Articles and places area. Before
+the job exists, nothing is saved: the script keeps the new steps, articles and places in the
+form, as hidden inputs (`step` repeated in order, `article_id` repeated, and `place_name` with
+`place_path` in pairs). It draws them with the same markup and classes as the saved-job partials,
+so they look identical, but every control works on the client only. Without JavaScript, the form
+shows `steps_text` (a textarea, one step per line) and a note that articles and places are added
+on the job's page after saving. The server accepts either input.
+
+**Saving.** `POST /tasks` creates the job, its steps, its article links and its places in **one
+transaction**, through the same store checks the single-item endpoints use: 50 steps, 200
+characters, 20 articles, 20 places, and path validity. A refusal rolls the whole thing back and
+re-renders the form with everything as typed (8.32). The `created` activity row's `detail` gains
+`"steps": N`, which `activityText` reads as "(with N steps)". No `step_added` rows are written
+for steps made with the job.
+
+**Discard prompt.** The window's close and Cancel ask "Discard this new job?" only when the form
+holds at least one step, article or place (8.33). Reuse the existing unsaved-changes prompt if
+the window has one.
+
+**My jobs.** The lane card partial used by My jobs gains a compact step list. It is tick-only:
+the box, the words, and who ticked it and when. It ends with an **Edit steps** link that opens the
+job's window. Ticks post to the existing tick endpoint with `redirect_to=myjobs`, and the script
+swaps in the card's fragment, so the count updates (8.35).
+- **Open or closed.** Working on now cards are open by default. Up next and Up for grabs cards are
+  closed by default. The choice is kept per job in `localStorage` (`comphq.steps.open.<id>`), and
+  every read and write is wrapped in `try/catch`, so a blocked store just means the defaults.
+  Without JavaScript, `?open=<id>` (repeatable) opens cards from the server.
+- **The refresh** (B4) keeps each card's state: re-render, then re-apply the stored choices
+  before the page is shown.
+- **One query** loads the steps for every card on the page (`WHERE task_id IN (…)`), never one
+  per card, which keeps 8.39 inside gate 4.53.
+- Team and the Board are unchanged (A12).
+
+### B14.4 `yearly-jobs`: yearly jobs (gates 8.40–8.53)
+
+**Storage** (`tasks/0006_yearly.sql`, add-only):
+- `tasks.repeat` takes a new value, `yearly`. It's a TEXT column with no CHECK constraint, so no
+  table rebuild is needed. Confirm this against `0003`; if a CHECK exists, record the
+  alternative in `docs/decisions.md`.
+- `tasks.notice_days` (INTEGER, nullable; weeks × 7).
+- `tasks.repeat_anchor` (TEXT `MM-DD`, nullable; the month and day the job is due each year, so
+  29 February comes back in leap years).
+- `tasks.shows_from` (TEXT local date, nullable; due date minus `notice_days`).
+
+**Waiting** is `repeat = 'yearly' AND shows_from > today`. It's computed, not stored, so there's
+no clock job and test mode's fixed date works.
+- Every list that 8.42 names leaves waiting jobs out: the board query, the lanes (My jobs, Team,
+  Up for grabs), the Briefing's due query, the `WaitingOn` stamp query's candidate list, and the
+  version endpoint's view.
+- Job search and the linked-job picker include them, marked (8.50).
+- `due.go`'s Calendar query includes them (8.49).
+- Put the predicate in one SQL fragment or helper so no list can miss it. A store test lists every
+  query that shows jobs and asserts each one excludes a waiting job.
+
+**Order (8.51).** A waiting job keeps `stage='todo'`. Its `position` must not affect anyone. The
+move code (`stageOrder`, `renumber`, and the lane-relative `before_id`/`after_id`) works only over
+non-waiting jobs. A waiting job's `position` is set to bottom-of-To-do when it shows. Test: with
+waiting jobs interleaved in To do, every 2.04/2.29/7.01 move gives exactly the result it gives
+with them absent.
+
+**Setting it (8.40–8.41, 8.48).** The form's control is a `select name="repeat"` with `none`,
+`weekly` and `yearly`, plus `notice_weeks` (1–52, default 6), shown only for yearly by the
+script. Without JavaScript it's always visible, with a hint. The 7.30 checkbox is replaced (8.90).
+Saving a yearly job:
+- Set `repeat_anchor` from the due date.
+- Set `notice_days` and `shows_from`.
+- If `shows_from > today`, the reply's message names the show date (8.42).
+- Changing the due date updates the anchor and `shows_from`.
+- Switching to `none` or `weekly` clears the yearly columns. Switching to `yearly` clears
+  `repeat_reset_on`, so a weekly job's last Saturday can never be mistaken for a showing.
+- A yearly job's stage is `todo`, whatever starting column the form sent (8.41). Done is the one
+  exception: a yearly job finished and saved from its window stays Done.
+- Activity: `repeat_on`/`repeat_off`, with `detail` saying `yearly`.
+
+**The yearly pass (8.44–8.47).** `ResetYearly(ctx, today)` runs wherever `ResetWeekly` runs.
+Generalise `withWeeklyReset` into one `withRepeats` wrapper, plus start-up. Inside one
+transaction:
+1. **Put away.** For yearly jobs in Done whose `done_at` is before today minus 14 days (the B4
+   tuck-away rule):
+   - Set the new due date: the anchor's month and day in the year after the old due date, with
+     29 Feb clamped to 28 Feb in non-leap years. Set `shows_from` = new due − `notice_days`.
+   - Clear `done_at`, set `stage='todo'`, and untick the steps (as B13.5).
+   - Write activity `yearly_wait`.
+   - If the new `shows_from ≤ today`, apply step 2 to it straight away.
+2. **Show.** For yearly jobs not in Done whose `shows_from ≤ today` and whose
+   `repeat_reset_on` ≠ `shows_from`:
+   - Put the job at the bottom of To do and set `repeat_reset_on = shows_from`, which marks this
+     year's showing as done, so it happens once.
+   - Write activity `yearly_shown`.
+
+Use the same "Comp HQ did this" marker as D-95: the job's `created_by`, with `{"by":"comphq"}`.
+The no-op case must stay one cheap indexed query, or an `app_meta` key for the last day
+processed, as B13.5 requires. Two racing requests are settled by the transaction re-checking its
+conditions. `ListBoard`'s 14-day exclusion and `ListFinished` treat `yearly` like `weekly`, so a
+yearly job is never listed in Finished tasks.
+
+**Rollback (8.53).** 1.5.0 reads `repeat <> 'weekly'` as an ordinary job and ignores the new
+columns, so waiting jobs show in its To do. That's acceptable for a rare rollback, and
+`CHANGES.md` says so. Saving such a job's form in 1.5.0 sets `repeat='none'` (its form has only
+the weekly box), so that one job stops being yearly. The gate's wording ("each one that hasn't
+been changed") already allows for this. Say it in CHANGES too.
+
+**Everywhere else.** The **YEARLY** stamp is a `.stamp` variant beside WEEKLY. The Yearly jobs
+page is `GET /tasks/yearly`, a Tasks page (so its top search box searches jobs), linked wherever
+Finished tasks and Removed tasks are. `tasks.csv`: Repeats = `yearly`, and a new **Notice
+(weeks)** column, which is empty unless the job is yearly.
+
+### B14.5 `public-holidays`: US federal holidays (gates 8.60–8.67)
+
+**A pure package**, `internal/calendar/holidays`, with no database, clock or network.
+`Days(from, to time.Time) []Day`, where `Day` has `Date`, `Name`, and `Kind`, which is one of:
+- `closed`: the holiday itself on a weekday or Saturday, or the observed Monday after a Sunday
+  holiday. **No mail.**
+- `sunday`: the holiday itself on a Sunday. There's never mail on Sunday, so it's shown plainly
+  with "No mail".
+- `observed_open`: the Friday before a Saturday holiday. Federal offices are closed but **mail is
+  as normal**.
+
+The rules are fixed dates and nth or last weekdays (8.60), with Juneteenth only from 2021. Names
+are exactly as 8.60 lists them. The observed Friday may fall in the previous year (1 Jan 2028 →
+Fri 31 Dec 2027), so `Days` computes holidays for `from.Year()-1` to `to.Year()+1` and filters.
+
+**Postal practice, verified 17 Nov 2026.** For a Saturday holiday, US Postal Service notices say
+post offices are open with normal delivery on the Friday and closed on the Saturday. Their
+notices for Independence Day 2026 (Sat 4 Jul), Juneteenth 2027 (Sat 19 Jun) and Christmas 2027
+(Sat 25 Dec) all say this. For a Sunday holiday, the Monday is the closed day. This is why
+`observed_open` exists. The build agent re-checks these against usps.com and opm.gov if it has
+internet during the build, and records any difference in `docs/decisions.md` instead of guessing.
+
+**Fixed test table** (unit test, `holidays_test.go`), which must match exactly. Every federal
+holiday from 2026 to 2030, with the observed days, taken from OPM's published federal holiday
+lists. At least these spot checks:
+- Thanksgiving Thu 26 Nov 2026.
+- Martin Luther King Jr. Day Mon 18 Jan 2027.
+- Juneteenth Sat 19 Jun 2027, with `observed_open` Fri 18 Jun 2027.
+- Independence Day Sun 4 Jul 2027, with `closed` Mon 5 Jul 2027.
+- Christmas Sat 25 Dec 2027, with `observed_open` Fri 24 Dec 2027.
+- New Year's Day Sat 1 Jan 2028, with `observed_open` Fri 31 Dec 2027.
+- Memorial Day Mon 31 May 2027.
+- Labor Day Mon 4 Sep 2028.
+- Columbus Day Mon 8 Oct 2029.
+- Veterans Day Mon 11 Nov 2030.
+
+**Calendar.** The month grid and 12-week list ask `holidays.Days` for the visible range and draw
+a `.chip.holiday` before events.
+- The chip is a non-interactive element with `tabindex="0"`, a `title`, and visually hidden text
+  carrying 8.63's sentence. It isn't a link or button, so it can't open the editor. A click on
+  it does nothing at all: the day's "start a new event" handler (6.21) ignores clicks that land
+  on any chip, as it already must for event chips. A click on the day's empty space still
+  starts a new event.
+- The chip is built from existing tokens only (no new colours): a third chip style alongside the
+  solid event chip and the outlined job chip, for example the paper background with an ink-coloured
+  dashed border and a small flag icon drawn to B9.4's rules.
+- Its look is part of O8.5.
+
+**Briefing.** `briefing.Build` takes holidays as a fourth input, through a `calendar` query
+interface (`HolidaysBetween`), per B2:
+- **This week:** days in `[today, F]`, all three kinds, stamped **HOLIDAY**.
+- **Coming up:** `closed` days with `start > F` and `start − 14 days ≤ S`, labelled like events.
+- **Just mine** doesn't hide holidays (they belong to everyone, like events).
+
+**Not stored, so nothing to migrate, export or roll back (8.67).**
+
+### B14.6 `questions`: the Questions section (gates 8.70–8.83)
+
+**A new section package**, `internal/questions`, registered like the others (B2: one package,
+one registration line), with `migrations/questions/`, `web/templates/questions/` and
+`web/static/questions/`. It depends only on `people`, `db` and `app`.
+
+**Storage** (`questions/0001_questions.sql`, B3):
+- `questions`: `id`, `text` (≤ 300), `details` (≤ 2,000), `asked_by`, `asked_at`,
+  `answered_by`, `answered_at` (both null while waiting), `edited_by`, `edited_at`,
+  `removed_by`, `removed_at`.
+- `question_answers`: `id`, `question_id`, `text` (≤ 2,000), `created_by`, `created_at`,
+  `edited_by`, `edited_at`, `removed_by`, `removed_at`.
+- A `questions` change counter in `app_meta`, or the section's own table, bumped by every write
+  in the same transaction.
+- Indexes: `(answered_at, asked_at)` on questions where not removed, and `question_id` on
+  answers.
+
+**Routes.**
+- `GET /questions`
+- `POST /questions` (ask)
+- `GET /questions/{id}`
+- `POST /questions/{id}` (edit)
+- `POST /questions/{id}/answers`
+- `POST /questions/{id}/answers/{aid}` (edit)
+- `POST /questions/{id}/answers/{aid}/remove` and `…/restore` (Undo, using the shared undo
+  message part from D-93, 10 s)
+- `POST /questions/{id}/answered` and `…/unanswered`
+- `POST /questions/{id}/remove`, `GET /questions/removed`, `POST /questions/{id}/restore`
+- `GET /questions/version`, polled like the others (B4)
+- `GET /questions/search` and `GET /questions/search.json`
+
+All writes are POSTs under the origin check. Text is plain: escape it, and show line breaks with
+`white-space: pre-line`. Length limits are enforced in the store, with the typed text kept on
+refusal.
+
+**Search (8.78).** The section's `NavItem.Search` reads "Search questions". The match is the
+same Go word match as job search (D-94), over the text, details and live answers. Waiting
+questions come first, then question-text matches before details or answer matches, newest first.
+Every section's results end with links to the other two searches. A 1,000-question library stays
+well inside one second in a single pass. If the speed layer shows otherwise, an FTS table is
+allowed; record it.
+
+**Briefing.** `briefing.Build` takes waiting questions through a `questions` query interface
+(`Waiting(ctx, limit) ([]WaitingQuestion, total int)`). The section is drawn after Coming up.
+Briefing's version endpoint also reflects the questions counter, so 8.79 holds there. **Just
+mine** doesn't hide questions: they belong to nobody, so they belong to everyone.
+
+**Icon.** `questions`: a speech bubble with a question mark, drawn to B9.4's rules and added to
+the section icon set. It uses `currentColor`, so both brands' sidebars colour it with no
+brand-specific file. Add it to the icon policy tests.
+
+**Export.** `questions.csv` and `answers.csv` through the settings export interface, as 8.81
+lists, removed rows included.
+
+**Test library.** `e2e/seed` gains 1,000 questions (about 60 % answered) and 3,000 answers, plus
+200 yearly jobs, half of them waiting.
+
+### B14.7 How Phase 8 gates are checked
+
+As B7, per gate:
+
+| Gates | How they're checked |
+|---|---|
+| 8.01–8.05 | Store unit test for the Done order (including the same-second tiebreak). E2E: finish by drag (dropped low in Done), by button and from My jobs, then assert the order with no reload and after a reload in a second context. Attempt a within-Done drag and assert nothing moved. Assert no move icons on Done cards. |
+| 8.10–8.21 | Store unit tests for every refusal and for path normalising (UNC, drive letter, forward slashes, trailing spaces, case-insensitive duplicates), with fake `ArticleFinder`/`JobsUsing`. An integration test with the real wiring. E2E: picker, archived article marking, Copy (read the clipboard in Chromium with `clipboard-read` granted, on plain `http://`; if the browser won't allow that there, assert what the script handed to its copy call, the way the Setup page's Copy is tested), the article's jobs panel, an assertion that linking leaves `version_no` and Recently updated unchanged, no-JS forms, export columns. 8.21 in the container rollback step. |
+| 8.30–8.39 | E2E: build a job with 5 steps (reordered and one removed before saving), 2 articles and a place, then save and assert everything and the single History line. Each 8.32 refusal keeps the typed form. The discard prompt. No-JS `steps_text`. My jobs: open by default in Working on now, Show/Hide kept through a reload and a refresh, ticks seen in a second context. 8.39 in the speed layer. |
+| 8.40–8.53 | `ResetYearly` table tests across `COMPHQ_TEST_TODAY` dates: show day, put-away day (exactly 14 days), a missed year with the NAS "off", a run twice, 29 Feb into a non-leap and a leap year, a long notice that shows at once, unfinished, removed and restored. The every-list exclusion test, and the move-order test with waiting jobs interleaved. E2E for the Repeats choice, the message, the Yearly jobs page, the stamp, the Calendar chip, search marking and export columns. 8.53 in the container rollback step. |
+| 8.60–8.67 | The fixed table in `holidays_test.go`, and a test that `Days` across a year boundary finds 31 Dec 2027. E2E on the month views for Nov 2026, Jul 2027 and Dec 2027 (chips, wording, tooltip, axe, clicking the chip doesn't open the editor, and a blank part of that day still does). Briefing E2E under fixed test dates: Sat 7 Nov 2026 (Thanksgiving not yet shown), Sat 14 Nov 2026 (Thanksgiving in Coming up, "in 12 days"), Sat 21 Nov 2026 (Thanksgiving in This week, since `F` is Fri 27 Nov), Sat 3 Jul 2027 (Sun 4 Jul and the no-mail Mon 5 Jul in This week), and Sat 25 Dec 2027 ("Christmas Day · No mail today"). |
+| 8.70–8.83 | Store unit tests (limits, mark/unmark, edit, remove/restore, search order). E2E for every screen and flow, two contexts for 8.79, no-JS for 8.80, the Briefing section's 5-plus-"more" rule and empty state, the sidebar entry and icon in both brands, and export. 8.82 in the container rollback step. 8.83 in the speed layer. |
+| 8.90–8.91 | The full suite, unchanged except the planned rewrites named in 8.90, each pointed at its D-entry in its commit message, and the screen sweep at both sizes, run once with `COMPHQ_BRAND=mc`. Screenshots of every new screen in `reports/screens/` for the owner checks. |
