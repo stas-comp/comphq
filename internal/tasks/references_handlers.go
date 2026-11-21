@@ -121,8 +121,10 @@ func isReferenceRefusal(err error) bool {
 	return false
 }
 
-// afterReferenceChange answers a reference action: back to the job's page on
-// success, or the page again with the refusal's own words.
+// afterReferenceChange answers a reference action. From a page: back to the
+// job's page on success, or the page again with the refusal's own words. From
+// the window or the script (fragment=1): the section as it now is, with the
+// refusal's words in it, so the screen changes without a reload.
 func (h *Handlers) afterReferenceChange(w http.ResponseWriter, r *http.Request, id int64, err error) {
 	switch {
 	case errors.Is(err, ErrTaskNotFound):
@@ -130,8 +132,20 @@ func (h *Handlers) afterReferenceChange(w http.ResponseWriter, r *http.Request, 
 	case err != nil && !isReferenceRefusal(err):
 		log.Printf("tasks: references: %v", err)
 		http.Error(w, "internal error", http.StatusInternalServerError)
+	case wantsFragment(r):
+		notice, name, path := "", "", ""
+		if err != nil {
+			notice = err.Error()
+			name, path = typedPlace(r)
+		}
+		data, derr := h.buildReferencesData(r.Context(), id, "", true, notice, name, path)
+		if derr != nil {
+			http.Error(w, "internal error", http.StatusInternalServerError)
+			return
+		}
+		h.srv.RenderPartial(w, http.StatusOK, "tasks-references", data)
 	case err == nil:
-		http.Redirect(w, r, "/tasks/"+strconv.FormatInt(id, 10), http.StatusFound)
+		http.Redirect(w, r, "/tasks/"+strconv.FormatInt(id, 10)+"#refs", http.StatusFound)
 	default:
 		h.renderDetails(w, r, id, http.StatusOK, err.Error(), nil, nil, nil)
 	}

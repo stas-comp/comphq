@@ -289,3 +289,155 @@ a.mini {
   flex-basis: 100%;
   margin: var(--space-2) 0 0;
 }
+
+/* Articles and COSMOS places (gates 8.10-8.19): the same quiet section as
+   Linked jobs, under it. */
+.task-refs {
+  margin: var(--space-6) 0;
+}
+
+.task-refs .sub {
+  margin: var(--space-3) 0 var(--space-1);
+}
+
+.ref-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-1);
+}
+
+.ref-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-3);
+  padding: var(--space-1) 0;
+}
+
+.ref-line-title {
+  flex: 1 1 10rem;
+  min-width: 0;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.ref-line-meta,
+.ref-match-category {
+  font: 500 11px var(--font-mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.ref-line .inline-form {
+  display: flex;
+}
+
+/* The path is plain, selectable text in a typewriter-style font (gate 8.19). */
+.ref-path {
+  flex: 1 1 100%;
+  order: 3;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  overflow-wrap: anywhere;
+  user-select: all;
+  padding: var(--space-1) var(--space-2);
+  background: var(--color-accent-wash);
+  border-radius: var(--radius-sm);
+}
+
+.ref-place .copy-button,
+.ref-place .inline-form {
+  order: 2;
+}
+
+.ref-search {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+
+.ref-search label {
+  font-weight: 700;
+}
+
+.ref-search .field {
+  flex: 1 1 14rem;
+  min-width: 0;
+}
+
+.refs-empty {
+  margin: var(--space-2) 0;
+  color: var(--color-text-muted);
+}
+
+.ref-matches {
+  list-style: none;
+  margin: var(--space-2) 0 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-2);
+}
+
+.ref-match {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+}
+
+.ref-match-title {
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.ref-match-pick {
+  all: unset;
+  cursor: pointer;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+}
+
+.ref-match-pick:hover,
+.ref-match-pick:focus-visible {
+  background: var(--color-accent-wash);
+  outline: 2px solid var(--color-accent-soft);
+}
+
+.place-form {
+  margin-top: var(--space-3);
+}
+
+.place-form-title {
+  margin: 0 0 var(--space-1);
+  font-weight: 700;
+}
+
+.place-fields {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-2) var(--space-3);
+}
+
+.place-field {
+  display: grid;
+  gap: var(--space-1);
+  flex: 1 1 14rem;
+  min-width: 0;
+}
+
+.place-field label {
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+.ref-hint {
+  margin: var(--space-2) 0 0;
+  font-size: 13px;
+  color: var(--color-text-muted);
+}

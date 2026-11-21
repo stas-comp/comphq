@@ -24,6 +24,14 @@ Some pictures couldn't be copied, so they're marked in the article below. The re
 {{end}}
 
 <div class="kb-article-body">{{.BodyHTML}}</div>
+{{if .Jobs}}
+<section class="kb-jobs-using" id="jobs-using" aria-labelledby="jobs-using-heading">
+<h2 id="jobs-using-heading">Jobs using this article</h2>
+<ul class="kb-jobs-list">
+{{range .Jobs}}<li class="kb-job"><a class="kb-job-title" href="/tasks/{{.ID}}">{{.Title}}</a> <span class="kb-job-column">{{.StageLabel}}</span>{{if .Finished}} <span class="stamp stamp-date">Finished</span>{{end}}</li>
+{{end}}</ul>
+</section>
+{{end}}
 </article>
 <script src="/static/kb/highlight.js"></script>
 {{end}}

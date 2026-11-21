@@ -92,6 +92,9 @@ type articlePageData struct {
 	UpdatedBy    string
 	UpdatedAt    string
 	HistoryCount int
+	// Jobs are the jobs that link this article (gate 8.18), from Tasks through
+	// the JobsUsing interface; empty when there are none.
+	Jobs []JobRef
 }
 
 func (h *Handlers) renderArticlePage(w http.ResponseWriter, r *http.Request, status int, article Article, imageFailures []string) {
@@ -122,6 +125,9 @@ func (h *Handlers) renderArticlePage(w http.ResponseWriter, r *http.Request, sta
 		TitleHighlight: titleHighlight,
 		Category:       category,
 		ImageFailures:  imageFailures,
+	}
+	if h.jobs != nil {
+		data.Jobs = h.jobs.JobsForArticle(r.Context(), article.ID)
 	}
 	// The byline is only a convenience: no history row, no byline.
 	if versions, err := h.articles.History(article.ID); err == nil && len(versions) > 0 {

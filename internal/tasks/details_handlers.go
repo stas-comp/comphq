@@ -67,6 +67,8 @@ type detailsPageData struct {
 	Weekly bool
 	// Links is the Linked jobs section (gates 7.40, 7.41, 7.44).
 	Links linksData
+	// References is the Articles and places section (gates 8.10-8.14).
+	References referencesData
 }
 
 // handleTaskDetails serves a task's own page, unchanged (SPEC gate 4.27:
@@ -142,8 +144,15 @@ func (h *Handlers) renderDetails(w http.ResponseWriter, r *http.Request, id int6
 		return
 	}
 
+	typedName, typedPath := typedPlace(r)
+	refsData, err := h.buildReferencesData(r.Context(), id, r.FormValue("article_q"), wantsFragment(r), "", typedName, typedPath)
+	if err != nil {
+		http.Error(w, "internal error", http.StatusInternalServerError)
+		return
+	}
+
 	data := detailsPageData{
-		Links: linksData,
+		Links: linksData, References: refsData,
 		ID: task.ID, Title: task.Title, Notes: task.Notes, Size: task.Size, Stage: task.Stage, DueDate: format.DayFirst(task.DueDate),
 		InWindow:  wantsFragment(r),
 		SizeLabel: sizeLabels[task.Size], StageLabel: stageLabels[task.Stage], DueLabel: dueLabel,

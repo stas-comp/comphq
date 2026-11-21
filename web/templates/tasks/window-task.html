@@ -13,6 +13,7 @@ is unchanged and is where the title link goes with no script. */}}
 {{if .Notes}}<div class="task-read-notes">{{.Notes}}</div>{{else}}<p class="task-read-notes task-read-empty">No description.</p>{{end}}
 {{template "tasks-steps" .Steps}}
 {{template "tasks-links" .Links}}
+{{template "tasks-references" .References}}
 <details class="task-history">
 <summary>History</summary>
 {{if .Activity}}

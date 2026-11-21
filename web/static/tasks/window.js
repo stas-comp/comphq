@@ -39,7 +39,7 @@
     // The Steps list has fields of its own; the keyboard lands on the window's
     // own first field, or its heading, never on a step.
     const first = Array.from(body.querySelectorAll('[autofocus], input:not([type="hidden"]), select, textarea')).find(
-      (el) => !el.closest('.task-steps, .task-links'),
+      (el) => !el.closest('.task-steps, .task-links, .task-refs'),
     )
     if (first) first.focus()
     else heading.focus()
@@ -115,7 +115,7 @@
   // Anything typed makes the window "unsaved" — except in the Steps list,
   // whose steps are saved as they are used (steps.js), not by Save.
   body.addEventListener('input', (event) => {
-    if (event.target instanceof Element && event.target.closest('.task-steps, .task-links')) return
+    if (event.target instanceof Element && event.target.closest('.task-steps, .task-links, .task-refs')) return
     dirty = true
   })
 

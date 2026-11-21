@@ -1,0 +1,99 @@
+{{/* Articles and COSMOS places (SPEC B14.2, D-105, gates 8.10-8.19): one partial,
+drawn by the job's own page and by the task window alike, under Linked jobs.
+Every control is an ordinary form, so it all works with no script (gate 8.19);
+references.js only layers on top. The article picker has two paths: with script,
+the box searches as you type and picking an article links it at once; without,
+the box is a plain GET form (?article_q=) that comes back with each match and a
+Link button. A place is a folder path, shown as text that can be selected and
+copied by hand, with a Copy button: a browser won't open a COSMOS folder from an
+plain-HTTP page, so the path goes into File Explorer's address bar instead. */}}
+{{define "tasks-references"}}
+<section class="task-refs" id="refs" aria-labelledby="refs-heading" data-task-id="{{.TaskID}}">
+<h2 id="refs-heading">Articles and places</h2>
+{{if .Notice}}<p class="message refs-notice" role="alert">{{.Notice}}</p>{{end}}
+{{$taskID := .TaskID}}{{$inWindow := .InWindow}}
+
+<h3 class="sub">Articles</h3>
+{{if .Articles}}
+<ul class="ref-list ref-articles">{{range .Articles}}{{template "tasks-ref-article" .}}{{end}}</ul>
+{{else}}
+<p class="refs-empty">No articles linked yet.</p>
+{{end}}
+<form method="get" action="/tasks/{{.TaskID}}#refs" class="ref-search" role="search">
+<label for="article-q-{{.TaskID}}">Link an article</label>
+<input class="field" type="search" id="article-q-{{.TaskID}}" name="article_q" value="{{.ArticleQuery}}" placeholder="Type part of an article's title" autocomplete="off">
+<button class="btn" type="submit">Find</button>
+</form>
+<div class="ref-results" aria-live="polite">
+{{if .ArticleQuery}}
+{{if .ArticleMatches}}
+<ul class="ref-matches">
+{{range .ArticleMatches}}
+<li class="ref-match">
+<span class="ref-match-title">{{.Title}}</span> <span class="ref-match-category">{{.Category}}</span>
+<form method="post" action="/tasks/{{$taskID}}/articles" class="ref-link-form">
+{{if $inWindow}}<input type="hidden" name="fragment" value="1">{{end}}
+<input type="hidden" name="article_id" value="{{.ID}}">
+<button class="mini" type="submit">Link</button>
+</form>
+</li>
+{{end}}
+</ul>
+{{else}}
+<p class="refs-empty">No published article matches <em>{{.ArticleQuery}}</em>, or it is already linked.</p>
+{{end}}
+{{end}}
+</div>
+
+<h3 class="sub">COSMOS places</h3>
+{{if .Places}}
+<ul class="ref-list ref-places">{{range .Places}}{{template "tasks-ref-place" .}}{{end}}</ul>
+{{else}}
+<p class="refs-empty">No places added yet.</p>
+{{end}}
+<form method="post" action="/tasks/{{.TaskID}}/places" class="place-form">
+{{if .InWindow}}<input type="hidden" name="fragment" value="1">{{end}}
+<p class="place-form-title">Add a COSMOS place</p>
+<div class="place-fields">
+<div class="place-field">
+<label for="place-path-{{.TaskID}}">Folder path</label>
+<input class="field" type="text" id="place-path-{{.TaskID}}" name="path" value="{{.TypedPath}}" placeholder="\\NAS\COSMOS\Mailings\2026" autocomplete="off" spellcheck="false" required>
+</div>
+<div class="place-field">
+<label for="place-name-{{.TaskID}}">Name (optional)</label>
+<input class="field" type="text" id="place-name-{{.TaskID}}" name="name" value="{{.TypedName}}" maxlength="80" placeholder="Mailing lists 2026" autocomplete="off">
+</div>
+<button class="btn" type="submit">Add place</button>
+</div>
+</form>
+<p class="ref-hint">Paste a path into File Explorer's address bar to open the folder.</p>
+</section>
+{{end}}
+
+{{/* One linked article: its current title (which opens it), its category, the
+Archived mark when it has been archived since, and the remove icon. */}}
+{{define "tasks-ref-article"}}
+<li class="ref-line" data-link-id="{{.LinkID}}">
+{{if .Missing}}<span class="ref-line-title">{{.Title}}</span>{{else}}<a class="ref-line-title" href="/kb/articles/{{.ArticleID}}">{{.Title}}</a>{{end}}
+{{if .Category}}<span class="ref-line-meta">{{.Category}}</span>{{end}}
+{{if .Archived}}<span class="stamp stamp-date ref-line-archived">Archived</span>{{end}}
+<form method="post" action="/tasks/{{.TaskID}}/articles/{{.LinkID}}/remove" class="inline-form">
+{{if .InWindow}}<input type="hidden" name="fragment" value="1">{{end}}
+{{template "part-icon-button" .Remove}}
+</form>
+</li>
+{{end}}
+
+{{/* One place: its name, the exact path in a typewriter-style font, a Copy
+button, and the remove icon. The path is plain selectable text. */}}
+{{define "tasks-ref-place"}}
+<li class="ref-line ref-place" data-place-id="{{.ID}}">
+<span class="ref-line-title">{{.Label}}</span>
+<code class="ref-path" id="place-path-text-{{.ID}}">{{.Path}}</code>
+<button class="mini copy-button" type="button" data-copy="{{.Path}}" data-copied-label="Copied">Copy</button>
+<form method="post" action="/tasks/{{.TaskID}}/places/{{.ID}}/remove" class="inline-form">
+{{if .InWindow}}<input type="hidden" name="fragment" value="1">{{end}}
+{{template "part-icon-button" .Remove}}
+</form>
+</li>
+{{end}}
