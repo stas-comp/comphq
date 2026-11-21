@@ -61,7 +61,8 @@ toast.js takes it away after 10 seconds. */}}
 <span class="task-card-size">{{template "part-size" .SizeLabel}}</span>
 {{template "tasks-step-badge" .}}
 <div class="task-card-actions">
-<form method="post" action="/tasks/{{.ID}}/move" class="inline-form">
+{{/* Done is in finishing order and can't be put in a hand-made order (D-104, gate 8.03), so its cards have no move icons. */}}
+{{if not .Done}}<form method="post" action="/tasks/{{.ID}}/move" class="inline-form">
 <input type="hidden" name="stage" value="{{.Stage}}">
 <input type="hidden" name="before_id" value="{{.PrevID}}">
 {{template "part-icon-button" .MoveUp}}
@@ -71,6 +72,7 @@ toast.js takes it away after 10 seconds. */}}
 <input type="hidden" name="after_id" value="{{.NextID}}">
 {{template "part-icon-button" .MoveDown}}
 </form>
+{{end}}
 {{if .OnIt}}
 <form method="post" action="/tasks/{{.ID}}/assign" class="inline-form board-action">
 <input type="hidden" name="from_person" value="{{.MeID}}">

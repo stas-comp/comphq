@@ -12,8 +12,13 @@ document.addEventListener('refresh:applied', initSortable)
 
 function initSortable() {
   document.querySelectorAll('.task-card-list').forEach((list) => {
+    // Done is in finishing order and can't be reordered by hand (D-104, gates
+    // 8.02 and 8.03): sort: false lets cards be dragged out of it and dropped
+    // into it, but never shuffled inside it.
+    const isDone = list.closest('.task-column').dataset.stage === 'done'
     comphqSortable(list, {
       group: 'tasks',
+      sort: !isDone,
       // Clicking a move button or the "Move to…" select inside a card
       // must never be mistaken for the start of a drag.
       filter: 'button, select',
@@ -25,6 +30,12 @@ function initSortable() {
       onStart: () => { document.body.dataset.refreshBusy = '1' },
       onEnd: (evt) => {
         delete document.body.dataset.refreshBusy
+        const toDone = evt.to.closest('.task-column').dataset.stage === 'done'
+        // A card dragged up or down inside Done goes back to its place.
+        if (toDone && evt.from === evt.to) return
+        // A card dropped anywhere in Done belongs at the top, so put it there
+        // now, before the server answers, with no visible jump (gate 8.02).
+        if (toDone) evt.to.prepend(evt.item)
         handleDrop(evt.item)
       },
     })

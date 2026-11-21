@@ -37,9 +37,12 @@ The alternative was to save the job first and then switch the window to it. That
 
 COSMOS is a shared folder (owner, 17 Nov 2026). Browsers won't open `file:` or UNC links from an `http://` page, so a place is a folder path with a **Copy** button, not a link. The path is checked loosely (UNC or drive letter) because COSMOS's real layout isn't known. Linking an article isn't an edit of it. Tasks needs article titles, and an article's page needs its jobs. Importing each other would break B2, so each section declares the small interface it needs, and `cmd/comphq` wires the other's implementation in. Limits of 20 each match linked jobs (D-96). SPEC B14.2.
 
-## D-104 Done is in finishing order and can't be reordered by hand (owner request 3) (planned, P8-00, 2026-11-21)
+## D-104 Done is in finishing order and can't be reordered by hand (owner request 3) (P8-00, 2026-11-21)
 
 The staff asked for the newest finished job on top, always. A hand-made order in Done had no use: nobody prioritises finished work. So the Board orders Done by `done_at`, newest first. A drop anywhere in Done lands at the top, and Done cards lose their move icons. This changes gate 2.04 and gate 4.11's icons inside Done only. `position` is still written there, so the move code needs no special case, and nothing changes in storage. SPEC B14.1.
+
+**Built (P8-01, 2026-11-21):** `Store.ListBoard` orders Done by `done_at DESC, id DESC`, and `Store.Move` into Done ignores `before_id`/`after_id` (it appends, so `position` is still written) and a move from Done to Done changes nothing at all. Done cards leave out the move icons, and Done's list in `board.js` is `sort: false`, with a card dropped in Done put at the top on the client before the server answers. **A finding the spec didn't have:** B14.1 said `done_at` was already a real time, but the move and add-a-task handlers passed `app.Today` (midnight) as the clock, so every job finished on one day had the same `done_at` and the order could not be told apart. A new `app.Now` (the real clock; with `COMPHQ_TEST_TODAY` it keeps that date and takes only the time of day) is now what those two handlers pass, so `done_at`, `updated_at` and the History times are real moments. Every day-based rule (the 14-day tuck-away, weekly resets) compares dates and behaves exactly as before: a job finished at any time on day D is put away on the same day as it was when `done_at` was midnight. Finishing times stay at one-second resolution, with the id as the tiebreak. No planned test needed correcting: the existing 2.04 drag and 4.11 icon tests never touched Done.
+
 
 ## D-103 MC HQ is Comp HQ with a brand setting, not a separate copy (owner request, 2026-11-14)
 

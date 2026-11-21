@@ -278,13 +278,25 @@ func (s *Store) Move(ctx context.Context, taskID int64, input MoveInput, actorID
 		return err
 	}
 
+	// Done is in finishing order and can't be reordered by hand (D-104, gate
+	// 8.03): a move inside Done changes nothing, and a move into Done ignores
+	// before_id and after_id. position is still written there, at the bottom,
+	// so nothing else needs a special case, but nothing reads it for Done.
+	if input.Stage == StageDone && oldStage == StageDone {
+		return nil
+	}
 	targetOthers, err := stageOrder(ctx, tx, input.Stage, taskID)
 	if err != nil {
 		return err
 	}
-	newTargetOrder, err := insertTask(targetOthers, taskID, input.BeforeID, input.AfterID, input.ToBottom)
-	if err != nil {
-		return err
+	var newTargetOrder []int64
+	if input.Stage == StageDone {
+		newTargetOrder = append(append(newTargetOrder, targetOthers...), taskID)
+	} else {
+		newTargetOrder, err = insertTask(targetOthers, taskID, input.BeforeID, input.AfterID, input.ToBottom)
+		if err != nil {
+			return err
+		}
 	}
 	if err := renumber(ctx, tx, newTargetOrder); err != nil {
 		return err
@@ -417,7 +429,9 @@ func (s *Store) ListBoard(ctx context.Context, today time.Time, filter BoardFilt
 	query += `
 		ORDER BY
 			CASE stage WHEN 'idea' THEN 0 WHEN 'todo' THEN 1 WHEN 'doing' THEN 2 WHEN 'done' THEN 3 END,
-			position
+			CASE WHEN stage = 'done' THEN 0 ELSE position END,
+			CASE WHEN stage = 'done' THEN done_at END DESC,
+			CASE WHEN stage = 'done' THEN id END DESC
 	`
 
 	rows, err := s.DB.QueryContext(ctx, query, args...)

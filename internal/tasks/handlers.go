@@ -344,7 +344,7 @@ func (h *Handlers) handleCreateTask(w http.ResponseWriter, r *http.Request) {
 		Weekly:    r.FormValue("repeat") == repeatWeekly,
 	}
 
-	_, err = h.tasks.Create(r.Context(), input, person.ID, today)
+	_, err = h.tasks.Create(r.Context(), input, person.ID, app.Now(h.srv.TestMode))
 	// From the task window the form posts as a fragment: a saved task answers
 	// 204 (the window closes and the board is refreshed), a refused one
 	// answers 422 with the form again, message and typed values included.
@@ -411,8 +411,8 @@ func (h *Handlers) handleMoveTask(w http.ResponseWriter, r *http.Request) {
 	// reliably present.
 	redirectTarget := redirectTargetFrom(r)
 
-	today := app.Today(h.srv.TestMode)
-	switch err := h.tasks.Move(r.Context(), id, input, person.ID, today); err {
+	// The real moment, not the day: it is the finishing time that orders Done (D-104).
+	switch err := h.tasks.Move(r.Context(), id, input, person.ID, app.Now(h.srv.TestMode)); err {
 	case nil:
 		if redirectTarget != "" {
 			http.Redirect(w, r, redirectTarget, http.StatusFound)
