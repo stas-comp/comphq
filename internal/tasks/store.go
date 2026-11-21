@@ -87,6 +87,18 @@ type CreateInput struct {
 	PersonIDs []int64
 	// Weekly makes it a weekly job from the start (gates 7.30, 7.31).
 	Weekly bool
+	// Steps, ArticleIDs and Places are saved with the job, in one transaction
+	// and through the same checks as the single-item routes (gates 8.30-8.32,
+	// D-106): nothing is saved if any of them is refused.
+	Steps      []string
+	ArticleIDs []int64
+	Places     []PlaceInput
+}
+
+// PlaceInput is one COSMOS place typed in the Add task window.
+type PlaceInput struct {
+	Name string
+	Path string
 }
 
 func validSize(size string) bool {
@@ -128,6 +140,20 @@ func (s *Store) Create(ctx context.Context, input CreateInput, creatorID int64, 
 	}
 	if input.DueDate != "" && !format.ValidISODate(input.DueDate) {
 		return Task{}, ErrInvalidDate
+	}
+	// The steps, articles and places that come with the job go through the
+	// same checks as the single-item routes, before anything is written (and
+	// the checks that need the database run inside the transaction below).
+	steps, err := cleanNewSteps(input.Steps)
+	if err != nil {
+		return Task{}, err
+	}
+	places, err := cleanNewPlaces(input.Places)
+	if err != nil {
+		return Task{}, err
+	}
+	if err := s.checkNewArticles(ctx, input.ArticleIDs); err != nil {
+		return Task{}, err
 	}
 
 	tx, err := s.DB.BeginTx(ctx, nil)
@@ -179,11 +205,40 @@ func (s *Store) Create(ctx context.Context, input CreateInput, creatorID int64, 
 		}
 	}
 
+	// One History line for the whole new job: "created this (with 5 steps)".
+	// Steps made with the job write no step_added rows, and neither do its
+	// articles and places (gate 8.31).
+	createdDetail := "{}"
+	if len(steps) > 0 {
+		createdDetail = fmt.Sprintf(`{"steps":%d}`, len(steps))
+	}
 	if _, err := tx.ExecContext(ctx,
-		`INSERT INTO task_activity (task_id, person_id, action, detail, at) VALUES (?, ?, 'created', '{}', ?)`,
-		id, creatorID, nowStr,
+		`INSERT INTO task_activity (task_id, person_id, action, detail, at) VALUES (?, ?, 'created', ?, ?)`,
+		id, creatorID, createdDetail, nowStr,
 	); err != nil {
 		return Task{}, err
+	}
+	for i, text := range steps {
+		if _, err := tx.ExecContext(ctx,
+			`INSERT INTO task_checklist_items (task_id, text, position, created_by, created_at, updated_by, updated_at)
+			 VALUES (?, ?, ?, ?, ?, ?, ?)`,
+			id, text, i+1, creatorID, nowStr, creatorID, nowStr,
+		); err != nil {
+			return Task{}, err
+		}
+	}
+	for _, articleID := range input.ArticleIDs {
+		if _, err := tx.ExecContext(ctx,
+			`INSERT INTO task_articles (task_id, article_id, created_by, created_at) VALUES (?, ?, ?, ?)`,
+			id, articleID, creatorID, nowStr,
+		); err != nil {
+			return Task{}, err
+		}
+	}
+	for _, p := range places {
+		if err := addPlaceTx(ctx, tx, id, p.Name, p.Path, creatorID, now, false); err != nil {
+			return Task{}, err
+		}
 	}
 	if input.Weekly {
 		if err := setWeeklyTx(ctx, tx, id, true, creatorID, now); err != nil {

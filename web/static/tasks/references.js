@@ -13,14 +13,14 @@
 // The section is one partial, drawn by the task window and by the job's own
 // page alike, so this one script serves both. (Copy is app/copy.js.)
 (function () {
-  const section = () => document.querySelector(".task-refs");
+  const section = () => document.querySelector(".task-refs[data-task-id]");
   let timer = null;
   let seq = 0;
 
   function parse(html) {
     const fresh = new DOMParser()
       .parseFromString(html, "text/html")
-      .querySelector(".task-refs");
+      .querySelector(".task-refs[data-task-id]");
     return fresh ? document.importNode(fresh, true) : null;
   }
 
@@ -49,13 +49,13 @@
     "submit",
     async (event) => {
       const form = event.target;
-      if (!(form instanceof HTMLFormElement) || !form.closest(".task-refs"))
+      if (!(form instanceof HTMLFormElement) || !form.closest(".task-refs[data-task-id]"))
         return;
       event.stopPropagation();
       event.preventDefault();
       if (form.classList.contains("ref-search")) {
         clearTimeout(timer);
-        search(form.closest(".task-refs"));
+        search(form.closest(".task-refs[data-task-id]"));
         return;
       }
       const data = new URLSearchParams(new FormData(form, event.submitter));
@@ -169,9 +169,9 @@
 
   document.addEventListener("input", (event) => {
     const input = event.target;
-    if (!(input instanceof HTMLInputElement) || !input.closest(".ref-search"))
+    if (!(input instanceof HTMLInputElement) || !input.closest(".ref-search") || !input.closest(".task-refs[data-task-id]"))
       return;
-    const root = input.closest(".task-refs");
+    const root = input.closest(".task-refs[data-task-id]");
     clearTimeout(timer);
     timer = setTimeout(() => search(root), 250);
   });

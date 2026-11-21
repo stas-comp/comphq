@@ -29,9 +29,12 @@ SPEC B14.4.
 
 "Show up on My jobs" means seeing and ticking. Adding and editing stay in the job's window, so My jobs doesn't grow a second editor. Jobs you're working on show their steps open, because that's what you're doing. Up next and Up for grabs stay compact, with **Show steps**. The open or closed choice is kept per computer in browser storage, which is a convenience only, so losing it just means the defaults. SPEC B14.3.
 
-## D-106 The Add task window keeps new steps, articles and places on the page until one save (owner request 1) (planned, P8-00, 2026-11-21)
+## D-106 The Add task window keeps new steps, articles and places on the page until one save (owner request 1) (P8-00, 2026-11-21)
 
 The alternative was to save the job first and then switch the window to it. That needs less code, but it's two steps for something the staff asked to be one. The lists live in the form, and `POST /tasks` writes everything in one transaction through the same store checks as the single-item routes, so no limit can be got round and a refusal leaves nothing behind. Without JavaScript, steps come from a one-per-line box. SPEC B14.3.
+
+**Built (P8-04, 2026-11-21):** `Store.Create` takes `Steps`, `ArticleIDs` and `Places`. The cheap checks (blank steps dropped, 200 characters, 50 steps, path form, name length, article published and not twice, 20 articles) run before the transaction opens, and the checks that need the database (a duplicate or a 21st place) run inside it through the same `addPlaceTx` the single-place route uses, so a refusal on the third place rolls back the job, its steps and its links. The `created` History row gains `{"steps":N}` and reads "Sam created this (with 5 steps)", with no `step_added`, article or place rows (the wording keeps the existing "created this" rather than the gate's "added this job", so older History lines and the new one match). The form draws the lists with the same classes as a saved job's, from hidden fields (`step`, `article_id`, `place_name` with `place_path`); `new-task.js` reveals them and hides the one-per-line box, and the window sends a `window:shown` event after it draws a fragment so the form is set up again after a refusal. A job with a step, article or place in its form asks "Discard this new job?" on Cancel, the close icon and Escape; a form with only a title still asks the old "Leave without saving?". The new form's sections are not `.task-refs[data-task-id]`, so `references.js`, which saves as it goes, leaves them alone.
+
 
 ## D-105 Articles and COSMOS places on a job; Tasks and the Knowledge Base meet through interfaces (owner requests 4 and 7) (P8-00, 2026-11-21)
 

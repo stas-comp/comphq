@@ -1,8 +1,13 @@
 package tasks
 
 import (
+	"bufio"
+	"errors"
 	"net/http"
+	"strconv"
+	"strings"
 
+	"github.com/stas-comp/comphq/internal/app"
 	"github.com/stas-comp/comphq/internal/app/format"
 )
 
@@ -32,6 +37,105 @@ type newTaskPageData struct {
 	People   []personOption
 	// Weekly keeps the tick-box as typed when a refused save comes back.
 	Weekly bool
+	// NewSteps, NewArticles and NewPlaces are what was added to the job so far
+	// (SPEC B14.3, gates 8.30-8.34): they come back as typed after a refusal.
+	// StepsText is the no-script one-per-line box, kept as typed.
+	NewSteps    []newStepLine
+	StepsText   string
+	NewArticles []newArticleLine
+	NewPlaces   []newPlaceLine
+}
+
+// newStepLine is one step already added in the form. Its three icon buttons are
+// the same three a saved step has (move up, move down, remove), but plain
+// buttons: they work on the form in the browser and post nothing.
+type newStepLine struct{ Text string }
+
+func (l newStepLine) button(kind string) app.IconButton {
+	b := app.NewIconButton(kind, "step “"+l.Text+"”", false)
+	b.Type = "button"
+	return b
+}
+
+func (l newStepLine) Up() app.IconButton     { return l.button(app.IconMoveUp) }
+func (l newStepLine) Down() app.IconButton   { return l.button(app.IconMoveDown) }
+func (l newStepLine) Remove() app.IconButton { return l.button(app.IconRemove) }
+
+func (l newArticleLine) Remove() app.IconButton {
+	b := app.NewIconButton(app.IconRemove, "article "+l.Title, false)
+	b.Type = "button"
+	return b
+}
+
+func (l newPlaceLine) Remove() app.IconButton {
+	b := app.NewIconButton(app.IconRemove, "place "+l.Label, false)
+	b.Type = "button"
+	return b
+}
+
+// newArticleLine and newPlaceLine are the articles and places already added in
+// the form, before the job exists.
+type newArticleLine struct {
+	ID       int64
+	Title    string
+	Category string
+}
+
+type newPlaceLine struct {
+	Name  string
+	Path  string
+	Label string
+}
+
+// newJobExtras is what the Add task form adds beyond the job's own fields.
+type newJobExtras struct {
+	steps      []string
+	articleIDs []int64
+	places     []PlaceInput
+}
+
+// newJobExtrasFromForm reads the steps (the repeated "step" fields, in order,
+// then the lines of the no-script "steps_text" box), the articles (repeated
+// "article_id") and the places ("place_name" and "place_path", in pairs) typed
+// in the Add task form (SPEC B14.3). The server accepts either input for steps.
+func newJobExtrasFromForm(r *http.Request) (newJobExtras, error) {
+	var e newJobExtras
+	e.steps = append(e.steps, r.PostForm["step"]...)
+	lines := bufio.NewScanner(strings.NewReader(r.PostFormValue("steps_text")))
+	for lines.Scan() {
+		e.steps = append(e.steps, lines.Text())
+	}
+	for _, raw := range r.PostForm["article_id"] {
+		id, err := strconv.ParseInt(strings.TrimSpace(raw), 10, 64)
+		if err != nil {
+			return e, err
+		}
+		e.articleIDs = append(e.articleIDs, id)
+	}
+	names, paths := r.PostForm["place_name"], r.PostForm["place_path"]
+	for i, path := range paths {
+		name := ""
+		if i < len(names) {
+			name = names[i]
+		}
+		e.places = append(e.places, PlaceInput{Name: name, Path: path})
+	}
+	return e, nil
+}
+
+// newJobRefusal turns a refusal from Create into the plain words the form
+// shows, and says whether it was one (gate 8.32).
+func newJobRefusal(err error) (string, bool) {
+	switch {
+	case errors.Is(err, ErrTooManySteps):
+		return "A job can have up to 50 steps.", true
+	case errors.Is(err, ErrStepTooLong):
+		return "A step can be up to 200 characters.", true
+	case errors.Is(err, ErrPlacePath), errors.Is(err, ErrPlaceNameLong), errors.Is(err, ErrPlaceDuplicate), errors.Is(err, ErrTooManyPlaces),
+		errors.Is(err, ErrArticleLinked), errors.Is(err, ErrTooManyArticles), errors.Is(err, ErrArticleGone), errors.Is(err, ErrArticleArchived):
+		return err.Error(), true
+	}
+	return "", false
 }
 
 // handleNewTaskForm serves GET /tasks/new: an empty form, in To do, Medium (gate 7.10).
@@ -69,7 +173,35 @@ func (h *Handlers) renderNewTask(w http.ResponseWriter, r *http.Request, status 
 		stage = StageTodo
 	}
 
+	// What was added to the job so far comes back as typed. The articles' words
+	// come from the Knowledge Base through the finder, and only the repeated
+	// "step" fields are drawn as a list (the no-script box keeps its own text).
+	var newSteps []newStepLine
+	for _, st := range r.PostForm["step"] {
+		if strings.TrimSpace(st) != "" {
+			newSteps = append(newSteps, newStepLine{Text: strings.TrimSpace(st)})
+		}
+	}
+	var newArticles []newArticleLine
+	known := h.tasks.finderArticles(r.Context(), input.ArticleIDs)
+	for _, id := range input.ArticleIDs {
+		a := known[id]
+		title := a.Title
+		if title == "" {
+			title = missingArticle
+		}
+		newArticles = append(newArticles, newArticleLine{ID: id, Title: title, Category: a.Category})
+	}
+	var newPlaces []newPlaceLine
+	for _, p := range input.Places {
+		if strings.TrimSpace(p.Name) == "" && strings.TrimSpace(p.Path) == "" {
+			continue
+		}
+		newPlaces = append(newPlaces, newPlaceLine{Name: strings.TrimSpace(p.Name), Path: strings.TrimSpace(p.Path), Label: PlaceDisplayName(p.Name, strings.ReplaceAll(strings.TrimSpace(p.Path), "/", `\`))})
+	}
+
 	data := newTaskPageData{
+		NewSteps: newSteps, StepsText: r.PostFormValue("steps_text"), NewArticles: newArticles, NewPlaces: newPlaces,
 		Message:  message,
 		InWindow: wantsFragment(r),
 		Title:    input.Title,

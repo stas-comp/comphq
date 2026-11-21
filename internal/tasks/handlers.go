@@ -343,6 +343,12 @@ func (h *Handlers) handleCreateTask(w http.ResponseWriter, r *http.Request) {
 		PersonIDs: personIDs,
 		Weekly:    r.FormValue("repeat") == repeatWeekly,
 	}
+	extras, err := newJobExtrasFromForm(r)
+	if err != nil {
+		http.Error(w, "invalid form", http.StatusBadRequest)
+		return
+	}
+	input.Steps, input.ArticleIDs, input.Places = extras.steps, extras.articleIDs, extras.places
 
 	_, err = h.tasks.Create(r.Context(), input, person.ID, app.Now(h.srv.TestMode))
 	// From the task window the form posts as a fragment: a saved task answers
@@ -366,6 +372,13 @@ func (h *Handlers) handleCreateTask(w http.ResponseWriter, r *http.Request) {
 	case ErrInvalidSize, ErrInvalidStage:
 		http.Error(w, err.Error(), http.StatusBadRequest)
 	default:
+		// A step over 200 characters, more than 50 steps, a bad folder path, more
+		// than 20 articles or places, and the rest of gate 8.32: nothing was
+		// saved, and the form comes back with everything as typed.
+		if msg, refused := newJobRefusal(err); refused {
+			h.renderNewTask(w, r, refusedStatus, msg, input, personIDs)
+			return
+		}
 		http.Error(w, "internal error", http.StatusInternalServerError)
 	}
 }

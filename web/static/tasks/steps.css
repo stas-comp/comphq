@@ -441,3 +441,19 @@ a.mini {
   font-size: 13px;
   color: var(--color-text-muted);
 }
+
+/* Steps, articles and places in the Add task form (gates 8.30-8.34): the same
+   lists as a saved job's, built in the form before the job exists. */
+.add-task-form .task-steps,
+.add-task-form .task-refs {
+  margin: var(--space-4) 0;
+}
+
+.add-task-form .new-js[hidden],
+.add-task-form .new-nojs[hidden] {
+  display: none;
+}
+
+.new-notice {
+  margin: var(--space-2) 0;
+}

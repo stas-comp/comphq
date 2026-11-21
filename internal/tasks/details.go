@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"strings"
 	"time"
 
@@ -303,6 +304,16 @@ func (s *Store) ListActivity(ctx context.Context, taskID int64) ([]Activity, err
 func (s *Store) activityText(ctx context.Context, action, detail, actorName string) (string, error) {
 	switch action {
 	case "created":
+		var d struct {
+			Steps int `json:"steps"`
+		}
+		if err := json.Unmarshal([]byte(detail), &d); err == nil && d.Steps > 0 {
+			word := "steps"
+			if d.Steps == 1 {
+				word = "step"
+			}
+			return fmt.Sprintf("%s created this (with %d %s)", actorName, d.Steps, word), nil
+		}
 		return actorName + " created this", nil
 	case "edited":
 		return actorName + " edited this", nil

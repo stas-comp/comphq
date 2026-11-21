@@ -20,8 +20,17 @@
   let opener = null
   let dirty = false
 
+  // A new job that already holds steps, articles or places (the hidden fields
+  // new-task.js adds to the form) has more to lose than a typed title: closing
+  // or cancelling asks "Discard this new job?" (gate 8.33).
+  function newJobHasExtras() {
+    return body.dataset.state === 'new' && !!body.querySelector('input[name="step"], input[name="article_id"], input[name="place_path"]')
+  }
+
   function requestClose() {
-    if (dirty && !window.confirm('Leave without saving?')) return false
+    if (newJobHasExtras()) {
+      if (!window.confirm('Discard this new job?')) return false
+    } else if (dirty && !window.confirm('Leave without saving?')) return false
     dialog.close()
     return true
   }
@@ -36,6 +45,7 @@
     heading.textContent = named ? named.dataset.windowTitle : fallbackTitle
     dirty = false
     if (!dialog.open) dialog.showModal()
+    document.dispatchEvent(new CustomEvent('window:shown')) // new-task.js sets up the Add task form
     // The Steps list has fields of its own; the keyboard lands on the window's
     // own first field, or its heading, never on a step.
     const first = Array.from(body.querySelectorAll('[autofocus], input:not([type="hidden"]), select, textarea')).find(
@@ -212,6 +222,7 @@
     }
     if (res.status === 422) {
       body.innerHTML = await res.text()
+      document.dispatchEvent(new CustomEvent('window:shown'))
       dirty = true
       const alert = body.querySelector('[role="alert"]')
       if (alert) {

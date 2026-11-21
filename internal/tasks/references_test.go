@@ -202,8 +202,8 @@ func TestGate816PlaceRefusalsChangeNothing(t *testing.T) {
 		{"", "", ErrPlacePath},
 		{"", "NAS/COSMOS", ErrPlacePath},
 		{strings.Repeat("n", 81), `\\NAS\COSMOS\X`, ErrPlaceNameLong},
-		{"Again", `\\nas\cosmos\MAILINGS`, ErrPlaceDuplicate},          // case-insensitive duplicate
-		{"Again", "//NAS/COSMOS/Mailings  ", ErrPlaceDuplicate},        // the same path typed another way
+		{"Again", `\\nas\cosmos\MAILINGS`, ErrPlaceDuplicate},   // case-insensitive duplicate
+		{"Again", "//NAS/COSMOS/Mailings  ", ErrPlaceDuplicate}, // the same path typed another way
 	}
 	for _, c := range cases {
 		if err := f.store.AddPlace(f.ctx, f.job.ID, c.name, c.path, f.sam, fixedNow); !errors.Is(err, c.want) {

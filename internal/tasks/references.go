@@ -305,7 +305,7 @@ func (s *Store) AddPlace(ctx context.Context, taskID int64, name, folderPath str
 	}
 	defer tx.Rollback()
 
-	if err := addPlaceTx(ctx, tx, taskID, name, p, actorID, now); err != nil {
+	if err := addPlaceTx(ctx, tx, taskID, name, p, actorID, now, true); err != nil {
 		return err
 	}
 	if err := bumpTasksVersion(ctx, tx); err != nil {
@@ -316,8 +316,10 @@ func (s *Store) AddPlace(ctx context.Context, taskID int64, name, folderPath str
 
 // addPlaceTx is the checks and the insert, shared with the Add task window,
 // which saves a new job's places in the same transaction as the job (D-106).
-// path is already normalised.
-func addPlaceTx(ctx context.Context, tx *sql.Tx, taskID int64, name, normPath string, actorID int64, now time.Time) error {
+// path is already normalised. record says whether History gets a line: a place
+// added to an existing job does, one saved with a new job doesn't, because the
+// job's own "created" line says it all.
+func addPlaceTx(ctx context.Context, tx *sql.Tx, taskID int64, name, normPath string, actorID int64, now time.Time, record bool) error {
 	if err := checkLive(ctx, tx, taskID); err != nil {
 		return err
 	}
@@ -360,6 +362,9 @@ func addPlaceTx(ctx context.Context, tx *sql.Tx, taskID int64, name, normPath st
 		return err
 	}
 	placeID, _ := res.LastInsertId()
+	if !record {
+		return nil
+	}
 	return recordActivity(ctx, tx, taskID, actorID, "place_added", placeDetail{PlaceID: placeID, Name: PlaceDisplayName(name, normPath), Path: normPath}, nowStr)
 }
 
@@ -483,4 +488,76 @@ func (s *Store) JobsUsingArticle(ctx context.Context, articleID int64) ([]Articl
 		out = append(out, j)
 	}
 	return out, rows.Err()
+}
+
+// cleanNewSteps tidies the steps typed with a new job: blank ones are dropped
+// (a blank line in the one-per-line box), and the limits are the single-step
+// route's (gate 8.32): 200 characters each, 50 in all.
+func cleanNewSteps(raw []string) ([]string, error) {
+	var out []string
+	for _, r := range raw {
+		if strings.TrimSpace(r) == "" {
+			continue
+		}
+		text, err := cleanStepText(r)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, text)
+	}
+	if len(out) > MaxSteps {
+		return nil, ErrTooManySteps
+	}
+	return out, nil
+}
+
+// cleanNewPlaces normalises the places typed with a new job; an entirely empty
+// pair (no name and no path) is dropped. A bad path or a long name is refused
+// here, and a duplicate or a 21st in the transaction that saves them.
+func cleanNewPlaces(raw []PlaceInput) ([]PlaceInput, error) {
+	var out []PlaceInput
+	for _, r := range raw {
+		name := strings.TrimSpace(r.Name)
+		if name == "" && strings.TrimSpace(r.Path) == "" {
+			continue
+		}
+		if utf8.RuneCountInString(name) > maxPlaceName {
+			return nil, ErrPlaceNameLong
+		}
+		p, err := NormalisePath(r.Path)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, PlaceInput{Name: name, Path: p})
+	}
+	return out, nil
+}
+
+// checkNewArticles checks the articles chosen for a new job against the same
+// rules as AddArticle (gate 8.32): published, not twice, at most 20.
+func (s *Store) checkNewArticles(ctx context.Context, ids []int64) error {
+	if len(ids) == 0 {
+		return nil
+	}
+	seen := map[int64]bool{}
+	for _, id := range ids {
+		if seen[id] {
+			return ErrArticleLinked
+		}
+		seen[id] = true
+	}
+	if len(ids) > maxJobArticles {
+		return ErrTooManyArticles
+	}
+	known := s.finderArticles(ctx, ids)
+	for _, id := range ids {
+		ref, ok := known[id]
+		if !ok {
+			return ErrArticleGone
+		}
+		if ref.Archived {
+			return ErrArticleArchived
+		}
+	}
+	return nil
 }

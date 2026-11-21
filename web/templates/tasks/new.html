@@ -13,6 +13,67 @@ ids in both. */}}
 <label for="new-task-notes">Description</label>
 <textarea class="field" id="new-task-notes" name="notes">{{.Notes}}</textarea>
 
+{{/* Steps, articles and places for a job that doesn't exist yet (SPEC B14.3, D-106,
+gates 8.30-8.34). With script, they are built up in the form, as hidden fields
+(step, article_id, place_name and place_path) that post with Add task, and
+nothing is saved before. Without script, only the one-per-line box shows, and a
+note says articles and places come after saving. The lists use the same classes
+as a saved job's, so they look the same. */}}
+<section class="task-steps new-steps" aria-labelledby="new-steps-heading">
+<div class="steps-head"><h2 id="new-steps-heading">Steps</h2></div>
+<div class="new-js" hidden>
+<ol class="steps-list new-steps-list" data-new-steps>
+{{range .NewSteps}}{{template "tasks-new-step" .}}{{end}}
+</ol>
+<div class="step-add new-step-add">
+<label class="visually-hidden" for="new-step-text">Add a step</label>
+<input class="field" type="text" id="new-step-text" placeholder="Add a step" autocomplete="off">
+<button class="btn" type="button" data-new="add-step">Add</button>
+</div>
+</div>
+<div class="new-nojs">
+<label for="new-steps-text">Steps, one on each line</label>
+<textarea class="field" id="new-steps-text" name="steps_text" rows="4">{{.StepsText}}</textarea>
+</div>
+</section>
+
+<section class="task-refs new-refs" aria-labelledby="new-refs-heading">
+<h2 id="new-refs-heading">Articles and places</h2>
+<div class="new-js" hidden>
+<h3 class="sub">Articles</h3>
+<ul class="ref-list ref-articles" data-new-articles>
+{{range .NewArticles}}{{template "tasks-new-article" .}}{{end}}
+</ul>
+<div class="ref-search new-article-search">
+<label for="new-article-q">Link an article</label>
+<input class="field" type="search" id="new-article-q" placeholder="Type part of an article's title" autocomplete="off">
+</div>
+<div class="ref-results" aria-live="polite"></div>
+<h3 class="sub">COSMOS places</h3>
+<ul class="ref-list ref-places" data-new-places>
+{{range .NewPlaces}}{{template "tasks-new-place" .}}{{end}}
+</ul>
+<div class="place-form new-place-form">
+<p class="place-form-title">Add a COSMOS place</p>
+<div class="place-fields">
+<div class="place-field">
+<label for="new-place-path">Folder path</label>
+<input class="field" type="text" id="new-place-path" placeholder="\\NAS\COSMOS\Mailings\2026" autocomplete="off" spellcheck="false">
+</div>
+<div class="place-field">
+<label for="new-place-name">Name (optional)</label>
+<input class="field" type="text" id="new-place-name" maxlength="80" placeholder="Mailing lists 2026" autocomplete="off">
+</div>
+<button class="btn" type="button" data-new="add-place">Add place</button>
+</div>
+</div>
+<p class="ref-hint">Paste a path into File Explorer's address bar to open the folder.</p>
+</div>
+<div class="new-nojs">
+<p class="refs-empty">Articles and COSMOS places can be added on the job's page after you save it.</p>
+</div>
+</section>
+
 <label for="new-task-size">Size</label>
 {{$size := .Size}}
 <select class="field" id="new-task-size" name="size">
@@ -42,8 +103,42 @@ ids in both. */}}
 </form>
 {{end}}
 
+{{/* The lines of the lists above, as a form shows them before the job exists. */}}
+{{define "tasks-new-step"}}
+<li class="step" data-new-step>
+<input type="hidden" name="step" value="{{.Text}}">
+<span class="step-tick"><input class="check" type="checkbox" disabled tabindex="-1" aria-hidden="true"></span>
+<span class="step-body"><span class="step-words">{{.Text}}</span></span>
+<button class="mini quiet step-rename-link" type="button" data-new="rename-step">Rename<span class="visually-hidden"> the step “{{.Text}}”</span></button>
+<span class="step-actions">{{template "part-icon-button" .Up}}{{template "part-icon-button" .Down}}{{template "part-icon-button" .Remove}}</span>
+</li>
+{{end}}
+
+{{define "tasks-new-article"}}
+<li class="ref-line" data-new-article>
+<input type="hidden" name="article_id" value="{{.ID}}">
+<span class="ref-line-title">{{.Title}}</span>
+{{if .Category}}<span class="ref-line-meta">{{.Category}}</span>{{end}}
+{{template "part-icon-button" .Remove}}
+</li>
+{{end}}
+
+{{define "tasks-new-place"}}
+<li class="ref-line ref-place" data-new-place>
+<input type="hidden" name="place_name" value="{{.Name}}">
+<input type="hidden" name="place_path" value="{{.Path}}">
+<span class="ref-line-title">{{.Label}}</span>
+<code class="ref-path">{{.Path}}</code>
+<button class="mini copy-button" type="button" data-copy="{{.Path}}" data-copied-label="Copied">Copy</button>
+{{template "part-icon-button" .Remove}}
+</li>
+{{end}}
+
 {{define "tasks-new.html"}}
 <p><a href="/tasks/board">Back to Board</a></p>
 <h1>Add task</h1>
 {{template "tasks-new-form" .}}
+<script src="/static/vendor/sortable/Sortable-1.15.7.min.js"></script>
+<script src="/static/app/copy.js"></script>
+<script src="/static/tasks/new-task.js"></script>
 {{end}}
