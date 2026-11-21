@@ -98,6 +98,31 @@ test.describe('Tasks speed (SPEC gates 2.21, 2.31, 2.38)', () => {
     assertUnderLimit('the window with 50 steps', median(times), READY_LIMIT_MS);
   });
 
+  // SPEC gate 8.39 (D-107): My jobs, with the real library and twenty of the
+  // person's own jobs each holding 50 steps (ten in Working on now, so open, and
+  // ten in Up next), is still ready within gate 4.53's budget, and its steps
+  // come from one query for the page.
+  test('My jobs with twenty of my jobs holding 50 steps each stays within budget (gate 8.39)', async ({ page, server }) => {
+    test.setTimeout(120_000);
+    await signInAsNewPerson(page, server.baseURL, '/tasks');
+    const me = (await page.context().cookies(server.baseURL)).find((c) => c.name === 'comphq_person')!.value;
+    for (let i = 0; i < 20; i++) {
+      const pairs: [string, string][] = [['title', `Fifty steps ${i}`], ['stage', i < 10 ? 'doing' : 'todo'], ['person_id', me]];
+      for (let s = 1; s <= 50; s++) pairs.push(['step', `Step ${s} of job ${i}`]);
+      const res = await page.request.post(server.baseURL + '/tasks', {
+        data: new URLSearchParams(pairs).toString(),
+        headers: { origin: server.baseURL, 'content-type': 'application/x-www-form-urlencoded' },
+        maxRedirects: 0,
+      });
+      expect(res.status()).toBeLessThan(400);
+    }
+    const ms = await medianNavigationMs(page, server.baseURL + '/tasks');
+    assertUnderLimit('My jobs with 20 jobs of 50 steps', ms, READY_LIMIT_MS);
+    await expect(page.locator('.myjobs-working-list .card-steps-body:not([hidden]) .step')).toHaveCount(500);
+    await axeCheck(page);
+    await expectNoSideScroll(page);
+  });
+
   test('the Board draws its 3/7 badges on the seeded library and passes the standard checks', async ({ page, server }) => {
     await signInAsNewPerson(page, server.baseURL, '/tasks/board');
     await ready(page);

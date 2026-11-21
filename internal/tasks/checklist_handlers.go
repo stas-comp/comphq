@@ -201,6 +201,18 @@ func (h *Handlers) stepDone(w http.ResponseWriter, r *http.Request, a stepAction
 		http.NotFound(w, r)
 		return
 	}
+	// A tick from a card on My jobs (gate 8.38): the box is a form that ticks the
+	// step and comes back to My jobs with that card open. A step somebody else
+	// removed meanwhile is simply gone from the list the page shows next.
+	if r.FormValue("redirect_to") == "myjobs" && !wantsFragment(r) {
+		if _, refused := noticeFor(err); err != nil && !refused {
+			http.Error(w, "internal error", http.StatusInternalServerError)
+			return
+		}
+		id := strconv.FormatInt(a.taskID, 10)
+		http.Redirect(w, r, "/tasks?open="+id+"#job-"+id, http.StatusFound)
+		return
+	}
 	if err != nil {
 		notice, ok := noticeFor(err)
 		if !ok {

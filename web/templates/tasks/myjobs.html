@@ -8,6 +8,36 @@ to the task's own page, which the task window opens over this screen. */}}
 tooltip and spoken name say what it is waiting on. */}}
 {{define "tasks-waiting"}}{{if .Waiting}}<span class="stamp waiting" role="img" title="{{.Waiting}}" aria-label="{{.Waiting}}">WAITING</span>{{end}}{{end}}
 
+{{/* The steps under a card on My jobs (SPEC B14.3, D-107, gates 8.35-8.38): a
+compact, tick-only list (the box, the words, who ticked it and when), with an
+Edit steps link that opens the job's window. Working on now cards come open;
+Up next and Up for grabs come closed, with "Show steps · 3/7". The toggle is a
+plain link (?open=ID, ?close=ID) so it works with no script; myjobs.js opens and
+closes in place and keeps each job's choice in the browser. Each box is a plain
+form that ticks the step and comes back to My jobs. */}}
+{{define "tasks-card-steps"}}{{if .StepsTotal}}
+<div class="card-steps" data-card-steps data-task-id="{{.ID}}" data-default-open="{{if .StepsDefaultOpen}}1{{else}}0{{end}}">
+<a class="mini quiet steps-toggle" href="{{.StepsToggle}}" data-hook="steps-toggle" aria-controls="card-steps-{{.ID}}" aria-expanded="{{if .StepsOpen}}true{{else}}false{{end}}"><span class="steps-toggle-label">{{if .StepsOpen}}Hide steps{{else}}Show steps{{end}}</span> · <span class="steps-toggle-count">{{.StepsDone}}/{{.StepsTotal}}</span></a>
+<div class="card-steps-body" id="card-steps-{{.ID}}"{{if not .StepsOpen}} hidden{{end}}>
+{{$jobID := .ID}}
+<ul class="steps-list card-steps-list">
+{{range .Steps}}
+<li class="step{{if .Done}} done{{end}}" data-step-id="{{.ID}}">
+<form method="post" action="/tasks/{{$jobID}}/steps/{{.ID}}/tick" class="inline-form step-tick" data-card-tick>
+<input type="hidden" name="redirect_to" value="myjobs">
+<input type="hidden" name="done" value="0">
+<input class="check" type="checkbox" name="done" value="1" id="card-step-{{.ID}}"{{if .Done}} checked{{end}} title="{{if .Done}}Untick{{else}}Tick{{end}} {{.Text}}" aria-label="{{.Text}}">
+<noscript><button class="mini quiet" type="submit">Update</button></noscript>
+</form>
+<span class="step-body"><span class="step-words">{{.Text}}</span>{{if .Done}}<span class="step-by">{{.DoneByName}}, {{.DoneDate}}</span>{{end}}</span>
+</li>
+{{end}}
+</ul>
+<a class="mini quiet card-steps-edit" href="/tasks/{{.ID}}" data-hook="edit-steps">Edit steps</a>
+</div>
+</div>
+{{end}}{{end}}
+
 {{define "tasks-myjobs.html"}}
 <div class="tools">
 <h1>Tasks</h1>
@@ -30,7 +60,7 @@ tooltip and spoken name say what it is waiting on. */}}
 <h3 class="sub">Working on now</h3>
 <ul class="team-task-list myjobs-working-list">
 {{range .Lane.WorkingOnNow}}
-<li class="card team-task" data-task-id="{{.ID}}">
+<li class="card team-task" id="job-{{.ID}}" data-task-id="{{.ID}}">
 <div class="task-card-row">{{template "tasks-job-title" .}}</div>
 <div class="task-card-row">
 {{template "part-size" .SizeLabel}}{{template "tasks-job-date" .}}
@@ -50,6 +80,7 @@ tooltip and spoken name say what it is waiting on. */}}
 </span>
 </div>
 {{if .AlsoOn}}<span class="also">Also on it: {{.AlsoOn}}</span>{{end}}
+{{template "tasks-card-steps" .}}
 </li>
 {{end}}
 </ul>
@@ -57,7 +88,7 @@ tooltip and spoken name say what it is waiting on. */}}
 <h3 class="sub">Up next</h3>
 <ul class="team-task-list myjobs-upnext-list">
 {{range .Lane.UpNext}}
-<li class="card team-task" data-task-id="{{.ID}}">
+<li class="card team-task" id="job-{{.ID}}" data-task-id="{{.ID}}">
 <div class="task-card-row"><span class="rank">{{.Number}}</span>{{template "tasks-job-title" .}}</div>
 <div class="task-card-row">
 {{template "part-size" .SizeLabel}}{{template "tasks-job-date" .}}
@@ -97,6 +128,7 @@ tooltip and spoken name say what it is waiting on. */}}
 </span>
 </div>
 {{if .AlsoOn}}<span class="also">Also on it: {{.AlsoOn}}</span>{{end}}
+{{template "tasks-card-steps" .}}
 </li>
 {{end}}
 <li class="drop">Drop a job here to take it</li>
@@ -105,7 +137,7 @@ tooltip and spoken name say what it is waiting on. */}}
 <h3 class="sub">Ideas I'm on</h3>
 <ul class="team-task-list myjobs-ideas-list">
 {{range .Lane.Ideas}}
-<li class="card team-task" data-task-id="{{.ID}}">
+<li class="card team-task" id="job-{{.ID}}" data-task-id="{{.ID}}">
 <div class="task-card-row">{{template "tasks-job-title" .}}</div>
 <div class="task-card-row">
 {{template "part-size" .SizeLabel}}{{template "tasks-job-date" .}}
@@ -134,7 +166,7 @@ tooltip and spoken name say what it is waiting on. */}}
 <div class="area-head"><h2>Up for grabs</h2><p>Nobody has taken these yet. Most important first.</p></div>
 <ul class="team-task-list myjobs-grabs-list">
 {{range .UpForGrabs}}
-<li class="card team-task" data-task-id="{{.ID}}">
+<li class="card team-task" id="job-{{.ID}}" data-task-id="{{.ID}}">
 <div class="task-card-row">{{template "tasks-job-title" .}}</div>
 <div class="task-card-row">
 {{template "part-size" .SizeLabel}}{{template "tasks-job-date" .}}
@@ -146,6 +178,7 @@ tooltip and spoken name say what it is waiting on. */}}
 </span>
 </div>
 {{if .IsIdea}}<span class="also">An idea: taking it moves it to To do.</span>{{end}}
+{{template "tasks-card-steps" .}}
 </li>
 {{end}}
 </ul>

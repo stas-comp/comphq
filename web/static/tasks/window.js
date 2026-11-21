@@ -112,7 +112,7 @@
       return
     }
     // A job found by the top bar's search opens in the window too (gate 7.23).
-    const title = event.target.closest('.task-card-title a, a.search-result[href^="/tasks/"], .task-search-results a')
+    const title = event.target.closest('.task-card-title a, a.search-result[href^="/tasks/"], .task-search-results a, a.card-steps-edit')
     if (title) {
       const match = /^\/tasks\/(\d+)$/.exec(new URL(title.href).pathname)
       if (match) {

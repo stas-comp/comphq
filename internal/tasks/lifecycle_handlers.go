@@ -30,6 +30,8 @@ type simpleCardView struct {
 	// StepsTotal and StepsDone are the job's live steps, for the small 3/7.
 	StepsTotal int
 	StepsDone  int
+	// CardSteps are the steps drawn under an Up for grabs card on My jobs.
+	CardSteps
 }
 
 func newSimpleCardView(t Task, meID int64, today time.Time) simpleCardView {

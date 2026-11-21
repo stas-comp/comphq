@@ -90,6 +90,8 @@ type LaneTask struct {
 	// ("Waiting on: Order toner", gate 7.42), filled in by ApplyWaiting.
 	Weekly  bool
 	Waiting string
+	// CardSteps are the job's steps under the card on My jobs (gates 8.35-8.38).
+	CardSteps
 }
 
 // MoveUp and MoveDown are the two icon-only move buttons of an Up next

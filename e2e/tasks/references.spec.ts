@@ -126,6 +126,20 @@ test('gate 8.12: an article archived after linking stays on the job, marked Arch
 
 test('gates 8.13, 8.14: add a place with and without a name; each shows name, path and Copy, which copies the exact path', async ({ page, server, context }) => {
   await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+  // Where the browser has no clipboard API (a page on a plain http:// address that
+  // is not localhost, as the container test's own network is), what the script
+  // handed to the browser's copy command is checked instead, the way the Setup
+  // page's Copy is tested.
+  await page.addInitScript(() => {
+    const w = window as unknown as { __copied: string[] };
+    w.__copied = [];
+    const original = document.execCommand.bind(document);
+    document.execCommand = (command: string, ...rest: [boolean?, string?]) => {
+      const el = document.activeElement as HTMLTextAreaElement | null;
+      if (command === 'copy' && el && 'value' in el) w.__copied.push(el.value);
+      return original(command, ...rest);
+    };
+  });
   const { job } = await setup(page, server.baseURL);
   await openWindow(page, server.baseURL, job);
 
@@ -147,7 +161,11 @@ test('gates 8.13, 8.14: add a place with and without a name; each shows name, pa
   // Copy puts the exact path on the clipboard, and reads Copied for 2 seconds.
   await named.getByRole('button', { name: 'Copy' }).click();
   await expect(named.locator('.copy-button')).toHaveText('Copied');
-  expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(FOLDER);
+  if (await page.evaluate(() => !!navigator.clipboard)) {
+    expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(FOLDER);
+  } else {
+    expect(await page.evaluate(() => (window as unknown as { __copied: string[] }).__copied)).toEqual([FOLDER]);
+  }
   await expect(named.locator('.copy-button')).toHaveText('Copy', { timeout: 5000 });
   await expect(section(page).locator('.ref-hint')).toHaveText("Paste a path into File Explorer's address bar to open the folder.");
 });

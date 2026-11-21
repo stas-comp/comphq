@@ -25,9 +25,12 @@ The owner chose "appears ahead, then waits" over a list someone starts by hand.
 
 SPEC B14.4.
 
-## D-107 Steps on My jobs are tick-only; Working on now opens by default (owner request 2) (planned, P8-00, 2026-11-21)
+## D-107 Steps on My jobs are tick-only; Working on now opens by default (owner request 2) (P8-00, 2026-11-21)
 
 "Show up on My jobs" means seeing and ticking. Adding and editing stay in the job's window, so My jobs doesn't grow a second editor. Jobs you're working on show their steps open, because that's what you're doing. Up next and Up for grabs stay compact, with **Show steps**. The open or closed choice is kept per computer in browser storage, which is a convenience only, so losing it just means the defaults. SPEC B14.3.
+
+**Built (P8-05, 2026-11-21):** `Store.StepsForTasks` loads the live steps of every card on My jobs with one `IN (…)` query (a counter, `stepListQueries`, lets a test prove it stays one however many cards there are); `renderMyJobs` fills a `CardSteps` struct embedded in both card types, so one partial, `tasks-card-steps`, draws Working on now, Up next and Up for grabs cards. The toggle is a link (`?open=ID`, and `?close=ID` for the cards that start open, both repeatable), so it works with no script; `myjobs.js` opens and closes in place, keeps each job's choice in `localStorage` as `comphq.steps.open.<id>` (every access in `try/catch`), and re-applies the choices after the 60-second redraw and after a tick. A box posts to the existing tick endpoint with `redirect_to=myjobs`, which comes back to `/tasks?open=ID#job-ID`; with script the page then fetches `/tasks` and swaps in just that card (the server draws the card, so its 3/7 is right), which is the "card's fragment" without a second rendering path. Ideas I'm on show no steps. Edit steps is a link the task window already knows how to open.
+
 
 ## D-106 The Add task window keeps new steps, articles and places on the page until one save (owner request 1) (P8-00, 2026-11-21)
 

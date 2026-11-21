@@ -457,3 +457,33 @@ a.mini {
 .new-notice {
   margin: var(--space-2) 0;
 }
+
+/* Steps under a card on My jobs (gates 8.35-8.38): compact and tick-only. */
+.card-steps {
+  margin-top: var(--space-2);
+}
+
+.card-steps .steps-toggle {
+  margin: 0;
+}
+
+.card-steps-body {
+  margin-top: var(--space-2);
+}
+
+.card-steps-body[hidden] {
+  display: none;
+}
+
+.card-steps-list .step {
+  padding: var(--space-1) var(--space-2);
+  font-size: 14px;
+}
+
+.card-steps-list .step-body {
+  cursor: default;
+}
+
+.card-steps-edit {
+  margin-top: var(--space-1);
+}

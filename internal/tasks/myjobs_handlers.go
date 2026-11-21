@@ -70,6 +70,28 @@ func (h *Handlers) renderMyJobs(w http.ResponseWriter, r *http.Request, status i
 	lane.Decorate(person.ID, today)
 	lane.UsePeopleMenu("myjobs")
 	lane.ApplyWaiting(waiting)
+
+	// The steps under every card come from one query for the whole page
+	// (gate 8.39), never one per card.
+	var stepIDs []int64
+	for _, group := range [][]LaneTask{lane.WorkingOnNow, lane.UpNext} {
+		for _, t := range group {
+			if t.StepsTotal > 0 {
+				stepIDs = append(stepIDs, t.ID)
+			}
+		}
+	}
+	for _, g := range views {
+		if g.StepsTotal > 0 {
+			stepIDs = append(stepIDs, g.ID)
+		}
+	}
+	stepsByJob, err := h.tasks.StepsForTasks(r.Context(), stepIDs, today)
+	if err != nil {
+		http.Error(w, "internal error", http.StatusInternalServerError)
+		return
+	}
+	applyCardSteps(&lane, views, stepsByJob, cardStepStateFromQuery(r.URL.Query()))
 	h.srv.RenderFrame(w, r, status, "tasks-myjobs.html", "Tasks", myJobsPageData{
 		WindowClose: app.NewIconButton(app.IconClose, "", false),
 		Initials:    lane.Initials,

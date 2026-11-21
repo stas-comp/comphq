@@ -19,7 +19,7 @@ function initMyJobsSortable() {
     comphqSortable(upNext, {
       group: { name: 'myjobs-take', pull: false },
       draggable: '.team-task', // not the "Drop a job here" box at the foot
-      filter: 'button',
+      filter: 'button, .card-steps',
       preventOnFilter: false,
       onStart: () => { document.body.dataset.refreshBusy = '1' },
       onEnd: (evt) => handleMyJobsDrop(evt),
@@ -31,7 +31,7 @@ function initMyJobsSortable() {
       // Ideas only ever leave: into Up next, which makes them a To do job.
       group: { name: 'myjobs-take', put: false },
       sort: false,
-      filter: 'button',
+      filter: 'button, .card-steps',
       preventOnFilter: false,
       onStart: () => { document.body.dataset.refreshBusy = '1' },
       onEnd: (evt) => handleMyJobsDrop(evt),
@@ -41,7 +41,7 @@ function initMyJobsSortable() {
   if (grabs) {
     comphqSortable(grabs, {
       group: { name: 'myjobs-take', put: false },
-      filter: 'button',
+      filter: 'button, .card-steps',
       preventOnFilter: false,
       onStart: () => { document.body.dataset.refreshBusy = '1' },
       onEnd: (evt) => handleMyJobsDrop(evt),
@@ -137,3 +137,107 @@ async function refreshMyJobs() {
   if (!res.ok) return
   swapMyJobsPage(await res.text())
 }
+
+// Steps under the cards (SPEC B14.3, D-107, gates 8.35-8.38).
+//
+// The page draws every card with its steps (Working on now open, the others
+// closed) and links that work with no script. This opens and closes a card in
+// place, keeps each job's choice in the browser (comphq.steps.open.<id>), and
+// puts that choice back after every redraw, whether the 60-second refresh or a
+// tick, before the page is shown. A blocked or empty store just means the
+// defaults, so every read and write is guarded. A tick posts the same form the
+// no-script page does, then the card is swapped for the server's fresh one, so
+// its 3/7 is right at once.
+const STEPS_KEY = (id) => 'comphq.steps.open.' + id
+
+function storedStepsChoice(id) {
+  try {
+    const v = window.localStorage.getItem(STEPS_KEY(id))
+    return v === '1' ? true : v === '0' ? false : null
+  } catch (err) {
+    return null
+  }
+}
+
+function storeStepsChoice(id, open) {
+  try {
+    window.localStorage.setItem(STEPS_KEY(id), open ? '1' : '0')
+  } catch (err) {
+    // the choice just isn't kept
+  }
+}
+
+function setCardStepsOpen(card, open) {
+  const body = card.querySelector('.card-steps-body')
+  const toggle = card.querySelector('.steps-toggle')
+  if (!body || !toggle) return
+  body.hidden = !open
+  toggle.setAttribute('aria-expanded', open ? 'true' : 'false')
+  toggle.querySelector('.steps-toggle-label').textContent = open ? 'Hide steps' : 'Show steps'
+}
+
+function applyStepsChoices(root) {
+  ;(root || document).querySelectorAll('[data-card-steps]').forEach((card) => {
+    const stored = storedStepsChoice(card.dataset.taskId)
+    const body = card.querySelector('.card-steps-body')
+    const serverOpen = body ? !body.hidden : false
+    setCardStepsOpen(card, stored === null ? serverOpen : stored)
+  })
+}
+
+document.addEventListener('DOMContentLoaded', () => applyStepsChoices())
+document.addEventListener('refresh:applied', () => applyStepsChoices())
+
+document.addEventListener('click', (event) => {
+  const toggle = event.target instanceof Element ? event.target.closest('.steps-toggle') : null
+  if (!toggle) return
+  if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
+  event.preventDefault()
+  const card = toggle.closest('[data-card-steps]')
+  const body = card.querySelector('.card-steps-body')
+  const open = body.hidden // it is closed now, so it opens
+  setCardStepsOpen(card, open)
+  storeStepsChoice(card.dataset.taskId, open)
+})
+
+// A tick: post it, then swap in the server's own card.
+async function tickFromCard(form, box) {
+  const card = form.closest('li[data-task-id]')
+  const taskId = card.dataset.taskId
+  const boxId = box.id
+  const params = new URLSearchParams()
+  params.append('redirect_to', 'myjobs')
+  params.append('done', '0')
+  if (box.checked) params.append('done', '1')
+  document.body.dataset.refreshBusy = '1'
+  try {
+    await fetch(form.action, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: params.toString(),
+      redirect: 'manual',
+    })
+    const res = await fetch('/tasks')
+    const doc = new DOMParser().parseFromString(await res.text(), 'text/html')
+    const fresh = doc.querySelector('li[data-task-id="' + taskId + '"]')
+    const old = document.querySelector('li[data-task-id="' + taskId + '"]')
+    if (!fresh || !old) throw new Error('card not found')
+    // Keep the card open: it was, or the tick would not have been possible.
+    old.replaceWith(fresh)
+    applyStepsChoices(fresh)
+    const again = document.getElementById(boxId)
+    if (again) again.focus()
+  } catch (err) {
+    form.submit() // the plain form does the same job
+  } finally {
+    delete document.body.dataset.refreshBusy
+  }
+}
+
+document.addEventListener('change', (event) => {
+  const box = event.target
+  if (!(box instanceof HTMLInputElement) || box.type !== 'checkbox') return
+  const form = box.closest('form[data-card-tick]')
+  if (!form) return
+  tickFromCard(form, box)
+})
