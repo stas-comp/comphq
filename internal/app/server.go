@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/stas-comp/comphq"
+	"github.com/stas-comp/comphq/internal/brand"
 	"github.com/stas-comp/comphq/internal/db"
 	"github.com/stas-comp/comphq/internal/people"
 )
@@ -34,7 +35,10 @@ type Server struct {
 // internal/app itself — see docs/decisions.md D-14). testMode gates
 // test-only routes (SPEC P1-09): never true in deploy/truenas.yaml.
 func NewServer(sqlDB *sql.DB, version, dataDir string, testMode bool) (*Server, error) {
-	tmpl, err := template.ParseFS(comphq.Templates,
+	// brand gives every template the department's name, wordmark word and
+	// icon addresses (D-103). It is a function, not page data, so the
+	// partials that are called without data (the head icons) can use it.
+	tmpl, err := template.New("").Funcs(template.FuncMap{"brand": brand.Current}).ParseFS(comphq.Templates,
 		"web/templates/app/*.html",
 		"web/templates/people/*.html",
 		"web/templates/settings/*.html",

@@ -9,3 +9,4 @@ reports/screens/
 
 # Local, filled-in copy for this NAS (pool name, time zone); never commit
 deploy/truenas.local.yaml
+deploy/mchq.local.yaml

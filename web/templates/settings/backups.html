@@ -9,5 +9,5 @@
 {{if not .LastBackupOK}}
 <p class="message" role="alert">The most recent backup attempt failed: {{.LastBackupError}}</p>
 {{end}}
-<p>Comp HQ backs up automatically every night and keeps the last {{.DailyKeep}} copies.</p>
+<p>{{brand.Name}} backs up automatically every night and keeps the last {{.DailyKeep}} copies.</p>
 {{end}}

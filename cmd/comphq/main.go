@@ -16,6 +16,7 @@ import (
 
 	"github.com/stas-comp/comphq"
 	"github.com/stas-comp/comphq/internal/app"
+	"github.com/stas-comp/comphq/internal/brand"
 	"github.com/stas-comp/comphq/internal/briefing"
 	"github.com/stas-comp/comphq/internal/calendar"
 	"github.com/stas-comp/comphq/internal/db"
@@ -57,6 +58,9 @@ func main() {
 
 func run() error {
 	cfg := app.LoadConfig()
+	if err := brand.Set(cfg.Brand); err != nil {
+		return err
+	}
 
 	if err := os.MkdirAll(cfg.DataDir, 0o755); err != nil {
 		return fmt.Errorf("create data dir: %w", err)
@@ -161,7 +165,7 @@ func run() error {
 		Addr:    cfg.Addr,
 		Handler: srv.Routes(),
 	}
-	log.Printf("comphq %s listening on %s", version, cfg.Addr)
+	log.Printf("comphq %s (%s) listening on %s", version, brand.Current().Name, cfg.Addr)
 	return httpServer.ListenAndServe()
 }
 

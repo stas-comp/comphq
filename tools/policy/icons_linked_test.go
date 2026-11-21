@@ -13,19 +13,31 @@ import (
 	"testing"
 )
 
+// linkedBrand is what the head partial's {{.IconDir}}, {{.IconFile}} and
+// {{.Manifest}} become for one brand (internal/brand, D-103).
+type linkedBrand struct {
+	key, iconDir, iconFile, manifest string
+}
+
+var linkedBrands = []linkedBrand{
+	{"comp", "/static/theme/icons", "comphq.ico", "/static/app/manifest.webmanifest"},
+	{"mc", "/static/theme/icons/mc", "mchq.ico", "/static/app/manifest-mc.webmanifest"},
+}
+
 // Gates 5.22 and 5.23: what the pages link and what the manifest lists must be
 // real files of the size they claim, so an icon can't be named and then not
-// exist (which is how every shortcut came out blank before v1.2).
+// exist (which is how every shortcut came out blank before v1.2). Checked for
+// every brand.
 func TestLinkedAndManifestIconsExistAtTheirDeclaredSizes(t *testing.T) {
 	root := repoRoot(t)
-	staticFile := func(src string) string {
+	staticFile := func(t *testing.T, src string) string {
 		if !strings.HasPrefix(src, "/static/") {
 			t.Fatalf("%s isn't served from /static/", src)
 		}
 		return filepath.Join(root, "web", "static", filepath.FromSlash(strings.TrimPrefix(src, "/static/")))
 	}
-	checkPNG := func(where, src, sizes string) {
-		data, err := os.ReadFile(staticFile(src))
+	checkPNG := func(t *testing.T, where, src, sizes string) {
+		data, err := os.ReadFile(staticFile(t, src))
 		if err != nil {
 			t.Errorf("%s names %s, which doesn't exist", where, src)
 			return
@@ -40,23 +52,6 @@ func TestLinkedAndManifestIconsExistAtTheirDeclaredSizes(t *testing.T) {
 		}
 	}
 
-	manifestData, err := os.ReadFile(filepath.Join(root, "web", "static", "app", "manifest.webmanifest"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	var manifest struct {
-		Icons []struct{ Src, Sizes, Type string } `json:"icons"`
-	}
-	if err := json.Unmarshal(manifestData, &manifest); err != nil {
-		t.Fatalf("manifest.webmanifest isn't JSON: %v", err)
-	}
-	if len(manifest.Icons) < len(pngSizes)+1 {
-		t.Errorf("the manifest lists %d icons, want at least %d (every size, and the maskable)", len(manifest.Icons), len(pngSizes)+1)
-	}
-	for _, ic := range manifest.Icons {
-		checkPNG("the manifest", ic.Src, ic.Sizes)
-	}
-
 	partsData, err := os.ReadFile(filepath.Join(root, "web", "templates", "app", "parts.html"))
 	if err != nil {
 		t.Fatal(err)
@@ -66,33 +61,59 @@ func TestLinkedAndManifestIconsExistAtTheirDeclaredSizes(t *testing.T) {
 	if start < 0 {
 		t.Fatal(`parts.html has no "app-head-icons" partial`)
 	}
-	block := parts[start:]
-	block = block[:strings.Index(block, "{{end}}")]
-	linkRe := regexp.MustCompile(`<link rel="(icon|apple-touch-icon)"([^>]*)href="([^"]+)"`)
-	found := 0
-	for _, m := range linkRe.FindAllStringSubmatch(block, -1) {
-		found++
-		src := m[3]
-		if _, err := os.Stat(staticFile(src)); err != nil {
-			t.Errorf("the head links %s, which doesn't exist", src)
-			continue
-		}
-		if strings.HasSuffix(src, ".png") {
-			sizes := regexp.MustCompile(`sizes="(\d+x\d+)"`).FindStringSubmatch(m[2])
-			declared := ""
-			if sizes != nil {
-				declared = sizes[1]
-			} else if strings.Contains(m[1], "apple-touch-icon") {
-				declared = "192x192" // the apple touch icon carries no sizes; it points at the 192
+	template := parts[start:]
+	template = template[:strings.Index(template, "{{end}}{{end}}")]
+
+	for _, lb := range linkedBrands {
+		t.Run(lb.key, func(t *testing.T) {
+			manifestData, err := os.ReadFile(staticFile(t, lb.manifest))
+			if err != nil {
+				t.Fatal(err)
 			}
-			checkPNG("the head", src, declared)
-		}
-	}
-	if found < 5 {
-		t.Errorf("the head partial links %d icons, want the .ico, the PNG sizes and the apple touch icon", found)
-	}
-	if !strings.Contains(block, `rel="manifest"`) || !strings.Contains(block, `name="theme-color"`) {
-		t.Error("the head partial links no manifest or theme colour")
+			var manifest struct {
+				Icons []struct{ Src, Sizes, Type string } `json:"icons"`
+			}
+			if err := json.Unmarshal(manifestData, &manifest); err != nil {
+				t.Fatalf("%s isn't JSON: %v", lb.manifest, err)
+			}
+			if len(manifest.Icons) < len(pngSizes)+1 {
+				t.Errorf("the manifest lists %d icons, want at least %d (every size, and the maskable)", len(manifest.Icons), len(pngSizes)+1)
+			}
+			for _, ic := range manifest.Icons {
+				if !strings.HasPrefix(ic.Src, lb.iconDir+"/icon-") {
+					t.Errorf("%s lists %s, which isn't one of this brand's icons in %s", lb.manifest, ic.Src, lb.iconDir)
+				}
+				checkPNG(t, lb.manifest, ic.Src, ic.Sizes)
+			}
+
+			block := strings.NewReplacer("{{.IconDir}}", lb.iconDir, "{{.IconFile}}", lb.iconFile, "{{.Manifest}}", lb.manifest).Replace(template)
+			linkRe := regexp.MustCompile(`<link rel="(icon|apple-touch-icon)"([^>]*)href="([^"]+)"`)
+			found := 0
+			for _, m := range linkRe.FindAllStringSubmatch(block, -1) {
+				found++
+				src := m[3]
+				if _, err := os.Stat(staticFile(t, src)); err != nil {
+					t.Errorf("the head links %s, which doesn't exist", src)
+					continue
+				}
+				if strings.HasSuffix(src, ".png") {
+					sizes := regexp.MustCompile(`sizes="(\d+x\d+)"`).FindStringSubmatch(m[2])
+					declared := ""
+					if sizes != nil {
+						declared = sizes[1]
+					} else if strings.Contains(m[1], "apple-touch-icon") {
+						declared = "192x192" // the apple touch icon carries no sizes; it points at the 192
+					}
+					checkPNG(t, "the head", src, declared)
+				}
+			}
+			if found < 5 {
+				t.Errorf("the head partial links %d icons, want the .ico, the PNG sizes and the apple touch icon", found)
+			}
+			if !strings.Contains(block, `rel="manifest" href="`+lb.manifest+`"`) || !strings.Contains(block, `name="theme-color"`) {
+				t.Error("the head partial links no manifest or theme colour")
+			}
+		})
 	}
 
 	// Every page that has a <head> of its own includes the partial (the test

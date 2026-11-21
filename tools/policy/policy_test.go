@@ -11,6 +11,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
 	"testing"
 )
@@ -121,6 +122,55 @@ func TestDeployYAMLRules(t *testing.T) {
 	} else if !semverRe.MatchString(m[1]) {
 		t.Errorf("deploy/truenas.yaml image tag %q must be an exact X.Y.Z version, never 'latest'", m[1])
 	}
+	if strings.Contains(content, "COMPHQ_BRAND") {
+		t.Error("deploy/truenas.yaml sets COMPHQ_BRAND; Comp HQ is the default and needs none")
+	}
+}
+
+// D-103: MC HQ's install file is the same app under the same rules, made MC
+// HQ by COMPHQ_BRAND, with its own dataset and port so it can never share
+// Comp HQ's data, and never older than Comp HQ's.
+func TestMCHQDeployYAMLRules(t *testing.T) {
+	root := repoRoot(t)
+	data, err := os.ReadFile(filepath.Join(root, "deploy", "truenas-mchq.yaml"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	content := string(data)
+	for _, banned := range []string{"COMPHQ_TEST_MODE", "COMPHQ_TEST_TODAY", "/comphq:/data", `"8080:8080"`} {
+		if strings.Contains(content, banned) {
+			t.Errorf("deploy/truenas-mchq.yaml must never contain %s", banned)
+		}
+	}
+	for _, want := range []string{`COMPHQ_BRAND: "mc"`, "/mchq:/data", `"8081:8080"`} {
+		if !strings.Contains(content, want) {
+			t.Errorf("deploy/truenas-mchq.yaml lacks %s", want)
+		}
+	}
+	m := imageTagRe.FindStringSubmatch(content)
+	if m == nil || !semverRe.MatchString(m[1]) {
+		t.Fatal("deploy/truenas-mchq.yaml needs a ghcr.io/stas-comp/comphq image at an exact X.Y.Z version")
+	}
+	comp, err := os.ReadFile(filepath.Join(root, "deploy", "truenas.yaml"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if c := imageTagRe.FindStringSubmatch(string(comp)); c != nil && versionLess(m[1], c[1]) {
+		t.Errorf("MC HQ's install file names %s, older than Comp HQ's %s", m[1], c[1])
+	}
+}
+
+// versionLess compares two X.Y.Z versions.
+func versionLess(a, b string) bool {
+	pa, pb := strings.Split(a, "."), strings.Split(b, ".")
+	for i := 0; i < 3 && i < len(pa) && i < len(pb); i++ {
+		x, _ := strconv.Atoi(pa[i])
+		y, _ := strconv.Atoi(pb[i])
+		if x != y {
+			return x < y
+		}
+	}
+	return false
 }
 
 // TestVendorChecksumsMatch checks every VENDOR.md anywhere under

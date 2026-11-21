@@ -1,8 +1,8 @@
 {{define "who.html"}}<!doctype html>
-<html lang="en">
+<html lang="en" data-brand="{{brand.Key}}">
 <head>
 <meta charset="utf-8">
-<title>Comp HQ — Who's using this computer?</title>
+<title>{{brand.Name}} — Who's using this computer?</title>
 <link rel="stylesheet" href="/static/theme/theme.css">
 <link rel="stylesheet" href="/static/people/who.css">
 {{template "app-head-icons"}}
@@ -10,7 +10,7 @@
 <body>
 <main class="picker">
 <div class="picker-inner">
-<div class="wordmark"><small>Comp</small>
+<div class="wordmark"><small>{{brand.Word}}</small>
 <strong>HQ</strong></div>
 <h1>Who's using this computer?</h1>
 {{if .Message}}<p class="message" role="alert">{{.Message}}</p>{{end}}

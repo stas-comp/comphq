@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/stas-comp/comphq"
+	"github.com/stas-comp/comphq/internal/brand"
 )
 
 type setupPageData struct {
@@ -34,21 +35,20 @@ func (h *Handlers) handleSetup(w http.ResponseWriter, r *http.Request) {
 	h.srv.RenderFrame(w, r, http.StatusOK, "settings-setup.html", "Set up this computer", data)
 }
 
-// downloadIconName is the name the saved icon file gets: what Windows' Change
-// Icon dialog will show a person browsing for it, so it reads as Comp HQ's.
-const downloadIconName = "Comp HQ.ico"
-
 // handleSetupIcon serves the Comp HQ icon as a download (SPEC B11.4, gate
 // 5.25) for the last-resort route on the Setup page: if Windows ever draws a
 // shortcut with a blank icon, a person saves this and points the shortcut at
 // it by hand.
 func (h *Handlers) handleSetupIcon(w http.ResponseWriter, r *http.Request) {
-	data, err := fs.ReadFile(comphq.Static, "web/static/theme/icons/comphq.ico")
+	b := brand.Current()
+	data, err := fs.ReadFile(comphq.Static, b.IconPath())
 	if err != nil {
 		http.NotFound(w, r)
 		return
 	}
 	w.Header().Set("Content-Type", "image/x-icon")
-	w.Header().Set("Content-Disposition", `attachment; filename="`+downloadIconName+`"; filename*=UTF-8''Comp%20HQ.ico`)
+	// The saved file is named for the app ("Comp HQ.ico"), which is what
+	// Windows' Change Icon dialog shows a person browsing for it.
+	w.Header().Set("Content-Disposition", b.IconDownloadDisposition())
 	w.Write(data)
 }

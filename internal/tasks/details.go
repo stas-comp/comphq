@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/stas-comp/comphq/internal/app/format"
+	"github.com/stas-comp/comphq/internal/brand"
 )
 
 // sizeLabels are the full words shown for a task's size (SPEC gate
@@ -338,7 +339,7 @@ func (s *Store) activityText(ctx context.Context, action, detail, actorName stri
 		if err != nil {
 			return "", err
 		}
-		return "Comp HQ put this back in To do for " + day.Format("Mon 2 Jan") + " (weekly)", nil
+		return brand.Current().Name + " put this back in To do for " + day.Format("Mon 2 Jan") + " (weekly)", nil
 	case "moved":
 		var d movedDetail
 		if err := json.Unmarshal([]byte(detail), &d); err != nil {

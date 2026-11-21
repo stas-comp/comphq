@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/stas-comp/comphq/internal/brand"
 	"github.com/stas-comp/comphq/internal/kb"
 )
 
@@ -36,7 +37,7 @@ func (h *Handlers) handleExport(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	filename := fmt.Sprintf("comphq-export-%s.zip", time.Now().Format("2006-01-02"))
+	filename := fmt.Sprintf("%s-export-%s.zip", brand.Current().FilePrefix, time.Now().Format("2006-01-02"))
 	w.Header().Set("Content-Type", "application/zip")
 	w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, filename))
 

@@ -1,0 +1,27 @@
+# MC HQ — the MC Department's copy of Comp HQ, in crimson and gold (D-103).
+# It is the same app as Comp HQ: the COMPHQ_BRAND line below is the only
+# thing that makes it MC HQ. It keeps its own data, in its own dataset, and
+# runs beside Comp HQ on its own port.
+# Paste this into TrueNAS SCALE (Apps → Discover Apps → Install via YAML).
+# Change the lines marked "← CHANGE THIS" below, then click Save.
+services:
+  mchq:
+    image: ghcr.io/stas-comp/comphq:1.5.0
+    restart: unless-stopped
+    user: "568:568"
+    ports:
+      - "8081:8080" # ← CHANGE THIS: the number before the colon is the port MC HQ is opened on. 8081 because Comp HQ has 8080. Only change it if TrueNAS says 8081 is already used by something else. Never use 80 or 443 — TrueNAS's own screen uses those.
+    volumes:
+      - /mnt/YOUR-POOL/mchq:/data # ← CHANGE THIS: replace YOUR-POOL with the name of your storage pool (TrueNAS → Storage). This is MC HQ's own "mchq" dataset, never Comp HQ's "comphq" one.
+    environment:
+      TZ: "Europe/London" # ← CHANGE THIS: replace with your own time zone, e.g. "America/New_York". This is what "today" means for due dates and the Briefing.
+      COMPHQ_BRAND: "mc" # Leave this alone: it is what makes this MC HQ.
+    healthcheck:
+      test: ["CMD", "/comphq", "healthcheck"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 15s
+    read_only: true
+    tmpfs:
+      - /tmp

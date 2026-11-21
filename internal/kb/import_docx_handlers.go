@@ -8,16 +8,19 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/stas-comp/comphq/internal/brand"
 	"github.com/stas-comp/comphq/internal/kb/docx"
 	kbhtml "github.com/stas-comp/comphq/internal/kb/html"
 	"github.com/stas-comp/comphq/internal/people"
 )
 
 // docxUnreadableMessage is SPEC gate 1.51's exact wording for a file
-// Comp HQ can't read at all (old .doc, password-protected, PDF, or a
+// the app can't read at all (old .doc, password-protected, PDF, or a
 // damaged file) — the docx package can't tell these apart, so they all
-// share this one message.
-const docxUnreadableMessage = "Comp HQ can't open this file. Open it in Word, remove any password, choose File → Save As → Word Document (.docx), then try again."
+// share this one message. It starts with the app's own name (D-103).
+func docxUnreadableMessage() string {
+	return brand.Current().Name + " can't open this file. Open it in Word, remove any password, choose File → Save As → Word Document (.docx), then try again."
+}
 
 // handleImportDocx converts an uploaded .docx into editor-ready HTML
 // (SPEC B4): it never creates or changes an article — Publish, following
@@ -59,7 +62,7 @@ func (h *Handlers) handleImportDocx(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "That file is larger than 50 MB.", http.StatusBadRequest)
 		return
 	case docx.ErrUnreadable:
-		http.Error(w, docxUnreadableMessage, http.StatusBadRequest)
+		http.Error(w, docxUnreadableMessage(), http.StatusBadRequest)
 		return
 	default:
 		http.Error(w, "internal error", http.StatusInternalServerError)

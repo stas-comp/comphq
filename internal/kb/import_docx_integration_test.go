@@ -170,8 +170,8 @@ func TestImportDocxHTTPBadFixturesShowExactMessage(t *testing.T) {
 			if resp.StatusCode != http.StatusBadRequest {
 				t.Fatalf("status = %d, want 400; body: %s", resp.StatusCode, body)
 			}
-			if strings.TrimSpace(body) != docxUnreadableMessage {
-				t.Errorf("body = %q, want the exact 1.51 message %q", body, docxUnreadableMessage)
+			if strings.TrimSpace(body) != docxUnreadableMessage() {
+				t.Errorf("body = %q, want the exact 1.51 message %q", body, docxUnreadableMessage())
 			}
 		})
 	}

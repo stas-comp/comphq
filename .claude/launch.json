@@ -6,6 +6,12 @@
       "runtimeExecutable": "node",
       "runtimeArgs": ["scripts/dev-server.mjs"],
       "port": 8090
+    },
+    {
+      "name": "mchq-dev",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["scripts/dev-server.mjs", "mc"],
+      "port": 8091
     }
   ]
 }

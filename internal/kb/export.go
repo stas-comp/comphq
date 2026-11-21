@@ -7,6 +7,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/stas-comp/comphq/internal/brand"
 	kbhtml "github.com/stas-comp/comphq/internal/kb/html"
 )
 
@@ -158,12 +159,14 @@ type indexLink struct {
 // contained... with inline CSS"), so the export reads well with no
 // network and no dependency on the app's own stylesheets. It targets
 // bare tags, since Sanitize's allowlist never keeps a class or id
-// attribute.
-const exportCSS = `body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; color: #1b1f24; max-width: 40rem; margin: 2rem auto; padding: 0 1rem; line-height: 1.5; }
+// attribute. Links take the brand's link colour (D-103).
+func exportCSS() string { return strings.Replace(exportCSSTemplate, "LINK", brand.Current().Link, 1) }
+
+const exportCSSTemplate = `body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; color: #1b1f24; max-width: 40rem; margin: 2rem auto; padding: 0 1rem; line-height: 1.5; }
 h1 { font-size: 1.75rem; }
 h2 { font-size: 1.375rem; margin-top: 1.5em; }
 h3 { font-size: 1.125rem; margin-top: 1.5em; }
-a { color: #c2410c; }
+a { color: LINK; }
 img { max-width: 100%; height: auto; }
 table { border-collapse: collapse; width: 100%; margin: 1em 0; }
 td, th { border: 1px solid #ccc; padding: 0.4em 0.6em; text-align: left; vertical-align: top; }
@@ -194,12 +197,13 @@ func renderArticlePage(title, bodyHTML string) (page string, imageSrcs []string)
 	})
 	escapedTitle := html.EscapeString(title)
 	body := "<h1>" + escapedTitle + "</h1>\n" + rewritten
-	return fmt.Sprintf(exportPageTemplate, escapedTitle, exportCSS, body), srcs
+	return fmt.Sprintf(exportPageTemplate, escapedTitle, exportCSS(), body), srcs
 }
 
 func renderIndexPage(sections []indexSection) string {
 	var body strings.Builder
-	body.WriteString("<h1>Comp HQ export</h1>\n")
+	exportTitle := html.EscapeString(brand.Current().Name) + " export"
+	body.WriteString("<h1>" + exportTitle + "</h1>\n")
 	if len(sections) == 0 {
 		body.WriteString("<p>There are no articles yet.</p>\n")
 	}
@@ -214,7 +218,7 @@ func renderIndexPage(sections []indexSection) string {
 		}
 		body.WriteString("</ul>\n")
 	}
-	return fmt.Sprintf(exportPageTemplate, "Comp HQ export", exportCSS, body.String())
+	return fmt.Sprintf(exportPageTemplate, exportTitle, exportCSS(), body.String())
 }
 
 var filenameForbiddenChars = regexp.MustCompile(`[<>:"/\\|?*\x00-\x1f]`)

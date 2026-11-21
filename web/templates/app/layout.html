@@ -1,9 +1,9 @@
 {{define "layout.html"}}<!doctype html>
-<html lang="en">
+<html lang="en" data-brand="{{brand.Key}}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{{.Title}} — Comp HQ</title>
+<title>{{.Title}} — {{brand.Name}}</title>
 <link rel="stylesheet" href="/static/theme/theme.css">
 <link rel="stylesheet" href="/static/app/frame.css">
 <link rel="stylesheet" href="/static/settings/settings.css">
@@ -20,7 +20,7 @@
 <body data-ready data-today="{{.Today}}">
 <div class="frame">
 <aside class="sidebar">
-<div class="wordmark"><small>Comp</small>
+<div class="wordmark"><small>{{brand.Word}}</small>
 <strong>HQ</strong></div>
 <nav aria-label="Sections">
 <ul>

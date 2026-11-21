@@ -145,6 +145,39 @@ func TestThemeTokensMatchSpecTable(t *testing.T) {
 	}
 }
 
+// D-103: MC HQ's block in theme.css only gives existing colour tokens new
+// values. It invents no token of its own (a section stylesheet couldn't use
+// it in Comp HQ), and it swaps the two that make the brand: the dark ink and
+// the accent.
+func TestBrandBlockOnlyRedefinesColourTokens(t *testing.T) {
+	root := map[string]bool{}
+	mc := map[string]string{}
+	for _, d := range cssDecls(readCSS(t, themeCSSPath(t))) {
+		switch d.selector {
+		case ":root":
+			root[d.prop] = true
+		case `:root[data-brand="mc"]`:
+			mc[d.prop] = d.value
+		}
+	}
+	if len(mc) == 0 {
+		t.Fatal(`theme.css has no :root[data-brand="mc"] block`)
+	}
+	for prop := range mc {
+		if !root[prop] {
+			t.Errorf(`the MC HQ block sets %s, which :root doesn't define`, prop)
+		}
+		if !strings.HasPrefix(prop, "--color-") && prop != "--shadow-raised" {
+			t.Errorf(`the MC HQ block sets %s; a brand changes colours only`, prop)
+		}
+	}
+	for _, must := range []string{"--color-ink-navy", "--color-signal-orange", "--color-signal-orange-deep"} {
+		if _, ok := mc[must]; !ok {
+			t.Errorf("the MC HQ block doesn't set %s", must)
+		}
+	}
+}
+
 // Every @font-face in theme.css must point at a file that exists.
 func TestThemeFontFilesExist(t *testing.T) {
 	root := repoRoot(t)

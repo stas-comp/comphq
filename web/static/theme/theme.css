@@ -4,7 +4,9 @@
    means editing one line (SPEC B2). Section stylesheets only lay things
    out; one that introduces its own colour or font value is a defect, and
    the policy test in tools/policy fails on it. Light theme only.
-   The look is the agreed mockup, docs/design/mockup.html (SPEC B9.1). */
+   The look is the agreed mockup, docs/design/mockup.html (SPEC B9.1).
+   MC HQ is the same app with its own colours: see the block after :root
+   (D-103). */
 
 @font-face {
   font-family: "Big Shoulders Display";
@@ -74,6 +76,7 @@
   --color-sidebar-text: #c9cedc;
   --color-sidebar-muted: #7c849c;
   --shadow-raised: 0 22px 40px -20px rgba(20, 27, 45, 0.5);
+  --color-backdrop: rgba(20, 27, 45, 0.55); /* behind the task window */
 
   --font-size-body: 0.9375rem; /* the mockup's body size, 15px */
   --font-size-small: 0.875rem;
@@ -96,6 +99,36 @@
   --space-8: 2rem;
 
   --sidebar-width: 14rem; /* the mockup 224px */
+}
+
+/* MC HQ (D-103): the same app for the MC Department, chosen with
+   COMPHQ_BRAND=mc, which puts data-brand="mc" on every page's <html>.
+   Crimson takes the ink navy's place and gold the orange's; every
+   token keeps its name and its job, so no other stylesheet changes. The
+   bluish greys are warmed to sit with the crimson. Each pair is at least
+   as readable as Comp HQ's: crimson on paper 11.0:1, crimson on gold
+   6.7:1 (the B9.2 rule holds: never white on the gold), deep gold on
+   paper 5.9:1 and on the soft accent 5.4:1, muted text on paper 5.97:1,
+   sidebar text on crimson 9.5:1, its muted text 6.1:1, white on every
+   avatar and size chip 6.3:1 or more. Paper, cards, borders and the
+   danger red are Comp HQ's own. */
+:root[data-brand="mc"] {
+  --color-ink-navy: #6b0f24;
+  --color-ink-navy-light: #83172f;
+  --color-ink-navy-3: #9a2140;
+  --color-signal-orange: #f2b632;
+  --color-signal-orange-deep: #835400;
+  --color-accent-soft: #fbe8b8;
+  --color-accent-wash: #fdf6e3;
+  --color-ink-text: #211a1c;
+  --color-text-muted: #655a5c;
+  --color-chip-continues-text: #f6dbe1;
+  --color-avatar-b: #5f4a78;
+  --color-size-medium: #7a5662;
+  --color-sidebar-text: #f4dde2;
+  --color-sidebar-muted: #e0a9b5;
+  --shadow-raised: 0 22px 40px -20px rgba(70, 10, 24, 0.5);
+  --color-backdrop: rgba(70, 10, 24, 0.55);
 }
 
 * {
@@ -876,7 +909,7 @@ body.has-datepicker .field-date {
 }
 
 .task-window::backdrop {
-  background: rgba(20, 27, 45, 0.55);
+  background: var(--color-backdrop);
 }
 
 .task-window-inner {

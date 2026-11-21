@@ -72,6 +72,18 @@ These steps use TrueNAS SCALE 25.04's menu names.
 5. **Check it started properly:** in **Apps**, Comp HQ should show as **Healthy** within about a minute. If it doesn't, see "It won't open — what now?" below.
 6. **Open it:** go to `http://<NAS IP>:8080` in your browser (see "Opening Comp HQ" above).
 
+## Setting up MC HQ
+
+MC HQ is the MC Department's own copy of Comp HQ, in crimson and gold, with "MC HQ" wherever Comp HQ says "Comp HQ". It is the same app: one setting in its install file makes it MC HQ. It runs beside Comp HQ on the same NAS and has its own data, people, articles, jobs and calendar. Nothing in one is ever visible in the other. You install it once, much like Comp HQ:
+
+1. **Create its storage location:** **Datasets → Add Dataset**, name it `mchq`, choose the **Apps** preset, and save.
+2. **Set up its daily backups:** **Data Protection → Periodic Snapshot Tasks → Add**, choose the `mchq` dataset, **daily**, keep for **30 days**, and save.
+3. **Install it:** **Apps → Discover Apps**, the **⋮** menu, **Install via YAML**. Paste the whole of `deploy/mchq.local.yaml` (already filled in for this NAS; nothing to change). If you don't have that file, use `deploy/truenas-mchq.yaml` and change its lines marked `# ← CHANGE THIS`, as in "Installing on TrueNAS" above. If TrueNAS asks for an app name, call it `mchq`. Click **Save** / **Install**.
+4. **Check it started:** in **Apps**, `mchq` should show as **Healthy** within about a minute.
+5. **Open it:** go to `http://<NAS IP>:8081`. MC HQ uses **8081** because Comp HQ has 8080.
+
+Everything else in this README works the same way for MC HQ. Read "comphq" as "mchq" in the TrueNAS steps (**Apps → mchq → Edit** to update it, the `mchq` dataset to restore it) and 8080 as 8081. Its exports are named like `mchq-export-2026-11-14.zip`. Update both apps to the same version number at the same time: they are the same app, so a new version brings the same changes to each.
+
 ## Updating
 
 When a new version is ready, you'll be told the version number and a short summary of what's new.

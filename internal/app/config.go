@@ -8,7 +8,8 @@ import "os"
 type Config struct {
 	DataDir  string
 	Addr     string
-	TestMode bool // COMPHQ_TEST_MODE=1: registers test-only routes (never set in deploy/truenas.yaml)
+	TestMode bool   // COMPHQ_TEST_MODE=1: registers test-only routes (never set in deploy/truenas.yaml)
+	Brand    string // COMPHQ_BRAND: "comp" (the default) or "mc" (D-103)
 }
 
 // LoadConfig reads Config from the environment, applying defaults.
@@ -17,6 +18,7 @@ func LoadConfig() Config {
 		DataDir:  getenv("COMPHQ_DATA_DIR", "/data"),
 		Addr:     getenv("COMPHQ_ADDR", ":8080"),
 		TestMode: os.Getenv("COMPHQ_TEST_MODE") == "1",
+		Brand:    os.Getenv("COMPHQ_BRAND"),
 	}
 }
 

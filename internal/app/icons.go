@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/stas-comp/comphq"
+	"github.com/stas-comp/comphq/internal/brand"
 )
 
 func init() {
@@ -18,16 +19,13 @@ func init() {
 	mime.AddExtensionType(".ico", "image/x-icon")
 }
 
-// faviconPath is the one icon file, inside the app, that /favicon.ico serves.
-const faviconPath = "web/static/theme/icons/comphq.ico"
-
-// handleFavicon answers GET /favicon.ico with the multi-size Comp HQ icon
+// handleFavicon answers GET /favicon.ico with the brand's multi-size icon
 // (SPEC B11.2, gate 5.22). Every page links its icons explicitly, but some
 // browsers, and Windows itself when it draws a shortcut, ask for this address
 // and nothing else, so it has to be answered — with the icon, not the
 // "Page not found" frame, and without first asking who is using the computer.
 func (s *Server) handleFavicon(w http.ResponseWriter, r *http.Request) {
-	data, err := fs.ReadFile(comphq.Static, faviconPath)
+	data, err := fs.ReadFile(comphq.Static, brand.Current().IconPath())
 	if err != nil {
 		http.NotFound(w, r)
 		return
