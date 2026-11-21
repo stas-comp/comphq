@@ -34,7 +34,7 @@ func TestBriefingTasks(t *testing.T) {
 		t.Fatalf("Remove: %v", err)
 	}
 
-	got, err := store.BriefingTasks(ctx, date(t, "2026-09-25"))
+	got, err := store.BriefingTasks(ctx, date(t, "2026-09-25"), fixedNow)
 	if err != nil {
 		t.Fatalf("BriefingTasks: %v", err)
 	}

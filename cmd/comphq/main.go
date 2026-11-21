@@ -194,6 +194,12 @@ func run() error {
 	if _, err := (&tasks.Store{DB: sqlDB}).ResetWeekly(context.Background(), app.Today(cfg.TestMode)); err != nil {
 		return fmt.Errorf("weekly reset: %w", err)
 	}
+	// SPEC B14.4, gate 8.47: the same for the yearly pass, so a yearly job that
+	// was Done 14 days ago, or whose show day came while Comp HQ was off, is
+	// put away or shown now.
+	if _, err := (&tasks.Store{DB: sqlDB}).ResetYearly(context.Background(), app.Today(cfg.TestMode)); err != nil {
+		return fmt.Errorf("yearly pass: %w", err)
+	}
 
 	if cfg.TestMode {
 		// Hundreds of existing tests render pages without caring about

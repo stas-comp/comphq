@@ -15,7 +15,7 @@ func (s *Store) ListFinished(ctx context.Context, today time.Time) ([]Task, erro
 		SELECT id, title, notes, size, stage, position, due_date, done_at
 		FROM tasks
 		WHERE removed_at IS NULL AND stage = 'done' AND done_at IS NOT NULL AND done_at < ?
-		  AND repeat <> 'weekly'
+		  AND repeat NOT IN ('weekly', 'yearly')
 		ORDER BY done_at DESC
 	`, cutoff)
 }
@@ -100,7 +100,7 @@ func (s *Store) Reopen(ctx context.Context, taskID int64, actorID int64, now tim
 		return err
 	}
 
-	newOrder, err := stageOrder(ctx, tx, StageTodo, taskID)
+	newOrder, err := stageOrder(ctx, tx, StageTodo, taskID, now)
 	if err != nil {
 		return err
 	}
@@ -121,7 +121,7 @@ func (s *Store) Reopen(ctx context.Context, taskID int64, actorID int64, now tim
 	}
 
 	if oldStage != StageTodo {
-		oldOrder, err := stageOrder(ctx, tx, oldStage, taskID)
+		oldOrder, err := stageOrder(ctx, tx, oldStage, taskID, now)
 		if err != nil {
 			return err
 		}
@@ -164,7 +164,7 @@ func (s *Store) Remove(ctx context.Context, taskID int64, actorID int64, now tim
 	// (gate 7.16, D-93): the job that followed it, or the one before it when
 	// it was last. Only new removals carry this; older ones fall back to the
 	// row's old position.
-	before, err := stageOrder(ctx, tx, stage, 0)
+	before, err := stageOrder(ctx, tx, stage, 0, now)
 	if err != nil {
 		return err
 	}
@@ -188,7 +188,7 @@ func (s *Store) Remove(ctx context.Context, taskID int64, actorID int64, now tim
 		return err
 	}
 
-	remaining, err := stageOrder(ctx, tx, stage, taskID)
+	remaining, err := stageOrder(ctx, tx, stage, taskID, now)
 	if err != nil {
 		return err
 	}
@@ -254,7 +254,7 @@ func (s *Store) Undo(ctx context.Context, taskID int64, actorID int64, now time.
 		_ = json.Unmarshal([]byte(detailJSON), &detail) // an older row has "{}": fall back below
 	}
 
-	order, err := stageOrder(ctx, tx, stage, taskID)
+	order, err := stageOrder(ctx, tx, stage, taskID, now)
 	if err != nil {
 		return false, err
 	}
@@ -332,7 +332,7 @@ func (s *Store) Restore(ctx context.Context, taskID int64, actorID int64, now ti
 		return err
 	}
 
-	newOrder, err := stageOrder(ctx, tx, stage, taskID)
+	newOrder, err := stageOrder(ctx, tx, stage, taskID, now)
 	if err != nil {
 		return err
 	}

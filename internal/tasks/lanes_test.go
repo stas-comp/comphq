@@ -169,7 +169,7 @@ func TestListForTeamViewIncludesIdeasButNotDone(t *testing.T) {
 	createNamed(t, store, ctx, creator, "To do", StageTodo)
 	createNamed(t, store, ctx, creator, "Doing", StageDoing)
 
-	tasksList, err := store.ListForTeamView(ctx)
+	tasksList, err := store.ListForTeamView(ctx, fixedNow)
 	if err != nil {
 		t.Fatalf("ListForTeamView: %v", err)
 	}
@@ -212,7 +212,7 @@ func TestAssignedIdeaShowsInLaneNotUpForGrabsAndAddsNoWorkload(t *testing.T) {
 	if _, err := store.Create(ctx, CreateInput{Title: "Real work", Size: "M", Stage: StageTodo, PersonIDs: []int64{sam}}, sam, fixedNow); err != nil {
 		t.Fatalf("Create(todo): %v", err)
 	}
-	teamTasks, err := store.ListForTeamView(ctx)
+	teamTasks, err := store.ListForTeamView(ctx, fixedNow)
 	if err != nil {
 		t.Fatalf("ListForTeamView: %v", err)
 	}
@@ -224,7 +224,7 @@ func TestAssignedIdeaShowsInLaneNotUpForGrabsAndAddsNoWorkload(t *testing.T) {
 	if _, err := store.Create(ctx, CreateInput{Title: "Big idea", Size: "L", Stage: StageIdea, PersonIDs: []int64{sam}}, sam, fixedNow); err != nil {
 		t.Fatalf("Create(idea): %v", err)
 	}
-	teamTasks, err = store.ListForTeamView(ctx)
+	teamTasks, err = store.ListForTeamView(ctx, fixedNow)
 	if err != nil {
 		t.Fatalf("ListForTeamView: %v", err)
 	}
@@ -250,7 +250,7 @@ func TestAssignedIdeaShowsInLaneNotUpForGrabsAndAddsNoWorkload(t *testing.T) {
 		t.Errorf("LaneForPerson Ideas = %v, want [Big idea] (My jobs uses the same lane)", got)
 	}
 
-	grabs, err := store.ListUpForGrabs(ctx)
+	grabs, err := store.ListUpForGrabs(ctx, fixedNow)
 	if err != nil {
 		t.Fatalf("ListUpForGrabs: %v", err)
 	}
@@ -277,7 +277,7 @@ func TestIdeasSharedAcrossLanesAndUnassignedIdeaGetsItsOwnGroup(t *testing.T) {
 	}
 	createNamed(t, store, ctx, sam, "Nobody's idea", StageIdea)
 
-	teamTasks, err := store.ListForTeamView(ctx)
+	teamTasks, err := store.ListForTeamView(ctx, fixedNow)
 	if err != nil {
 		t.Fatalf("ListForTeamView: %v", err)
 	}
@@ -309,7 +309,7 @@ func TestUnassignedIdeaStillInUpForGrabsAndTakeMovesToTodo(t *testing.T) {
 	ctx := context.Background()
 
 	idea := createNamed(t, store, ctx, sam, "Loose idea", StageIdea)
-	grabs, err := store.ListUpForGrabs(ctx)
+	grabs, err := store.ListUpForGrabs(ctx, fixedNow)
 	if err != nil {
 		t.Fatalf("ListUpForGrabs: %v", err)
 	}

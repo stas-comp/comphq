@@ -30,8 +30,13 @@ type UpdateInput struct {
 	DueDate   string // "" clears it
 	PersonIDs []int64
 	// Weekly turns the weekly repeat on or off; nil leaves it as it is
-	// (gates 7.30, 7.37).
-	Weekly *bool
+	// (gates 7.30, 7.37). Repeat is the Repeats choice that replaces the tick-box
+	// (gate 8.40): "none", "weekly" or "yearly", nil to leave it; it wins over
+	// Weekly when both are given. NoticeWeeks is the yearly notice, 1 to 52 (0
+	// keeps a yearly job's notice as it is, and is 6 for a job becoming yearly).
+	Weekly      *bool
+	Repeat      *string
+	NoticeWeeks int
 }
 
 // Update applies every change from the details page in one transaction,
@@ -62,16 +67,64 @@ func (s *Store) Update(ctx context.Context, taskID int64, input UpdateInput, act
 	}
 	defer tx.Rollback()
 
-	var oldTitle, oldNotes, oldSize, oldStage string
+	var oldTitle, oldNotes, oldSize, oldStage, oldRepeat string
 	var oldDueDate sql.NullString
+	var oldNotice sql.NullInt64
 	err = tx.QueryRowContext(ctx,
-		`SELECT title, notes, size, stage, due_date FROM tasks WHERE id = ? AND removed_at IS NULL`, taskID,
-	).Scan(&oldTitle, &oldNotes, &oldSize, &oldStage, &oldDueDate)
+		`SELECT title, notes, size, stage, due_date, repeat, notice_days FROM tasks WHERE id = ? AND removed_at IS NULL`, taskID,
+	).Scan(&oldTitle, &oldNotes, &oldSize, &oldStage, &oldDueDate, &oldRepeat, &oldNotice)
 	if err == sql.ErrNoRows {
 		return ErrTaskNotFound
 	}
 	if err != nil {
 		return err
+	}
+
+	// What the job repeats as once this is saved. A yearly job needs a due date and
+	// 1 to 52 weeks' notice (gate 8.41), belongs in To do when it becomes yearly
+	// or will be waiting (Done is the exception: a yearly job finished and saved
+	// from its window stays Done), and keeps its notice when none is given.
+	finalRepeat := oldRepeat
+	switch {
+	case input.Repeat != nil:
+		finalRepeat = *input.Repeat
+		if finalRepeat == "" {
+			finalRepeat = repeatNone
+		}
+		if finalRepeat != repeatNone && finalRepeat != repeatWeekly && finalRepeat != repeatYearly {
+			return ErrInvalidRepeat
+		}
+	case input.Weekly != nil:
+		if *input.Weekly {
+			finalRepeat = repeatWeekly
+		} else if oldRepeat == repeatWeekly {
+			finalRepeat = repeatNone
+		}
+	}
+	var noticeDays int
+	if finalRepeat == repeatYearly {
+		if input.DueDate == "" {
+			return ErrYearlyNeedsDue
+		}
+		switch {
+		case input.NoticeWeeks != 0:
+			if noticeDays, err = noticeDaysFor(input.NoticeWeeks); err != nil {
+				return err
+			}
+		case oldRepeat == repeatYearly && oldNotice.Valid:
+			noticeDays = int(oldNotice.Int64)
+		default:
+			noticeDays = defaultNoticeWeeks * 7
+		}
+		if input.Stage != StageDone && input.Stage != StageTodo {
+			shows, err := showsFromFor(input.DueDate, noticeDays)
+			if err != nil {
+				return err
+			}
+			if oldRepeat != repeatYearly || shows > dateOf(now) {
+				input.Stage = StageTodo
+			}
+		}
 	}
 
 	oldPersonIDs, err := assigneeIDs(ctx, tx, taskID)
@@ -118,7 +171,7 @@ func (s *Store) Update(ctx context.Context, taskID int64, input UpdateInput, act
 	}
 
 	if input.Stage != oldStage {
-		newOrder, err := stageOrder(ctx, tx, input.Stage, taskID)
+		newOrder, err := stageOrder(ctx, tx, input.Stage, taskID, now)
 		if err != nil {
 			return err
 		}
@@ -126,7 +179,7 @@ func (s *Store) Update(ctx context.Context, taskID int64, input UpdateInput, act
 		if err := renumber(ctx, tx, newOrder); err != nil {
 			return err
 		}
-		oldOrder, err := stageOrder(ctx, tx, oldStage, taskID)
+		oldOrder, err := stageOrder(ctx, tx, oldStage, taskID, now)
 		if err != nil {
 			return err
 		}
@@ -151,8 +204,35 @@ func (s *Store) Update(ctx context.Context, taskID int64, input UpdateInput, act
 	if err := updateDoneAtForStageChange(ctx, tx, taskID, oldStage, input.Stage, nowStr); err != nil {
 		return err
 	}
-	if input.Weekly != nil {
-		if err := setWeeklyTx(ctx, tx, taskID, *input.Weekly, actorID, now); err != nil {
+	switch {
+	case finalRepeat == repeatYearly:
+		// A weekly job's last Saturday must never be mistaken for a showing:
+		// setYearlyTx clears repeat_reset_on. Changing the due date or the notice
+		// moves the anchor and the show date.
+		becameVisible, err := setYearlyTx(ctx, tx, taskID, noticeDays, actorID, now)
+		if err != nil {
+			return err
+		}
+		if becameVisible { // a waiting job whose show date now has come goes to the bottom of To do
+			others, err := stageOrder(ctx, tx, StageTodo, taskID, now)
+			if err != nil {
+				return err
+			}
+			if err := renumber(ctx, tx, append(others, taskID)); err != nil {
+				return err
+			}
+		}
+	case oldRepeat == repeatYearly:
+		if err := clearYearlyTx(ctx, tx, taskID, actorID, now); err != nil {
+			return err
+		}
+		if finalRepeat == repeatWeekly {
+			if err := setWeeklyTx(ctx, tx, taskID, true, actorID, now); err != nil {
+				return err
+			}
+		}
+	case input.Repeat != nil || input.Weekly != nil:
+		if err := setWeeklyTx(ctx, tx, taskID, finalRepeat == repeatWeekly, actorID, now); err != nil {
 			return err
 		}
 	}
@@ -354,9 +434,35 @@ func (s *Store) activityText(ctx context.Context, action, detail, actorName stri
 		}
 		return actorName + " added the COSMOS place “" + d.Name + "”", nil
 	case "repeat_on":
+		var d repeatDetail
+		if err := json.Unmarshal([]byte(detail), &d); err == nil && d.Kind == repeatYearly {
+			return actorName + " made this repeat every year", nil
+		}
 		return actorName + " made this repeat every week", nil
 	case "repeat_off":
 		return actorName + " stopped this repeating", nil
+	case "yearly_wait":
+		// Nobody did this, so no person is named: it reads "Comp HQ put this away
+		// until Sat 24 Oct 2027 (yearly)" (gate 8.47).
+		var d yearlyDetail
+		if err := json.Unmarshal([]byte(detail), &d); err != nil {
+			return "", err
+		}
+		until, err := time.Parse(dateLayout, d.Until)
+		if err != nil {
+			return "", err
+		}
+		return brand.Current().Name + " put this away until " + until.Format("Mon 2 Jan 2006") + " (yearly)", nil
+	case "yearly_shown":
+		var d yearlyDetail
+		if err := json.Unmarshal([]byte(detail), &d); err != nil {
+			return "", err
+		}
+		due, err := time.Parse(dateLayout, d.Due)
+		if err != nil {
+			return "", err
+		}
+		return brand.Current().Name + " put this in To do, due " + due.Format("Mon 2 Jan 2006") + " (yearly)", nil
 	case "weekly_reset":
 		// Nobody did this, so no person is named: it reads "Comp HQ put this
 		// back in To do for Sat 10 Oct (weekly)" (gate 7.36).

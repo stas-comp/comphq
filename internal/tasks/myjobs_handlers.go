@@ -36,12 +36,12 @@ func (h *Handlers) handleMyJobs(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handlers) renderMyJobs(w http.ResponseWriter, r *http.Request, status int, person people.Person, message string) {
-	teamTasks, err := h.tasks.ListForTeamView(r.Context())
+	teamTasks, err := h.tasks.ListForTeamView(r.Context(), app.Today(h.srv.TestMode))
 	if err != nil {
 		http.Error(w, "internal error", http.StatusInternalServerError)
 		return
 	}
-	grabs, err := h.tasks.ListUpForGrabs(r.Context())
+	grabs, err := h.tasks.ListUpForGrabs(r.Context(), app.Today(h.srv.TestMode))
 	if err != nil {
 		http.Error(w, "internal error", http.StatusInternalServerError)
 		return

@@ -57,7 +57,7 @@ func (s *Store) Take(ctx context.Context, taskID int64, beforeID, afterID int64,
 
 	hasDropPosition := beforeID != 0 || afterID != 0
 	if newStage != stage || hasDropPosition {
-		targetOthers, err := stageOrder(ctx, tx, newStage, taskID)
+		targetOthers, err := stageOrder(ctx, tx, newStage, taskID, now)
 		if err != nil {
 			return err
 		}
@@ -75,7 +75,7 @@ func (s *Store) Take(ctx context.Context, taskID int64, beforeID, afterID int64,
 		}
 
 		if newStage != stage {
-			oldOthers, err := stageOrder(ctx, tx, stage, taskID)
+			oldOthers, err := stageOrder(ctx, tx, stage, taskID, now)
 			if err != nil {
 				return err
 			}

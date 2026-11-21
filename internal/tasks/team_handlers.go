@@ -20,7 +20,7 @@ type teamPageData struct {
 // Working on now, numbered Up next, and — for a person, not Unassigned
 // — a workload row.
 func (h *Handlers) handleTeam(w http.ResponseWriter, r *http.Request) {
-	tasks, err := h.tasks.ListForTeamView(r.Context())
+	tasks, err := h.tasks.ListForTeamView(r.Context(), app.Today(h.srv.TestMode))
 	if err != nil {
 		http.Error(w, "internal error", http.StatusInternalServerError)
 		return

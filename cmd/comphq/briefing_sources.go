@@ -21,8 +21,9 @@ type briefingTasks struct {
 	today func() time.Time
 }
 
-// resetWeekly runs the weekly reset (SPEC B13.5): the Briefing is one of the
-// places that shows jobs, and the reset must have caught up before it does.
+// resetWeekly runs the weekly and the yearly pass (SPEC B13.5, B14.4): the
+// Briefing is one of the places that shows jobs, and they must have caught up
+// before it does.
 func (a briefingTasks) resetWeekly(ctx context.Context) {
 	if a.today == nil {
 		return
@@ -30,11 +31,18 @@ func (a briefingTasks) resetWeekly(ctx context.Context) {
 	if _, err := a.store.ResetWeekly(ctx, a.today()); err != nil {
 		log.Printf("briefing: weekly reset: %v", err)
 	}
+	if _, err := a.store.ResetYearly(ctx, a.today()); err != nil {
+		log.Printf("briefing: yearly pass: %v", err)
+	}
 }
 
 func (a briefingTasks) Tasks(ctx context.Context, dueOnOrBefore time.Time) ([]briefing.Task, error) {
 	a.resetWeekly(ctx)
-	rows, err := a.store.BriefingTasks(ctx, dueOnOrBefore)
+	today := dueOnOrBefore
+	if a.today != nil {
+		today = a.today()
+	}
+	rows, err := a.store.BriefingTasks(ctx, dueOnOrBefore, today)
 	if err != nil {
 		return nil, err
 	}

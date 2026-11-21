@@ -14,7 +14,7 @@ There are no roles (A3), so the subprefect answers like anyone. Marking answered
 
 No download and no internet (A2, intent). The 11 federal holidays follow fixed rules, so a small pure package can compute any year. The office cares about mail, and the Postal Service treats weekend holidays differently from other federal offices. A Saturday holiday is a no-mail Saturday, with mail as normal on the Friday that federal offices observe. A Sunday holiday means no mail on the Monday. This matters to a Saturday team: Christmas 2027 and New Year's Day 2028 are Saturdays. Holidays show in the Briefing's existing This week and Coming up sections (from 2 weeks ahead), and add no section of their own. Holidays aren't stored, so there's nothing to export or migrate. SPEC B14.5.
 
-## D-108 A yearly job is one job that waits, shows ahead, and is put away again (owner request 6; owner's answer 17 Nov 2026) (planned, P8-00, 2026-11-21)
+## D-108 A yearly job is one job that waits, shows ahead, and is put away again (owner request 6; owner's answer 17 Nov 2026) (P8-00, 2026-11-21)
 
 The owner chose "appears ahead, then waits" over a list someone starts by hand.
 - **Waiting is computed** (`shows_from > today`), not a fifth column or stage. A new stage would   break every list on rollback to 1.5.0, and computing it needs no clock job.
@@ -24,6 +24,9 @@ The owner chose "appears ahead, then waits" over a list someone starts by hand.
 - **The weekly tick-box becomes a Repeats choice**, since a job can't be both. This changes gate   7.30's wording, and gate 7.20's list of Tasks pages gains Yearly jobs.
 
 SPEC B14.4.
+
+**Built (P8-06, 2026-11-21):** `migrations/tasks/0006_yearly.sql` adds `notice_days`, `repeat_anchor` and `shows_from` (`repeat` has no CHECK constraint in `0003`, so `yearly` needed no table rebuild). `waitingClause` is the one SQL fragment that says what waiting means (`repeat = 'yearly' AND COALESCE(shows_from, '') > today`; the `COALESCE` matters, because a bare comparison with NULL would hide a job that has no show date). It is in the Board, the lanes (My jobs, Team, Up for grabs), the Briefing's due query, the WAITING stamps, the position of a new job, and `stageOrder`, which every move reads, so the order code only ever sees jobs people can see. To let the date reach all of them `ListForTeamView`, `ListUpForGrabs`, `BriefingTasks`, `WaitingOn` and `stageOrder` take today. Two tests keep it honest: one lists every screen and asserts a waiting job is on none of them (but found by search and on the Calendar), and `TestEveryQueryThatListsJobsKnowsAboutWaiting` scans the package's SQL so a new list that forgets the clause fails the build. `ResetYearly` puts away (14 days in Done, next due counted from the old due date, steps unticked) and shows (bottom of To do, once, marked by `repeat_reset_on = shows_from`); a job both put away and shown in one pass counts once. A job saved yearly with a show date that has already come is marked shown at once, so the pass doesn't put it at the bottom of To do a second time. A job becoming yearly goes to To do, but an already-yearly job that is showing can be moved between columns like any other (only a waiting one is forced to To do). `withWeeklyReset` became `withRepeats`, and the Briefing and start-up run the yearly pass beside the weekly one. Not done in this task, by the plan: the Repeats select, the Yearly jobs page, the stamp and the export columns (P8-07).
+
 
 ## D-107 Steps on My jobs are tick-only; Working on now opens by default (owner request 2) (P8-00, 2026-11-21)
 

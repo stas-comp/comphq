@@ -63,6 +63,8 @@ var ErrEmptyTitle = errors.New("title can't be empty")
 var (
 	ErrInvalidSize  = errors.New("that isn't a valid size")
 	ErrInvalidStage = errors.New("that isn't a valid stage")
+	// ErrInvalidRepeat is a Repeats value that isn't none, weekly or yearly.
+	ErrInvalidRepeat = errors.New("that isn't a valid repeat")
 	// ErrInvalidDate is a due date that isn't a real day (SPEC gate 4.05: the
 	// date field is typed, so nothing but the server can check it).
 	ErrInvalidDate = errors.New("that isn't a valid date")
@@ -87,6 +89,10 @@ type CreateInput struct {
 	PersonIDs []int64
 	// Weekly makes it a weekly job from the start (gates 7.30, 7.31).
 	Weekly bool
+	// Repeat is "", "none", "weekly" or "yearly" (gate 8.40); Weekly is the older
+	// way to say "weekly". NoticeWeeks is the yearly notice, 1 to 52 (0 is 6).
+	Repeat      string
+	NoticeWeeks int
 	// Steps, ArticleIDs and Places are saved with the job, in one transaction
 	// and through the same checks as the single-item routes (gates 8.30-8.32,
 	// D-106): nothing is saved if any of them is refused.
@@ -141,6 +147,29 @@ func (s *Store) Create(ctx context.Context, input CreateInput, creatorID int64, 
 	if input.DueDate != "" && !format.ValidISODate(input.DueDate) {
 		return Task{}, ErrInvalidDate
 	}
+	repeat := input.Repeat
+	if repeat == "" && input.Weekly {
+		repeat = repeatWeekly
+	}
+	var noticeDays int
+	switch repeat {
+	case "", repeatNone, repeatWeekly:
+	case repeatYearly:
+		// A yearly job needs a due date, belongs in To do whatever column the form
+		// sent (Done is the one exception), and has 1 to 52 weeks' notice.
+		var err error
+		if noticeDays, err = noticeDaysFor(input.NoticeWeeks); err != nil {
+			return Task{}, err
+		}
+		if input.DueDate == "" {
+			return Task{}, ErrYearlyNeedsDue
+		}
+		if stage != StageDone {
+			stage = StageTodo
+		}
+	default:
+		return Task{}, ErrInvalidRepeat
+	}
 	// The steps, articles and places that come with the job go through the
 	// same checks as the single-item routes, before anything is written (and
 	// the checks that need the database run inside the transaction below).
@@ -164,7 +193,7 @@ func (s *Store) Create(ctx context.Context, input CreateInput, creatorID int64, 
 
 	var maxPos sql.NullInt64
 	if err := tx.QueryRowContext(ctx,
-		`SELECT MAX(position) FROM tasks WHERE stage = ? AND removed_at IS NULL`, stage,
+		`SELECT MAX(position) FROM tasks WHERE stage = ? AND removed_at IS NULL AND `+waitingClause(""), stage, dateOf(now),
 	).Scan(&maxPos); err != nil {
 		return Task{}, err
 	}
@@ -240,8 +269,13 @@ func (s *Store) Create(ctx context.Context, input CreateInput, creatorID int64, 
 			return Task{}, err
 		}
 	}
-	if input.Weekly {
+	switch repeat {
+	case repeatWeekly:
 		if err := setWeeklyTx(ctx, tx, id, true, creatorID, now); err != nil {
+			return Task{}, err
+		}
+	case repeatYearly:
+		if _, err := setYearlyTx(ctx, tx, id, noticeDays, creatorID, now); err != nil {
 			return Task{}, err
 		}
 	}
@@ -344,7 +378,7 @@ func (s *Store) Move(ctx context.Context, taskID int64, input MoveInput, actorID
 	if input.Stage == StageDone && oldStage == StageDone {
 		return nil
 	}
-	targetOthers, err := stageOrder(ctx, tx, input.Stage, taskID)
+	targetOthers, err := stageOrder(ctx, tx, input.Stage, taskID, now)
 	if err != nil {
 		return err
 	}
@@ -373,7 +407,7 @@ func (s *Store) Move(ctx context.Context, taskID int64, input MoveInput, actorID
 	}
 
 	if oldStage != input.Stage {
-		oldOthers, err := stageOrder(ctx, tx, oldStage, taskID)
+		oldOthers, err := stageOrder(ctx, tx, oldStage, taskID, now)
 		if err != nil {
 			return err
 		}
@@ -419,11 +453,14 @@ func updateDoneAtForStageChange(ctx context.Context, tx *sql.Tx, taskID int64, o
 
 // stageOrder returns a stage's current tasks, in position order,
 // excluding excludeID (the task being moved — irrelevant when it isn't
-// in this stage at all, but harmless either way).
-func stageOrder(ctx context.Context, tx *sql.Tx, stage string, excludeID int64) ([]int64, error) {
+// in this stage at all, but harmless either way). A yearly job that is
+// still waiting is left out (gate 8.51): the order code works only over
+// jobs people can see, so a waiting job's position can never change what
+// any move does. today is only the date of that moment.
+func stageOrder(ctx context.Context, tx *sql.Tx, stage string, excludeID int64, today time.Time) ([]int64, error) {
 	rows, err := tx.QueryContext(ctx,
-		`SELECT id FROM tasks WHERE stage = ? AND removed_at IS NULL AND id != ? ORDER BY position`,
-		stage, excludeID,
+		`SELECT id FROM tasks WHERE stage = ? AND removed_at IS NULL AND id != ? AND `+waitingClause("")+` ORDER BY position, id`,
+		stage, excludeID, dateOf(today),
 	)
 	if err != nil {
 		return nil, err
@@ -474,9 +511,10 @@ func (s *Store) ListBoard(ctx context.Context, today time.Time, filter BoardFilt
 		SELECT id, title, notes, size, stage, position, due_date, done_at
 		FROM tasks
 		WHERE removed_at IS NULL
-		  AND NOT (stage = 'done' AND done_at IS NOT NULL AND done_at < ? AND repeat <> 'weekly')
+		  AND NOT (stage = 'done' AND done_at IS NOT NULL AND done_at < ? AND repeat NOT IN ('weekly', 'yearly'))
+		  AND `+waitingClause("")+`
 	`
-	args := []any{cutoff}
+	args := []any{cutoff, dateOf(today)}
 	if filter.PersonID != 0 {
 		query += ` AND id IN (SELECT task_id FROM task_assignees WHERE person_id = ?)`
 		args = append(args, filter.PersonID)

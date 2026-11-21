@@ -94,7 +94,7 @@ func waitingText(titles []string) string {
 // waitingFor is the WAITING text for each job in ids that is waiting
 // (gate 7.42), from one query for the whole list.
 func (h *Handlers) waitingFor(ctx context.Context, ids []int64) map[int64]string {
-	waiting, err := h.tasks.WaitingOn(ctx, ids)
+	waiting, err := h.tasks.WaitingOn(ctx, ids, app.Today(h.srv.TestMode))
 	if err != nil {
 		return nil
 	}

@@ -349,23 +349,29 @@ func (s *Store) RemoveLink(ctx context.Context, taskID, linkID, actorID int64, n
 // waiting on (gate 7.42): the jobs with a live "before" link to it that are
 // neither removed nor Done. It is one query for a whole list, so the WAITING
 // stamp costs a card nothing; a job that isn't waiting has no entry.
-func (s *Store) WaitingOn(ctx context.Context, taskIDs []int64) (map[int64][]string, error) {
+//
+// A yearly job that is itself still waiting shows nowhere, so it has no stamp
+// (gate 8.42): today is only the date of that moment.
+func (s *Store) WaitingOn(ctx context.Context, taskIDs []int64, today time.Time) (map[int64][]string, error) {
 	out := make(map[int64][]string)
 	if len(taskIDs) == 0 {
 		return out, nil
 	}
 	placeholders := strings.TrimSuffix(strings.Repeat("?,", len(taskIDs)), ",")
-	args := make([]any, len(taskIDs))
+	args := make([]any, len(taskIDs), len(taskIDs)+1)
 	for i, id := range taskIDs {
 		args[i] = id
 	}
+	args = append(args, dateOf(today))
 	rows, err := s.DB.QueryContext(ctx, `
 		SELECT l.other_task_id, o.title
 		FROM task_links l
 		JOIN tasks o ON o.id = l.task_id
+		JOIN tasks t ON t.id = l.other_task_id
 		WHERE l.other_task_id IN (`+placeholders+`)
 		  AND l.kind = 'before' AND l.removed_at IS NULL
 		  AND o.removed_at IS NULL AND o.stage != 'done'
+		  AND `+waitingClause("t")+`
 		ORDER BY l.other_task_id, l.id`, args...)
 	if err != nil {
 		return nil, err

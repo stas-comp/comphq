@@ -18,13 +18,14 @@ import (
 // get their own group and never count towards workload. Ordered by stage
 // then position so a lane's Working on now/Up next tasks come out already
 // in shared-priority order.
-func (s *Store) ListForTeamView(ctx context.Context) ([]Task, error) {
+func (s *Store) ListForTeamView(ctx context.Context, today time.Time) ([]Task, error) {
 	return s.listTasks(ctx, `
 		SELECT id, title, notes, size, stage, position, due_date, done_at
 		FROM tasks
 		WHERE removed_at IS NULL AND stage IN ('doing', 'todo', 'idea')
+		  AND `+waitingClause("")+`
 		ORDER BY stage, position
-	`)
+	`, dateOf(today))
 }
 
 // ListUpForGrabs returns every unremoved, unassigned task nobody is on
@@ -32,17 +33,18 @@ func (s *Store) ListForTeamView(ctx context.Context) ([]Task, error) {
 // priority order, then Ideas. An idea somebody is on is not here — it
 // shows in that person's lanes instead (gates 4.48, 4.49). Done tasks never appear
 // here (SPEC gate 2.33: "finished jobs don't appear").
-func (s *Store) ListUpForGrabs(ctx context.Context) ([]Task, error) {
+func (s *Store) ListUpForGrabs(ctx context.Context, today time.Time) ([]Task, error) {
 	return s.listTasks(ctx, `
 		SELECT id, title, notes, size, stage, position, due_date, done_at
 		FROM tasks
 		WHERE removed_at IS NULL
 		  AND stage IN ('doing', 'todo', 'idea')
 		  AND id NOT IN (SELECT DISTINCT task_id FROM task_assignees)
+		  AND `+waitingClause("")+`
 		ORDER BY
 			CASE stage WHEN 'doing' THEN 0 WHEN 'todo' THEN 1 WHEN 'idea' THEN 2 END,
 			position
-	`)
+	`, dateOf(today))
 }
 
 // LaneForPerson builds one person's own lane exactly the way BuildLanes

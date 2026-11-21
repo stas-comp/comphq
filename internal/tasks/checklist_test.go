@@ -731,7 +731,7 @@ func TestListsCarryLiveStepCounts(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	team, err := f.store.ListForTeamView(ctx)
+	team, err := f.store.ListForTeamView(ctx, fixedNow)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -762,7 +762,7 @@ func TestBriefingIsUnchangedByStepsOnAJob(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	before, err := f.store.BriefingTasks(ctx, due)
+	before, err := f.store.BriefingTasks(ctx, due, fixedNow)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -778,7 +778,7 @@ func TestBriefingIsUnchangedByStepsOnAJob(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	after, err := f.store.BriefingTasks(ctx, due)
+	after, err := f.store.BriefingTasks(ctx, due, fixedNow)
 	if err != nil {
 		t.Fatal(err)
 	}

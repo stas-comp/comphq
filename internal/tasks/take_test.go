@@ -25,7 +25,7 @@ func TestListUpForGrabsOrderAndExclusions(t *testing.T) {
 		t.Fatalf("Create: %v", err)
 	}
 
-	grabs, err := store.ListUpForGrabs(ctx)
+	grabs, err := store.ListUpForGrabs(ctx, fixedNow)
 	if err != nil {
 		t.Fatalf("ListUpForGrabs: %v", err)
 	}
@@ -56,7 +56,7 @@ func TestLaneForPersonMatchesTeamLane(t *testing.T) {
 		t.Fatalf("Create: %v", err)
 	}
 
-	tasks, err := store.ListForTeamView(ctx)
+	tasks, err := store.ListForTeamView(ctx, fixedNow)
 	if err != nil {
 		t.Fatalf("ListForTeamView: %v", err)
 	}

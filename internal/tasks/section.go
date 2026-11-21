@@ -39,18 +39,18 @@ func Section(srv *app.Server, opts ...SectionOption) app.Section {
 			InsteadLabel: "Search articles instead", InsteadHref: "/kb/search",
 		}},
 		RegisterRoutes: func(mux *http.ServeMux) {
-			mux.HandleFunc("GET /tasks", h.withWeeklyReset(h.handleMyJobs))
-			mux.HandleFunc("GET /tasks/board", h.withWeeklyReset(h.handleBoard))
+			mux.HandleFunc("GET /tasks", h.withRepeats(h.handleMyJobs))
+			mux.HandleFunc("GET /tasks/board", h.withRepeats(h.handleBoard))
 			mux.HandleFunc("GET /tasks/new", h.handleNewTaskForm)
 			mux.HandleFunc("POST /tasks", h.handleCreateTask)
-			mux.HandleFunc("GET /tasks/version", h.withWeeklyReset(h.handleVersion))
-			mux.HandleFunc("GET /tasks/team", h.withWeeklyReset(h.handleTeam))
+			mux.HandleFunc("GET /tasks/version", h.withRepeats(h.handleVersion))
+			mux.HandleFunc("GET /tasks/team", h.withRepeats(h.handleTeam))
 			mux.HandleFunc("GET /tasks/finished", h.handleFinished)
 			mux.HandleFunc("GET /tasks/removed", h.handleRemoved)
 			mux.HandleFunc("GET /tasks/search", h.handleSearchPage)
 			mux.HandleFunc("GET /tasks/search.json", h.handleSearchJSON)
 			mux.HandleFunc("GET /tasks/articles.json", h.handleArticlesJSON)
-			mux.HandleFunc("GET /tasks/{id}", h.withWeeklyReset(h.handleTaskDetails))
+			mux.HandleFunc("GET /tasks/{id}", h.withRepeats(h.handleTaskDetails))
 			mux.HandleFunc("GET /tasks/{id}/people", h.handleTaskPeople)
 			mux.HandleFunc("POST /tasks/{id}", h.handleUpdateTask)
 			mux.HandleFunc("POST /tasks/{id}/move", h.handleMoveTask)
@@ -76,15 +76,19 @@ func Section(srv *app.Server, opts ...SectionOption) app.Section {
 	}
 }
 
-// withWeeklyReset runs the Saturday reset (weekly.go) before a request that
-// shows jobs, so a NAS that was off on a Saturday catches up the first time
-// anyone opens Comp HQ (gate 7.35). With nothing to do it is one cheap query.
-// A failure is logged and the page is shown anyway: the jobs are still right,
-// the reset will simply be tried again on the next request.
-func (h *Handlers) withWeeklyReset(next http.HandlerFunc) http.HandlerFunc {
+// withRepeats runs the Saturday reset (weekly.go) and the yearly pass (yearly.go)
+// before a request that shows jobs, so a NAS that was off on a Saturday, or
+// through a yearly job's show day, catches up the first time anyone opens Comp HQ
+// (gates 7.35, 8.47). With nothing to do each is one cheap query. A failure is
+// logged and the page is shown anyway: the jobs are still right, the pass will
+// simply be tried again on the next request.
+func (h *Handlers) withRepeats(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if _, err := h.tasks.ResetWeekly(r.Context(), app.Today(h.srv.TestMode)); err != nil {
 			log.Printf("tasks: weekly reset: %v", err)
+		}
+		if _, err := h.tasks.ResetYearly(r.Context(), app.Today(h.srv.TestMode)); err != nil {
+			log.Printf("tasks: yearly pass: %v", err)
 		}
 		next(w, r)
 	}

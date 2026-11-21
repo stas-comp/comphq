@@ -24,7 +24,10 @@ type BriefingTask struct {
 // date on or before dueOnOrBefore — overdue ones included (SPEC A8:
 // "every unfinished task due on or before the Friday after that
 // Saturday"), ordered by due date then board position.
-func (s *Store) BriefingTasks(ctx context.Context, dueOnOrBefore time.Time) ([]BriefingTask, error) {
+//
+// A yearly job that is still waiting is left out (gate 8.42): today is only the
+// date of that moment.
+func (s *Store) BriefingTasks(ctx context.Context, dueOnOrBefore, today time.Time) ([]BriefingTask, error) {
 	rows, err := s.DB.QueryContext(ctx, `
 		SELECT id, title, notes, due_date, position, repeat = 'weekly'
 		FROM tasks
@@ -32,8 +35,9 @@ func (s *Store) BriefingTasks(ctx context.Context, dueOnOrBefore time.Time) ([]B
 		  AND stage != ?
 		  AND due_date IS NOT NULL AND due_date != ''
 		  AND due_date <= ?
+		  AND `+waitingClause("")+`
 		ORDER BY due_date, position, id
-	`, StageDone, dueOnOrBefore.Format("2006-01-02"))
+	`, StageDone, dueOnOrBefore.Format("2006-01-02"), dateOf(today))
 	if err != nil {
 		return nil, err
 	}

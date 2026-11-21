@@ -149,7 +149,7 @@ func (s *Store) ResetWeekly(ctx context.Context, today time.Time) (int, error) {
 	reset := 0
 	for _, j := range jobs {
 		if j.stage == StageDone {
-			todo, err := stageOrder(ctx, tx, StageTodo, j.id)
+			todo, err := stageOrder(ctx, tx, StageTodo, j.id, today)
 			if err != nil {
 				return 0, err
 			}
@@ -175,7 +175,7 @@ func (s *Store) ResetWeekly(ctx context.Context, today time.Time) (int, error) {
 		}
 	}
 	if reset > 0 {
-		doneOrder, err := stageOrder(ctx, tx, StageDone, 0)
+		doneOrder, err := stageOrder(ctx, tx, StageDone, 0, today)
 		if err != nil {
 			return 0, err
 		}

@@ -357,7 +357,7 @@ func TestWaitingOnFollowsTheFirstJobsState(t *testing.T) {
 		t.Fatal(err)
 	}
 	waiting := func() map[int64][]string {
-		m, err := f.store.WaitingOn(f.ctx, []int64{toner.ID, news.ID})
+		m, err := f.store.WaitingOn(f.ctx, []int64{toner.ID, news.ID}, fixedNow)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -390,7 +390,7 @@ func TestWaitingOnFollowsTheFirstJobsState(t *testing.T) {
 	if err := f.link(news.ID, other.ID, LinkRelated); err != nil {
 		t.Fatal(err)
 	}
-	if got, _ := f.store.WaitingOn(f.ctx, []int64{news.ID, other.ID}); len(got) != 0 {
+	if got, _ := f.store.WaitingOn(f.ctx, []int64{news.ID, other.ID}, fixedNow); len(got) != 0 {
 		t.Errorf("a related link made a job wait: %v", got)
 	}
 	// Several jobs to wait on are all listed, in the order linked.
@@ -398,11 +398,11 @@ func TestWaitingOnFollowsTheFirstJobsState(t *testing.T) {
 	target := f.job("Target")
 	f.link(target.ID, a.ID, LinkFirst)
 	f.link(target.ID, b.ID, LinkFirst)
-	if got, _ := f.store.WaitingOn(f.ctx, []int64{target.ID}); !reflect.DeepEqual(got[target.ID], []string{"Alpha", "Bravo"}) {
+	if got, _ := f.store.WaitingOn(f.ctx, []int64{target.ID}, fixedNow); !reflect.DeepEqual(got[target.ID], []string{"Alpha", "Bravo"}) {
 		t.Errorf("waiting on %v, want [Alpha Bravo]", got[target.ID])
 	}
 	// No ids: no query, no entries.
-	if got, err := f.store.WaitingOn(f.ctx, nil); err != nil || len(got) != 0 {
+	if got, err := f.store.WaitingOn(f.ctx, nil, fixedNow); err != nil || len(got) != 0 {
 		t.Errorf("WaitingOn(nil) = %v, %v", got, err)
 	}
 }
