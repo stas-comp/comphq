@@ -149,7 +149,7 @@ test('gate 8.36: Up next and Up for grabs cards say Show steps · n/m, open and 
   await otherPage.goto(server.baseURL + '/tasks');
   await ready(otherPage);
   await card(otherPage, upNext).locator('.steps-toggle').click();
-  await card(otherPage, upNext).getByLabel('B').check();
+  await card(otherPage, upNext).getByLabel('B', { exact: true }).check();
   await other.close();
 
   await page.close();

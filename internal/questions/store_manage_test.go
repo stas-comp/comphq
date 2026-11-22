@@ -283,3 +283,34 @@ func TestGate881ExportRowsListEverythingIncludingRemoved(t *testing.T) {
 		t.Errorf("answers.csv = %v", arows)
 	}
 }
+
+// Gate 8.77: the Briefing lists waiting questions, oldest first, with how many wait
+// in all; answered and removed ones never appear.
+func TestGate877WaitingOldestIsOldestFirstAndCounted(t *testing.T) {
+	f := newFixture(t)
+	ids := make([]int64, 7)
+	for i := range ids {
+		ids[i], _ = f.store.Ask(f.ctx, fmt.Sprintf("Question %d", i), "", f.sam, at("2026-11-01", 9+i))
+	}
+	f.store.AddAnswer(f.ctx, ids[0], "An answer alone does not answer it", f.jane, at("2026-11-02", 9))
+	f.store.SetAnswered(f.ctx, ids[1], f.jane, at("2026-11-02", 10))
+	f.store.RemoveQuestion(f.ctx, ids[2], f.jane, at("2026-11-02", 11))
+
+	rows, total, err := f.store.WaitingOldest(f.ctx, 3, today)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if total != 5 {
+		t.Errorf("total = %d, want 5 (7 asked, 1 answered, 1 removed)", total)
+	}
+	var got []string
+	for _, r := range rows {
+		got = append(got, r.Text)
+	}
+	if want := "Question 0,Question 3,Question 4"; strings.Join(got, ",") != want {
+		t.Errorf("got %v, want %s (oldest first)", got, want)
+	}
+	if rows[0].AnswerCount != 1 || rows[0].AskedBy != "Sam" || rows[0].AskedLabel == "" {
+		t.Errorf("row = %+v", rows[0])
+	}
+}

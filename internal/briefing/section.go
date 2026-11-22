@@ -41,18 +41,42 @@ type HolidaySource interface {
 	HolidaysBetween(from, to time.Time) []Holiday
 }
 
+// WaitingQuestion is one line of "Questions waiting for an answer" (gate 8.77).
+type WaitingQuestion struct {
+	ID         int64
+	Text       string
+	AskedBy    string
+	AskedLabel string // "Sat 14 Nov"
+	Answers    int
+}
+
+// QuestionSource is the small query interface the Briefing needs from Questions
+// (SPEC B14.6), injected like the others: cmd/comphq adapts the store.
+type QuestionSource interface {
+	// Waiting returns up to limit unanswered, unremoved questions, oldest first,
+	// and how many are waiting in all.
+	Waiting(ctx context.Context, limit int) ([]WaitingQuestion, int, error)
+	// Version is the questions change counter, so the Briefing refreshes when a
+	// question is asked, answered or changed (gate 8.79).
+	Version(ctx context.Context) (int64, error)
+}
+
+// MaxWaitingQuestions is how many the section lists before "and N more".
+const MaxWaitingQuestions = 5
+
 // Handlers serves the Briefing.
 type Handlers struct {
-	srv      *app.Server
-	tasks    TaskSource
-	events   EventSource
-	holidays HolidaySource
+	srv       *app.Server
+	tasks     TaskSource
+	events    EventSource
+	holidays  HolidaySource
+	questions QuestionSource
 }
 
 // Section registers the Briefing as the first screen: both "/" and
 // "/briefing" render it (SPEC gate 3.01).
-func Section(srv *app.Server, tasks TaskSource, events EventSource, holidays HolidaySource) app.Section {
-	h := &Handlers{srv: srv, tasks: tasks, events: events, holidays: holidays}
+func Section(srv *app.Server, tasks TaskSource, events EventSource, holidays HolidaySource, questions QuestionSource) app.Section {
+	h := &Handlers{srv: srv, tasks: tasks, events: events, holidays: holidays, questions: questions}
 	return app.Section{
 		Nav: &app.NavItem{
 			Label:         "Briefing",
@@ -83,6 +107,11 @@ type pageData struct {
 	Path         string // this page's own path, for the Just mine switch
 	Mine         bool
 	MeID         int64
+	// Questions are the waiting questions (gate 8.77): the oldest few, and how many
+	// more there are. Just mine never hides them: they belong to everyone.
+	Questions      []WaitingQuestion
+	QuestionsMore  int
+	QuestionsTotal int
 }
 
 func (h *Handlers) handleBriefing(w http.ResponseWriter, r *http.Request) {
@@ -117,6 +146,16 @@ func (h *Handlers) handleBriefing(w http.ResponseWriter, r *http.Request) {
 		holidayDays = h.holidays.HolidaysBetween(today, saturday.AddDate(0, 0, 14))
 	}
 
+	var waiting []WaitingQuestion
+	var waitingTotal int
+	if h.questions != nil {
+		waiting, waitingTotal, err = h.questions.Waiting(r.Context(), MaxWaitingQuestions)
+		if err != nil {
+			http.Error(w, "internal error", http.StatusInternalServerError)
+			return
+		}
+	}
+
 	b := Build(Input{Today: today, PersonID: person.ID, Tasks: tasks, ThisWeek: week, Upcoming: upcoming, Holidays: holidayDays})
 	mine := r.URL.Query().Get("mine") == "1"
 	if mine {
@@ -141,6 +180,11 @@ func (h *Handlers) handleBriefing(w http.ResponseWriter, r *http.Request) {
 		HeadlineDay:  saturday.Format("Monday"),
 		HeadlineDate: saturday.Format("2 January"),
 		FridayLabel:  friday.Format("Mon 2 Jan"),
+		Questions:    waiting,
+	}
+	data.QuestionsTotal = waitingTotal
+	if waitingTotal > len(waiting) {
+		data.QuestionsMore = waitingTotal - len(waiting)
 	}
 	if b.IsToday {
 		data.HeadlineTag = "today's briefing"
@@ -168,6 +212,13 @@ func (h *Handlers) handleVersion(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "internal error", http.StatusInternalServerError)
 		return
 	}
+	var questionsVersion int64
+	if h.questions != nil {
+		if questionsVersion, err = h.questions.Version(r.Context()); err != nil {
+			http.Error(w, "internal error", http.StatusInternalServerError)
+			return
+		}
+	}
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]any{"version": tasksVersion + calendarVersion})
+	json.NewEncoder(w).Encode(map[string]any{"version": tasksVersion + calendarVersion + questionsVersion})
 }

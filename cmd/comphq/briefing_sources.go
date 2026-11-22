@@ -7,6 +7,7 @@ import (
 
 	"github.com/stas-comp/comphq/internal/briefing"
 	"github.com/stas-comp/comphq/internal/calendar"
+	"github.com/stas-comp/comphq/internal/questions"
 	"github.com/stas-comp/comphq/internal/tasks"
 )
 
@@ -75,6 +76,28 @@ func (briefingHolidays) HolidaysBetween(from, to time.Time) []briefing.Holiday {
 		}
 	}
 	return out
+}
+
+// briefingQuestions adapts *questions.Store to briefing.QuestionSource (SPEC B14.6).
+type briefingQuestions struct {
+	store *questions.Store
+	today func() time.Time
+}
+
+func (a briefingQuestions) Waiting(ctx context.Context, limit int) ([]briefing.WaitingQuestion, int, error) {
+	rows, total, err := a.store.WaitingOldest(ctx, limit, a.today())
+	if err != nil {
+		return nil, 0, err
+	}
+	out := make([]briefing.WaitingQuestion, len(rows))
+	for i, r := range rows {
+		out[i] = briefing.WaitingQuestion{ID: r.ID, Text: r.Text, AskedBy: r.AskedBy, AskedLabel: r.AskedLabel, Answers: r.AnswerCount}
+	}
+	return out, total, nil
+}
+
+func (a briefingQuestions) Version(ctx context.Context) (int64, error) {
+	return a.store.Version(ctx)
 }
 
 // briefingEvents adapts *calendar.Store to briefing.EventSource.

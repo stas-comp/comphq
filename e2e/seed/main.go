@@ -34,6 +34,7 @@ import (
 	"github.com/stas-comp/comphq/internal/kb"
 	"github.com/stas-comp/comphq/internal/kb/images"
 	"github.com/stas-comp/comphq/internal/people"
+	"github.com/stas-comp/comphq/internal/questions"
 	"github.com/stas-comp/comphq/internal/tasks"
 )
 
@@ -57,6 +58,8 @@ func main() {
 	taskCount := flag.Int("tasks", 2000, "number of tasks to create")
 	peopleCount := flag.Int("people", 10, "number of active people to create, for tasks to be assigned to")
 	eventCount := flag.Int("events", 300, "number of calendar events to create")
+	questionCount := flag.Int("questions", 1000, "number of questions to create (about 60% answered, three answers each)")
+	yearlyCount := flag.Int("yearly", 200, "number of yearly jobs to create (half of them waiting)")
 	flag.Parse()
 
 	if *dataDir == "" {
@@ -64,12 +67,12 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err := run(*dataDir, *articleCount, *wordsPerArticle, *categoryCount, *withImages, *taskCount, *peopleCount, *eventCount); err != nil {
+	if err := run(*dataDir, *articleCount, *wordsPerArticle, *categoryCount, *withImages, *taskCount, *peopleCount, *eventCount, *questionCount, *yearlyCount); err != nil {
 		log.Fatalf("seed: %v", err)
 	}
 }
 
-func run(dataDir string, articleCount, wordsPerArticle, categoryCount int, withImages bool, taskCount, peopleCount, eventCount int) error {
+func run(dataDir string, articleCount, wordsPerArticle, categoryCount int, withImages bool, taskCount, peopleCount, eventCount, questionCount, yearlyCount int) error {
 	if err := os.MkdirAll(dataDir, 0o755); err != nil {
 		return fmt.Errorf("create data dir: %w", err)
 	}
@@ -80,7 +83,7 @@ func run(dataDir string, articleCount, wordsPerArticle, categoryCount int, withI
 	}
 	defer sqlDB.Close()
 
-	for _, section := range []string{"app", "people", "kb", "tasks", "calendar"} {
+	for _, section := range []string{"app", "people", "kb", "tasks", "calendar", "questions"} {
 		migrations, err := db.LoadMigrations(comphq.Migrations, section)
 		if err != nil {
 			return fmt.Errorf("load %s migrations: %w", section, err)
@@ -167,6 +170,16 @@ func run(dataDir string, articleCount, wordsPerArticle, categoryCount int, withI
 		return fmt.Errorf("seed events: %w", err)
 	}
 	log.Printf("seeded %d events into %s", eventCount, dataDir)
+
+	if err := seedYearly(ctx, sqlDB, rng, person.ID, yearlyCount); err != nil {
+		return fmt.Errorf("seed yearly jobs: %w", err)
+	}
+	log.Printf("seeded %d yearly jobs (half waiting) into %s", yearlyCount, dataDir)
+
+	if err := seedQuestions(ctx, sqlDB, rng, questionCount); err != nil {
+		return fmt.Errorf("seed questions: %w", err)
+	}
+	log.Printf("seeded %d questions into %s", questionCount, dataDir)
 
 	return nil
 }
@@ -577,6 +590,83 @@ func seedEvents(ctx context.Context, sqlDB *sql.DB, rng *rand.Rand, creator int6
 		}
 		if err != nil && err != calendar.ErrEventNotFound {
 			return fmt.Errorf("exception %d: %w", j, err)
+		}
+	}
+	return nil
+}
+
+// seedYearly adds yearly jobs (SPEC B14.6 "Test library"): half are waiting for next
+// year's showing day, so the speed layer measures every list with the waiting clause
+// doing real work. The other half are not waiting, but, as with the rest of the
+// library (seedTasks), most of them have since been removed, so a real board's worth
+// of them, not a hundred more cards, shows in To do.
+func seedYearly(ctx context.Context, sqlDB *sql.DB, rng *rand.Rand, creator int64, count int) error {
+	store := &tasks.Store{DB: sqlDB}
+	now := time.Now()
+	var removable []int64
+	for i := 0; i < count; i++ {
+		waiting := i%2 == 0
+		var due time.Time
+		if waiting {
+			due = now.AddDate(0, 0, 100+rng.Intn(200)) // shows 6 weeks before this
+		} else {
+			due = now.AddDate(0, 0, 5+rng.Intn(25)) // showing now
+		}
+		task, err := store.Create(ctx, tasks.CreateInput{
+			Title:       fmt.Sprintf("Yearly job %03d: %s", i+1, titleCase(pickWords(rng, 3))),
+			Stage:       tasks.StageTodo,
+			DueDate:     due.Format("2006-01-02"),
+			Repeat:      "yearly",
+			NoticeWeeks: 6,
+		}, creator, now)
+		if err != nil {
+			return fmt.Errorf("create yearly job %d: %w", i, err)
+		}
+		if !waiting && i%20 != 1 { // all but five of the showing ones are removed
+			removable = append(removable, task.ID)
+		}
+	}
+	return removeTasks(sqlDB, removable, now)
+}
+
+// seedQuestions adds count questions, about 60% of them answered (marked), and three
+// answers for each question on average (SPEC B14.6 "Test library", gate 8.83), asked
+// over the past year by the people the tasks library made.
+func seedQuestions(ctx context.Context, sqlDB *sql.DB, rng *rand.Rand, count int) error {
+	rows, err := sqlDB.QueryContext(ctx, `SELECT id FROM people ORDER BY id`)
+	if err != nil {
+		return err
+	}
+	var ids []int64
+	for rows.Next() {
+		var id int64
+		if err := rows.Scan(&id); err != nil {
+			rows.Close()
+			return err
+		}
+		ids = append(ids, id)
+	}
+	rows.Close()
+	if len(ids) == 0 {
+		return fmt.Errorf("no people to ask questions")
+	}
+	store := &questions.Store{DB: sqlDB}
+	now := time.Now()
+	for i := 0; i < count; i++ {
+		asked := now.Add(-time.Duration(count-i) * 8 * time.Hour)
+		id, err := store.Ask(ctx, fmt.Sprintf("Question %04d: %s?", i+1, titleCase(pickWords(rng, 5))), paragraph(rng, 30), ids[i%len(ids)], asked)
+		if err != nil {
+			return fmt.Errorf("ask %d: %w", i, err)
+		}
+		for a := 0; a < 3; a++ {
+			if _, err := store.AddAnswer(ctx, id, sentence(rng, 14), ids[(i+a+1)%len(ids)], asked.Add(time.Duration(a+1)*time.Hour)); err != nil {
+				return fmt.Errorf("answer %d of %d: %w", a, i, err)
+			}
+		}
+		if i%5 < 3 { // 60% answered
+			if err := store.SetAnswered(ctx, id, ids[(i+1)%len(ids)], asked.Add(4*time.Hour)); err != nil {
+				return fmt.Errorf("mark %d: %w", i, err)
+			}
 		}
 	}
 	return nil

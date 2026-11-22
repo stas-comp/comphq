@@ -441,6 +441,23 @@ func (c AnswersCSV) ExportRows(ctx context.Context) ([][]string, error) {
 	return out, rows.Err()
 }
 
+// WaitingOldest is up to limit waiting questions, oldest first, with how many are
+// waiting in all: the Briefing's "Questions waiting for an answer" (gate 8.77).
+func (s *Store) WaitingOldest(ctx context.Context, limit int, today time.Time) ([]Row, int, error) {
+	var total int
+	if err := s.DB.QueryRowContext(ctx, `SELECT COUNT(*) FROM questions WHERE removed_at IS NULL AND answered_at IS NULL`).Scan(&total); err != nil {
+		return nil, 0, err
+	}
+	rows, err := s.DB.QueryContext(ctx, rowSelect+`
+		WHERE q.removed_at IS NULL AND q.answered_at IS NULL
+		ORDER BY q.asked_at ASC, q.id ASC LIMIT ?`, limit)
+	if err != nil {
+		return nil, 0, err
+	}
+	out, err := scanRows(rows, today)
+	return out, total, err
+}
+
 // AnswerRemoved says whether an answer of a question has been removed, for the Undo
 // message after removing one.
 func (s *Store) AnswerRemoved(ctx context.Context, questionID, answerID int64) (bool, error) {

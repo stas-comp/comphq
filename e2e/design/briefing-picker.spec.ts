@@ -75,7 +75,9 @@ test('gate 4.45: each panel heading is condensed capitals over a thick ink rule,
   await expectMatchesMockup(mockup, page, { mockup: '.panel-head', screen: 'briefing', app: heads }, ['display', 'align-items', 'column-gap', 'border-bottom-width', 'border-bottom-style', 'border-bottom-color', 'padding-bottom']);
   await expectMatchesMockup(mockup, page, { mockup: '.panel-head h2', screen: 'briefing', app: `${heads} h2` }, [...TEXT, 'line-height']);
   await expectMatchesMockup(mockup, page, { mockup: '.panel-head .count', screen: 'briefing', app: `${heads} .count` }, TEXT);
-  expect(await page.locator(heads).count()).toBe(3);
+  // v1.6 planned correction (D-110, gate 8.77): the Briefing has a fourth section.
+  expect(await page.locator(heads).count()).toBe(4);
+  await expect(page.locator('#briefing-questions ~ .count')).toHaveText(/^\d+ waiting$/);
   await expect(page.locator('#briefing-mustdo ~ .count')).toContainText(/\d+ tasks? · due before next Saturday/);
   await expect(page.locator('#briefing-coming ~ .count')).toHaveText('shown ahead of time');
   await expect(page.locator('#briefing-week ~ .count')).toHaveText(/^to \w{3} \d+ \w{3}$/);

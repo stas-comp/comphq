@@ -161,3 +161,8 @@
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+.briefing-more {
+  margin: var(--space-2) 0 0;
+  font-weight: 700;
+}

@@ -56,6 +56,25 @@
 <p class="briefing-empty">Nothing coming up yet.</p>
 {{end}}
 </section>
+
+<section class="panel briefing-section" aria-labelledby="briefing-questions">
+<div class="panel-head"><h2 id="briefing-questions">Questions waiting for an answer</h2><span class="count">{{.QuestionsTotal}} waiting</span></div>
+{{if .Questions}}
+<ul class="briefing-list">
+{{range .Questions}}
+<li class="item briefing-card briefing-question">
+<div class="item-main">
+<h3><a class="briefing-card-title" href="/questions/{{.ID}}">{{.Text}}</a></h3>
+<div class="meta"><span class="date briefing-when">Asked by {{.AskedBy}}, {{.AskedLabel}} · {{.Answers}} {{if eq .Answers 1}}answer{{else}}answers{{end}}</span></div>
+</div>
+</li>
+{{end}}
+</ul>
+{{if .QuestionsMore}}<p class="briefing-more"><a href="/questions">and {{.QuestionsMore}} more</a></p>{{end}}
+{{else}}
+<p class="briefing-empty">No questions waiting for an answer.</p>
+{{end}}
+</section>
 </div>
 </div>
 </div>
