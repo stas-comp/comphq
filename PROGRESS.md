@@ -139,8 +139,8 @@ Status values: `todo` · `in-progress` · `blocked` · `done`.
 | P8-10 | Questions, part 1: the section, asking, answering and marking answered | done | aac32be | https://github.com/stas-comp/comphq/actions/runs/44973942387 | Rollback to the real 1.5.0 binary run locally: Questions, links, weekly, references and yearly smoke tests all pass. Run 44967998801 (container) failed on one test-only fault, fixed in P8-11 |
 | P8-11 | Questions, part 2: editing, removing, search and export | done | ebbed54 | https://github.com/stas-comp/comphq/actions/runs/44973942387 | Run 44970778998: browser job failed on one test-only fault (a test label matching a random title), fixed in P8-12. Planned corrections: gate 7.24 (two instead links) |
 | P8-12 | Questions, part 3: the Briefing, refresh and speed | done | 7b76051 | https://github.com/stas-comp/comphq/actions/runs/44973942387 (speed job green) | Gates 8.77, 8.79, 8.83. Planned correction: gate 4.45 panel-head count 3 to 4 (D-110) |
-| P8-13 | Full sweep: every gate, both brands, README, CHANGES, screenshots | todo |  |  | Gates 8.90, 8.91. |
-| P8-14 | Release v1.6.0 and the Phase 8 report (no stop) | todo |  |  | O8.1-O8.6 listed for the owner, not waited for. |
+| P8-13 | Full sweep: every gate, both brands, README, CHANGES, screenshots | done | c8aa5f8 | full dispatch https://github.com/stas-comp/comphq/actions/runs/44977712794 (go, browser, container, speed and screens all green) | Gates 8.90, 8.91. README, CHANGES 1.6.0, screenshots in reports/screens (kept local: the folder is git-ignored; the screens job uploads them). The MC HQ accessibility and screen sweep (COMPHQ_BRAND=mc) passed locally, 61 tests. No task was parked, so there was no second round. |
+| P8-14 | Release v1.6.0 and the Phase 8 report (no stop) | in-progress | (release commit) |  | O8.1-O8.6 listed for the owner, not waited for. |
 
 ## Stop log
 
