@@ -123,7 +123,7 @@ func run() error {
 	// Settings.
 	srv.Registry().Add(briefing.Section(srv,
 		briefingTasks{store: &tasks.Store{DB: srv.DB}, today: func() time.Time { return app.Today(cfg.TestMode) }},
-		briefingEvents{store: &calendar.Store{DB: srv.DB}}))
+		briefingEvents{store: &calendar.Store{DB: srv.DB}}, briefingHolidays{}))
 	// Tasks and the Knowledge Base meet only here (SPEC B2, D-105): each
 	// declares the small interface it needs and the other's store fills it in.
 	articleStore := &kb.ArticleStore{DB: srv.DB}

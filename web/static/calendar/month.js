@@ -7,6 +7,7 @@ document.addEventListener('click', (e) => {
   const cell = e.target.closest('td.calendar-day')
   if (!cell) return
   if (e.target.closest('a')) return // a chip, or the day number itself
+  if (e.target.closest('.calendar-chip-holiday')) return // a holiday does nothing at all (gate 8.64)
   const link = cell.querySelector('.calendar-day-number')
   if (link) link.click()
 })

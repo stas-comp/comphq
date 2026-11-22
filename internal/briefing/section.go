@@ -35,17 +35,24 @@ type EventSource interface {
 	Version(ctx context.Context) (int64, error)
 }
 
+// HolidaySource is the small query interface the Briefing needs from the
+// Calendar for the US federal holidays (SPEC B14.5): worked out, never stored.
+type HolidaySource interface {
+	HolidaysBetween(from, to time.Time) []Holiday
+}
+
 // Handlers serves the Briefing.
 type Handlers struct {
-	srv    *app.Server
-	tasks  TaskSource
-	events EventSource
+	srv      *app.Server
+	tasks    TaskSource
+	events   EventSource
+	holidays HolidaySource
 }
 
 // Section registers the Briefing as the first screen: both "/" and
 // "/briefing" render it (SPEC gate 3.01).
-func Section(srv *app.Server, tasks TaskSource, events EventSource) app.Section {
-	h := &Handlers{srv: srv, tasks: tasks, events: events}
+func Section(srv *app.Server, tasks TaskSource, events EventSource, holidays HolidaySource) app.Section {
+	h := &Handlers{srv: srv, tasks: tasks, events: events, holidays: holidays}
 	return app.Section{
 		Nav: &app.NavItem{
 			Label:         "Briefing",
@@ -105,7 +112,12 @@ func (h *Handlers) handleBriefing(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	b := Build(Input{Today: today, PersonID: person.ID, Tasks: tasks, ThisWeek: week, Upcoming: upcoming})
+	var holidayDays []Holiday
+	if h.holidays != nil {
+		holidayDays = h.holidays.HolidaysBetween(today, saturday.AddDate(0, 0, 14))
+	}
+
+	b := Build(Input{Today: today, PersonID: person.ID, Tasks: tasks, ThisWeek: week, Upcoming: upcoming, Holidays: holidayDays})
 	mine := r.URL.Query().Get("mine") == "1"
 	if mine {
 		b = b.JustMine()

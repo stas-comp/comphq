@@ -425,7 +425,7 @@ func slicesContains(list []string, want string) bool {
 // icons, and the Word import icon the Knowledge Base editor's button uses.
 var expectedIcons = []string{
 	"arrow-up", "arrow-down", "trash", "give-back", "plus", "search", "check", "chevron", "close",
-	"briefing", "kb", "tasks", "calendar", "settings", "import-word",
+	"briefing", "kb", "tasks", "calendar", "settings", "import-word", "flag",
 }
 
 // SPEC gate 4.12, B9.4: every icon is one drawing on a 24 x 24 grid with a

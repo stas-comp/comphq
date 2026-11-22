@@ -19,7 +19,8 @@
 <td class="calendar-day{{if not .InMonth}} calendar-day-outside{{end}}{{if .IsToday}} calendar-day-today{{end}}{{if .IsSaturday}} calendar-day-saturday{{end}}" data-date="{{.Date}}">
 <a class="calendar-day-number" href="/calendar/new?date={{.Date}}" aria-label="{{.AriaLabel}}">{{.Day}}</a>
 {{range .Chips}}
-<a class="calendar-chip calendar-chip-{{.Kind}}{{if .Continues}} calendar-chip-continues{{end}}{{if .Late}} calendar-chip-late{{end}}" data-kind="{{.Kind}}" href="{{.Href}}">{{if .TimeLabel}}{{.TimeLabel}} {{end}}{{.Title}}</a>
+{{if eq .Kind "holiday"}}<span class="calendar-chip calendar-chip-holiday calendar-holiday-{{.MailKind}}" data-kind="holiday" tabindex="0" title="{{.Explanation}}"><span class="icon icon-flag" aria-hidden="true"></span><span class="calendar-holiday-words">{{.Title}}</span><span class="visually-hidden">. {{.Explanation}}</span></span>{{else}}
+<a class="calendar-chip calendar-chip-{{.Kind}}{{if .Continues}} calendar-chip-continues{{end}}{{if .Late}} calendar-chip-late{{end}}" data-kind="{{.Kind}}" href="{{.Href}}">{{if .TimeLabel}}{{.TimeLabel}} {{end}}{{.Title}}</a>{{end}}
 {{end}}
 </td>
 {{end}}
@@ -31,6 +32,7 @@
 <div class="legend calendar-legend">
 <span class="calendar-chip calendar-chip-event">Event</span>
 <span class="calendar-chip calendar-chip-task">Task due</span>
+<span class="calendar-chip calendar-chip-holiday"><span class="icon icon-flag" aria-hidden="true"></span><span class="calendar-holiday-words">Holiday</span></span>
 <span>Saturdays are highlighted — that's office day.</span>
 <a href="/calendar/removed">Removed events</a>
 </div>

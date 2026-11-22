@@ -158,6 +158,42 @@
   background: var(--color-paper-muted);
 }
 
+/* A holiday (gates 8.61-8.63): a third chip beside the solid event and the outlined
+   job: the paper field with a dashed ink border and a small flag, no hover or link
+   look because it does nothing when clicked. Existing tokens only. */
+.calendar-chip-holiday {
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+  background: var(--color-paper);
+  border: 1.5px dashed var(--color-ink-navy);
+  color: var(--color-ink-navy);
+  cursor: default;
+  /* The whole sentence must be readable ("Christmas Day (observed) · Mail as
+     normal"), so a holiday wraps instead of being cut off. */
+  overflow: visible;
+  white-space: normal;
+}
+
+.calendar-chip-holiday .icon {
+  width: 12px;
+  height: 12px;
+  margin-top: 2px;
+}
+
+.calendar-chip-holiday:focus-visible {
+  outline: 2px solid var(--color-signal-orange-deep);
+  outline-offset: 1px;
+}
+
+.calendar-holiday-observed_open {
+  border-style: dotted;
+}
+
+.calendar-list-holiday .calendar-chip-holiday {
+  display: inline-flex;
+}
+
 /* The legend under the grid (4.37). */
 .calendar-legend .calendar-chip {
   display: inline-flex;

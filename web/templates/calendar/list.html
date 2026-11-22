@@ -9,11 +9,18 @@
 {{if .Rows}}
 <ul class="calendar-list">
 {{range .Rows}}
+{{if .Holiday}}
+<li class="calendar-list-row calendar-list-holiday">
+<p class="calendar-list-date">{{.DateLabel}}</p>
+<p class="calendar-list-title"><span class="calendar-chip calendar-chip-holiday calendar-holiday-{{.Holiday.MailKind}}" data-kind="holiday" tabindex="0" title="{{.Holiday.Explanation}}"><span class="icon icon-flag" aria-hidden="true"></span><span class="calendar-holiday-words">{{.Holiday.Title}}</span><span class="visually-hidden">. {{.Holiday.Explanation}}</span></span></p>
+</li>
+{{else}}
 <li class="calendar-list-row">
 <p class="calendar-list-date">{{.DateLabel}}{{if .TimeLabel}}, {{.TimeLabel}}{{end}}</p>
 <p class="calendar-list-title"><a href="{{.DetailsHref}}">{{.Title}}</a></p>
 {{if .Notes}}<p class="calendar-list-notes">{{.Notes}}</p>{{end}}
 </li>
+{{end}}
 {{end}}
 </ul>
 {{else}}

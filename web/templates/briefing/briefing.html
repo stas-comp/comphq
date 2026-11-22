@@ -62,6 +62,15 @@
 {{end}}
 
 {{define "briefing-event-card"}}
+{{if .Holiday}}
+<li class="item briefing-card briefing-holiday">
+<div class="item-main">
+<h3 class="briefing-holiday-title" tabindex="0" title="{{.Explanation}}"><span class="icon icon-flag" aria-hidden="true"></span> {{.Title}}<span class="visually-hidden">. {{.Explanation}}</span></h3>
+<div class="meta"><span class="date briefing-when">{{.DateLabel}}</span></div>
+</div>
+<p class="stamps briefing-stamps"><span class="stamp stamp-{{.StampKind}}{{if eq .StampKind "holiday"}} holiday{{end}}">{{.Stamp}}</span></p>
+</li>
+{{else}}
 <li class="item briefing-card briefing-event">
 <div class="item-main">
 <h3><a class="briefing-card-title" href="/calendar/events/{{.EventID}}?occurrence={{.OriginalDate}}">{{.Title}}</a></h3>
@@ -70,4 +79,5 @@
 <p class="stamps briefing-stamps"><span class="stamp stamp-{{.StampKind}}">{{.Stamp}}</span></p>
 {{if .Notes}}<p class="note briefing-notes">{{.Notes}}</p>{{end}}
 </li>
+{{end}}
 {{end}}

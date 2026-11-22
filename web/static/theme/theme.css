@@ -610,6 +610,27 @@ body.has-datepicker .field-date {
   border: 1px dashed var(--color-ink-navy);
 }
 
+/* HOLIDAY (gate 8.65): a federal holiday in the Briefing. The same paper field and
+   dashed ink edge as the Calendar's holiday chip, so the two read as one thing. */
+.stamp-holiday,
+.stamp.holiday {
+  color: var(--color-ink-navy);
+  background: var(--color-paper);
+  border: 1px dashed var(--color-ink-navy);
+}
+
+.briefing-holiday-title {
+  margin: 0;
+  font: inherit;
+  font-weight: 700;
+}
+
+.briefing-holiday-title .icon {
+  width: 14px;
+  height: 14px;
+  vertical-align: -2px;
+}
+
 /* WAITING (gate 7.42): a job with an unfinished "do first" job. A label, never a
    lock (D-96): words, in the accent's soft field with navy ink. */
 .stamp-waiting,
@@ -791,6 +812,7 @@ body.has-datepicker .field-date {
 .icon-chevron { --icon: url("/static/theme/icons/chevron.svg"); }
 .icon-close { --icon: url("/static/theme/icons/close.svg"); }
 .icon-import-word { --icon: url("/static/theme/icons/import-word.svg"); }
+.icon-flag { --icon: url("/static/theme/icons/flag.svg"); }
 
 /* An icon-only button (gate 4.11): a 24px box like the mockup's card
    movers. There are exactly four — move up, move down, remove, give back —

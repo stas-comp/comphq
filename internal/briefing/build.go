@@ -54,6 +54,18 @@ type Occurrence struct {
 	NoticeDays int
 }
 
+// Holiday is one US federal holiday day, as the Briefing's own small shape (the
+// Calendar works holidays out; cmd/comphq hands them over, SPEC B2, B14.5).
+type Holiday struct {
+	Date        string // "YYYY-MM-DD"
+	Name        string // "Thanksgiving Day", "Christmas Day (observed)"
+	Label       string // "Thanksgiving Day · No mail"
+	Explanation string // the sentence for hovering and for a screen reader
+	// Kind is "closed" (no mail), "sunday" (no mail, on a Sunday) or
+	// "observed_open" (federal offices closed, the mail as normal).
+	Kind string
+}
+
 // Input is what Build needs, already fetched: the unfinished tasks with
 // due dates, the occurrences overlapping today..Friday, and each
 // series' candidate next occurrence for Coming up. Build re-applies the
@@ -65,6 +77,9 @@ type Input struct {
 	Tasks    []Task
 	ThisWeek []Occurrence
 	Upcoming []Occurrence
+	// Holidays are the federal holidays from today to two weeks after the Saturday
+	// (gate 8.65); Build keeps the ones each section is for.
+	Holidays []Holiday
 }
 
 // TaskCard is one "Must be done" card.
@@ -98,6 +113,10 @@ type EventCard struct {
 	TimeLabel    string // "18:00–20:00", "" for all day
 	UntilLabel   string // "until Tue 22 Sep" for multi-day events; "" otherwise
 	OriginalDate string
+	// Holiday marks a holiday card (gate 8.65): it has no link, Title is its
+	// label ("Thanksgiving Day · No mail"), and Explanation its sentence.
+	Holiday     bool
+	Explanation string
 }
 
 // Briefing is the finished page.
@@ -170,8 +189,26 @@ func Build(in Input) Briefing {
 		}
 	}
 	sortOccurrences(week)
+	// Holidays from today to Friday, all three kinds, each before that day's events
+	// (gate 8.65). A no-mail holiday on today's own date says so: "Independence
+	// Day · No mail today".
+	var holidaysThisWeek []Holiday
+	for _, h := range in.Holidays {
+		if h.Date >= todayStr && h.Date <= fridayStr {
+			holidaysThisWeek = append(holidaysThisWeek, h)
+		}
+	}
+	sort.SliceStable(holidaysThisWeek, func(i, j int) bool { return holidaysThisWeek[i].Date < holidaysThisWeek[j].Date })
+	nextHoliday := 0
 	for _, o := range week {
+		for nextHoliday < len(holidaysThisWeek) && holidaysThisWeek[nextHoliday].Date <= o.StartDate {
+			b.ThisWeek = append(b.ThisWeek, holidayWeekCard(holidaysThisWeek[nextHoliday], todayStr))
+			nextHoliday++
+		}
 		b.ThisWeek = append(b.ThisWeek, weekCard(o, today))
+	}
+	for ; nextHoliday < len(holidaysThisWeek); nextHoliday++ {
+		b.ThisWeek = append(b.ThisWeek, holidayWeekCard(holidaysThisWeek[nextHoliday], todayStr))
 	}
 
 	// Coming up: only each series' earliest occurrence after Friday whose
@@ -194,13 +231,56 @@ func Build(in Input) Briefing {
 		coming = append(coming, o)
 	}
 	sortOccurrences(coming)
+	var comingCards []EventCard
+	var comingDates []string
 	for _, o := range coming {
 		start, _ := time.ParseInLocation(dateLayout, o.StartDate, today.Location())
 		card := baseEventCard(o, start)
 		card.Stamp, card.StampKind = strings.ToUpper(distance(saturday, start)), "date"
-		b.ComingUp = append(b.ComingUp, card)
+		comingCards = append(comingCards, card)
+		comingDates = append(comingDates, o.StartDate)
 	}
+	// Coming up also has the no-mail holidays after Friday from two weeks ahead,
+	// labelled like events ("Thanksgiving Day · No mail · IN 12 DAYS", gate 8.65).
+	for _, h := range in.Holidays {
+		if h.Kind != "closed" || h.Date <= fridayStr {
+			continue
+		}
+		start, err := time.ParseInLocation(dateLayout, h.Date, today.Location())
+		if err != nil || start.AddDate(0, 0, -14).After(saturday) {
+			continue
+		}
+		card := EventCard{
+			Title: h.Label, Holiday: true, Explanation: h.Explanation, DateLabel: format.Date(start),
+			Stamp: strings.ToUpper(distance(saturday, start)), StampKind: "date",
+		}
+		// In date order among the events, holidays first on a shared day.
+		at := len(comingCards)
+		for i, d := range comingDates {
+			if h.Date <= d {
+				at = i
+				break
+			}
+		}
+		comingCards = append(comingCards, EventCard{})
+		copy(comingCards[at+1:], comingCards[at:])
+		comingCards[at] = card
+		comingDates = append(comingDates, "")
+		copy(comingDates[at+1:], comingDates[at:])
+		comingDates[at] = h.Date
+	}
+	b.ComingUp = comingCards
 	return b
+}
+
+// holidayWeekCard is a holiday in This week: the HOLIDAY stamp, no link.
+func holidayWeekCard(h Holiday, todayStr string) EventCard {
+	date, _ := time.Parse(dateLayout, h.Date)
+	title := h.Label
+	if h.Date == todayStr && h.Kind != "observed_open" {
+		title = h.Name + " · No mail today"
+	}
+	return EventCard{Title: title, Holiday: true, Explanation: h.Explanation, DateLabel: format.Date(date), Stamp: "HOLIDAY", StampKind: "holiday"}
 }
 
 func endOf(o Occurrence) string {

@@ -62,6 +62,21 @@ func (a briefingTasks) Version(ctx context.Context) (int64, error) {
 	return a.store.Version(ctx)
 }
 
+// briefingHolidays adapts the Calendar's holidays to briefing.HolidaySource (SPEC
+// B14.5): the one place that knows both shapes.
+type briefingHolidays struct{}
+
+func (briefingHolidays) HolidaysBetween(from, to time.Time) []briefing.Holiday {
+	days := calendar.HolidaysBetween(from, to)
+	out := make([]briefing.Holiday, len(days))
+	for i, d := range days {
+		out[i] = briefing.Holiday{
+			Date: d.Date.Format("2006-01-02"), Name: d.Name, Label: d.Label(), Explanation: d.Explanation(), Kind: string(d.Kind),
+		}
+	}
+	return out
+}
+
 // briefingEvents adapts *calendar.Store to briefing.EventSource.
 type briefingEvents struct{ store *calendar.Store }
 

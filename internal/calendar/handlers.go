@@ -481,6 +481,11 @@ type chipView struct {
 	// date has passed, drawn in red.
 	Continues bool
 	Late      bool
+	// Explanation and MailKind are for a holiday chip (gate 8.63): the sentence
+	// that explains it, and whether it is a no-mail day (closed, sunday) or an
+	// observed day with the mail as normal (observed_open).
+	Explanation string
+	MailKind    string
 }
 
 func eventChip(o CalendarOccurrence) chipView {
@@ -566,6 +571,13 @@ func (h *Handlers) handleMonth(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	// The US federal holidays (gates 8.60-8.62): worked out, never stored, and listed
+	// before that day's events (gate 8.61).
+	for _, hd := range HolidaysBetween(gridStart, gridEnd) {
+		key := hd.Date.Format(dateLayout)
+		byDate[key] = append([]chipView{holidayChip(hd)}, byDate[key]...)
+	}
+
 	// SPEC gate 2.19: unfinished tasks with due dates show on their
 	// date, looking different from events (outlined, data-kind="task").
 	if h.dueTasks != nil {
@@ -616,6 +628,9 @@ func (h *Handlers) handleMonth(w http.ResponseWriter, r *http.Request) {
 
 // listRowView is one row of the 12-week list view.
 type listRowView struct {
+	// Holiday is set for a holiday row (gates 8.60, 8.61): drawn as the same chip
+	// as the month grid, and listed before that day's events.
+	Holiday     *chipView
 	EventID     int64
 	DateLabel   string
 	Title       string
@@ -649,7 +664,14 @@ func (h *Handlers) handleList(w http.ResponseWriter, r *http.Request) {
 	}
 
 	rows := make([]listRowView, 0, len(occs))
+	holidayDays := HolidaysBetween(today, to)
+	nextHoliday := 0
 	for _, o := range occs {
+		// Holidays up to and including this event's day come first.
+		for nextHoliday < len(holidayDays) && holidayDays[nextHoliday].Date.Format(dateLayout) <= o.StartDate {
+			rows = append(rows, holidayRow(holidayDays[nextHoliday]))
+			nextHoliday++
+		}
 		rows = append(rows, listRowView{
 			EventID:     o.EventID,
 			DateLabel:   dateLabel(o.StartDate),
@@ -658,6 +680,10 @@ func (h *Handlers) handleList(w http.ResponseWriter, r *http.Request) {
 			TimeLabel:   o.StartTime,
 			DetailsHref: fmt.Sprintf("/calendar/events/%d?occurrence=%s", o.EventID, o.OriginalDate),
 		})
+	}
+
+	for ; nextHoliday < len(holidayDays); nextHoliday++ {
+		rows = append(rows, holidayRow(holidayDays[nextHoliday]))
 	}
 
 	h.srv.RenderFrame(w, r, http.StatusOK, "calendar-list.html", "Calendar", listPageData{
