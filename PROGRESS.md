@@ -140,7 +140,7 @@ Status values: `todo` · `in-progress` · `blocked` · `done`.
 | P8-11 | Questions, part 2: editing, removing, search and export | done | ebbed54 | https://github.com/stas-comp/comphq/actions/runs/44973942387 | Run 44970778998: browser job failed on one test-only fault (a test label matching a random title), fixed in P8-12. Planned corrections: gate 7.24 (two instead links) |
 | P8-12 | Questions, part 3: the Briefing, refresh and speed | done | 7b76051 | https://github.com/stas-comp/comphq/actions/runs/44973942387 (speed job green) | Gates 8.77, 8.79, 8.83. Planned correction: gate 4.45 panel-head count 3 to 4 (D-110) |
 | P8-13 | Full sweep: every gate, both brands, README, CHANGES, screenshots | done | c8aa5f8 | full dispatch https://github.com/stas-comp/comphq/actions/runs/44977712794 (go, browser, container, speed and screens all green) | Gates 8.90, 8.91. README, CHANGES 1.6.0, screenshots in reports/screens (kept local: the folder is git-ignored; the screens job uploads them). The MC HQ accessibility and screen sweep (COMPHQ_BRAND=mc) passed locally, 61 tests. No task was parked, so there was no second round. |
-| P8-14 | Release v1.6.0 and the Phase 8 report (no stop) | in-progress | (release commit) |  | O8.1-O8.6 listed for the owner, not waited for. |
+| P8-14 | Release v1.6.0 and the Phase 8 report (no stop) | done | 78d17ac (tag v1.6.0) | full dispatch https://github.com/stas-comp/comphq/actions/runs/44981364583 (all five jobs green); release run https://github.com/stas-comp/comphq/actions/runs/44983606331 (container failed once on four older tests that were slow on that runner, passed on rerun, then publish ran; image public, 1.6.0 and 1.5.0 manifests answer 200 anonymously); the tag's CI workflow https://github.com/stas-comp/comphq/actions/runs/44983606338 stayed red on the same older tests | Reports: reports/phase-8-report.md, reports/gates-phase-8.md, reports/phase-8-owner-inbox.md (1 item). Owner checks O8.1-O8.6 pending. |
 
 ## Stop log
 
@@ -160,6 +160,7 @@ Status values: `todo` · `in-progress` · `blocked` · `done`.
 
 | Date | Phase / check | Owner's words | Fix task(s) | Status |
 |---|---|---|---|---|
+| 2026-11-22 | Phase 8 / O8.1–O8.6 | (none yet; v1.6.0 released, report written, not waited for. O8.2 and O8.5 can only be checked in the office) | — | pending |
 | 2026-09-19 | Phase 3 / O3.2 (look and feel), given while trying v1.0.0 | Design is lacklustre; wants elegant icons (move up/down, remove, give back) instead of worded buttons, and the whole app moved towards the design mockup, Knowledge Base and Calendar included. Wants to assign people from a circle on the card. Reports a fault: a task created with someone assigned shows on the Board but not in My jobs or Team. Wants to click a card and get a Trello-style window with a fuller description, and later a checklist. | Phase 4 (P4-01–P4-15) for everything but the checklist; v1.2 for the checklist | specified, not yet built |
 | 2026-10-06 | Phase 7 / O7.1–O7.6 | (none yet — owner was away; report written, not waited for) | — | pending |
 | 2026-09-18 | Phase 3 / O3.1–O3.2 | (none yet — report sent at S5) | — | pending |
