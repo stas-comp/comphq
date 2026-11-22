@@ -1,0 +1,40 @@
+{{/* The Yearly jobs page (SPEC B14.4, gate 8.43): every yearly job, waiting or not,
+in order of due date. A title opens the job in the window (or its own page with no
+script), where everything can be changed. */}}
+{{define "tasks-yearly.html"}}
+<p><a href="/tasks/board">Back to Board</a></p>
+<h1>Yearly jobs</h1>
+<p class="yearly-intro">A yearly job waits out of sight and appears in To do a few weeks before it is due. Finish it, and after two weeks in Done it waits for next year.</p>
+{{if .Saved}}<p class="message" role="status">{{.Saved}}</p>{{end}}
+<div class="yearly-page" data-refresh-version-url="/tasks/version" data-refresh-fragment-selector=".yearly-page">
+{{if .Jobs}}
+<ul class="task-simple-list yearly-list">
+{{range .Jobs}}
+<li class="card task-card yearly-job{{if .Waiting}} waiting-yearly{{end}}" data-task-id="{{.ID}}">
+<div class="task-card-row">
+<h3 class="task-card-title"><a href="/tasks/{{.ID}}">{{.Title}}</a></h3>
+<span class="stamp yearly">YEARLY</span>
+</div>
+<div class="task-card-row">
+<span class="date">{{if .DueLabel}}Due {{.DueLabel}}{{else}}No due date{{end}}</span>
+<span class="yearly-notice">{{.NoticeWeeks}} {{if eq .NoticeWeeks 1}}week{{else}}weeks{{end}}' notice</span>
+<span class="yearly-status{{if .Waiting}} is-waiting{{end}}">{{.Status}}</span>
+{{if .Assignees}}<span class="task-card-assignees">{{template "part-people" .Assignees}}</span>{{end}}
+</div>
+</li>
+{{end}}
+</ul>
+{{else}}
+<p class="yearly-empty">No yearly jobs yet. Choose Every year under Repeats when you add or change a job.</p>
+{{end}}
+</div>
+{{template "tasks-window" .}}
+<script src="/static/vendor/sortable/Sortable-1.15.7.min.js"></script>
+<script src="/static/tasks/steps.js"></script>
+<script src="/static/tasks/links.js"></script>
+<script src="/static/app/copy.js"></script>
+<script src="/static/tasks/references.js"></script>
+<script src="/static/tasks/repeat.js"></script>
+<script src="/static/app/toast.js"></script>
+<script src="/static/tasks/window.js"></script>
+{{end}}

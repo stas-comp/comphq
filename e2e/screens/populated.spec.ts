@@ -34,7 +34,7 @@ async function addJob(page: Page, baseURL: string, job: Job): Promise<void> {
     await page.keyboard.press('Escape'); // close the date calendar (v1.3)
   }
   if (job.notes) await page.fill('#new-task-notes', job.notes);
-  if (job.weekly) await page.check('#new-task-repeat');
+  if (job.weekly) await page.selectOption('#new-task-repeat', 'weekly');
   if (job.people?.length) await page.selectOption('#new-task-people', job.people.map((label) => ({ label })));
   await page.click('.add-task-form button[type="submit"]');
   await ready(page);

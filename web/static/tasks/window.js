@@ -184,6 +184,30 @@
     if (opener && document.contains(opener)) opener.focus() // back on what opened it
   })
 
+  // A plain message at the foot of the screen (the same place and 10 seconds as
+  // the Undo message), for something the screen behind the window can't show.
+  function showNotice(text) {
+    let region = document.getElementById('toast-region')
+    if (!region) {
+      region = document.createElement('div')
+      region.id = 'toast-region'
+      region.className = 'toast-region'
+      region.setAttribute('role', 'status')
+      region.setAttribute('aria-live', 'polite')
+      document.body.appendChild(region)
+    }
+    region.textContent = ''
+    const toast = document.createElement('div')
+    toast.className = 'toast'
+    toast.setAttribute('data-toast', '')
+    const words = document.createElement('span')
+    words.className = 'toast-text'
+    words.textContent = text
+    toast.appendChild(words)
+    region.appendChild(toast)
+    if (window.comphqToast) window.comphqToast.arm()
+  }
+
   // Saving: the form posts as a fragment. A saved task is 204: a new task
   // closes the window; an edited one shows the task again, reading, with its
   // History updated. Either way the board is refreshed in place. A refused
@@ -211,10 +235,14 @@
     }
     if (res.status === 204) {
       dirty = false
+      // Saving a yearly job that is still waiting says when it will appear in To
+      // do (gate 8.42); it isn't on the screen behind, so this is where it shows.
+      const notice = res.headers.get('X-Comphq-Notice')
       try {
         if (state === 'editing' && id) await readTask(id)
         else dialog.close()
         await refreshPage()
+        if (notice) showNotice(notice)
       } catch (err) {
         window.location.reload() // saved; just show the fresh page
       }

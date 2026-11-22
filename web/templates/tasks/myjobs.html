@@ -2,7 +2,7 @@
 a LaneTask and a simple card have ID, Title and DueLabel. A title is a link
 to the task's own page, which the task window opens over this screen. */}}
 {{define "tasks-job-title"}}<h3 class="task-card-title"><a href="/tasks/{{.ID}}">{{.Title}}</a></h3>{{end}}
-{{define "tasks-job-date"}}<span class="date">{{if .DueLabel}}{{.DueLabel}}{{else}}No date{{end}}</span>{{if .Weekly}}<span class="stamp weekly">WEEKLY</span>{{end}}{{template "tasks-waiting" .}}{{template "tasks-step-badge" .}}{{end}}
+{{define "tasks-job-date"}}<span class="date">{{if .DueLabel}}{{.DueLabel}}{{else}}No date{{end}}</span>{{if .Weekly}}<span class="stamp weekly">WEEKLY</span>{{end}}{{if .Yearly}}<span class="stamp yearly">YEARLY</span>{{end}}{{template "tasks-waiting" .}}{{template "tasks-step-badge" .}}{{end}}
 
 {{/* WAITING (gate 7.42): the job has an unfinished "do first" job. Only a label: its
 tooltip and spoken name say what it is waiting on. */}}
@@ -45,7 +45,7 @@ form that ticks the step and comes back to My jobs. */}}
 <span class="how">Finished your jobs? Drag one from Up for grabs into your list, or press Take it.</span>
 <a class="btn primary tools-add" id="add-task-link" href="/tasks/new">+ Add task</a>
 </div>
-<p class="task-board-links"><a href="/tasks/finished">Finished tasks</a> · <a href="/tasks/removed">Removed tasks</a></p>
+<p class="task-board-links"><a href="/tasks/finished">Finished tasks</a> · <a href="/tasks/removed">Removed tasks</a> · <a href="/tasks/yearly">Yearly jobs</a></p>
 
 {{$lane := .Lane}}
 <div class="myjobs-page" data-refresh-version-url="/tasks/version" data-refresh-fragment-selector=".myjobs-page">
@@ -196,5 +196,6 @@ form that ticks the step and comes back to My jobs. */}}
 <script src="/static/app/copy.js"></script>
 <script src="/static/tasks/references.js"></script>
 <script src="/static/tasks/new-task.js"></script>
+<script src="/static/tasks/repeat.js"></script>
 <script src="/static/tasks/window.js"></script>
 {{end}}

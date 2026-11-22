@@ -34,15 +34,23 @@ func TestExportRows(t *testing.T) {
 		t.Fatalf("Create weekly: %v", err)
 	}
 
+	// A yearly job's Repeats column says "yearly" and a new Notice (weeks) column
+	// its notice (gates 8.40, 8.52); every other job's is empty. (The extra column
+	// is the planned correction to this test: tasks.csv gains it in 1.6.0.)
+	if _, err := store.Create(ctx, CreateInput{Title: "Renew", Stage: StageTodo, Repeat: "yearly", NoticeWeeks: 8, DueDate: "2026-12-01"}, sam, fixedNow); err != nil {
+		t.Fatalf("Create yearly: %v", err)
+	}
+
 	got, err := store.ExportRows(ctx)
 	if err != nil {
 		t.Fatalf("ExportRows: %v", err)
 	}
 	want := [][]string{
-		{"Title", "Column", "Size", "People", "Due date", "Created by", "Created", "Finished", "Removed", "Repeats"},
-		{"Fix printer", "To do", "Large", "Sam, Alex", "Sat 19 Sep 2026", "Sam", "Thu 17 Sep 2026, 12:00", "", "", ""},
-		{"Old idea", "Ideas", "Medium", "", "", "Sam", "Thu 17 Sep 2026, 12:00", "", "Thu 17 Sep 2026, 12:00", ""},
-		{"Weekly clean", "To do", "Medium", "", "Sat 19 Sep 2026", "Sam", "Thu 17 Sep 2026, 12:00", "", "", "weekly"},
+		{"Title", "Column", "Size", "People", "Due date", "Created by", "Created", "Finished", "Removed", "Repeats", "Notice (weeks)"},
+		{"Fix printer", "To do", "Large", "Sam, Alex", "Sat 19 Sep 2026", "Sam", "Thu 17 Sep 2026, 12:00", "", "", "", ""},
+		{"Old idea", "Ideas", "Medium", "", "", "Sam", "Thu 17 Sep 2026, 12:00", "", "Thu 17 Sep 2026, 12:00", "", ""},
+		{"Weekly clean", "To do", "Medium", "", "Sat 19 Sep 2026", "Sam", "Thu 17 Sep 2026, 12:00", "", "", "weekly", ""},
+		{"Renew", "To do", "Medium", "", "Tue 1 Dec 2026", "Sam", "Thu 17 Sep 2026, 12:00", "", "", "yearly", "8"},
 	}
 	if !reflect.DeepEqual(got, want) {
 		t.Errorf("ExportRows =\n%v\nwant\n%v", got, want)

@@ -24,6 +24,7 @@ type simpleCardView struct {
 	Assignees []assigneeView
 	// Weekly shows the WEEKLY stamp (gate 7.30); Waiting is the WAITING text.
 	Weekly  bool
+	Yearly  bool // the YEARLY stamp (gate 8.49)
 	Waiting string
 	// PeopleRedirect is which screen the card's people list returns to.
 	PeopleRedirect string
@@ -47,7 +48,7 @@ func newSimpleCardView(t Task, meID int64, today time.Time) simpleCardView {
 	}
 	return simpleCardView{
 		ID: t.ID, Title: t.Title, SizeLabel: sizeLabels[t.Size], DueDate: t.DueDate, DueLabel: shortDueLabel(t.DueDate, today),
-		IsIdea: t.Stage == StageIdea, Assignees: views, Weekly: t.Weekly,
+		IsIdea: t.Stage == StageIdea, Assignees: views, Weekly: t.Weekly, Yearly: t.Yearly,
 		StepsTotal: t.StepsTotal, StepsDone: t.StepsDone,
 	}
 }

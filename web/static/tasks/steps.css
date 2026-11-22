@@ -487,3 +487,25 @@ a.mini {
 .card-steps-edit {
   margin-top: var(--space-1);
 }
+
+/* The Repeats choice's weeks box (gate 8.41). */
+.repeat-notice[hidden] {
+  display: none;
+}
+
+.repeat-notice label {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.field-weeks {
+  width: 5rem;
+}
+
+.repeat-hint {
+  margin: var(--space-1) 0 0;
+  font-size: 13px;
+  color: var(--color-text-muted);
+}

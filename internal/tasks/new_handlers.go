@@ -35,8 +35,11 @@ type newTaskPageData struct {
 	Sizes    []sizeOption
 	Stages   []stageOption
 	People   []personOption
-	// Weekly keeps the tick-box as typed when a refused save comes back.
-	Weekly bool
+	// Weekly kept the old tick-box as typed; Repeat and NoticeWeeks keep the
+	// Repeats choice and the weeks box as typed when a refused save comes back.
+	Weekly      bool
+	Repeat      string
+	NoticeWeeks string
 	// NewSteps, NewArticles and NewPlaces are what was added to the job so far
 	// (SPEC B14.3, gates 8.30-8.34): they come back as typed after a refusal.
 	// StepsText is the no-script one-per-line box, kept as typed.
@@ -202,21 +205,45 @@ func (h *Handlers) renderNewTask(w http.ResponseWriter, r *http.Request, status 
 
 	data := newTaskPageData{
 		NewSteps: newSteps, StepsText: r.PostFormValue("steps_text"), NewArticles: newArticles, NewPlaces: newPlaces,
-		Message:  message,
-		InWindow: wantsFragment(r),
-		Title:    input.Title,
-		Notes:    input.Notes,
-		Size:     size,
-		Stage:    stage,
-		DueDate:  format.DayFirst(input.DueDate),
-		Sizes:    sizeOptions,
-		Stages:   stages,
-		People:   options,
-		Weekly:   input.Weekly,
+		Message:     message,
+		InWindow:    wantsFragment(r),
+		Title:       input.Title,
+		Notes:       input.Notes,
+		Size:        size,
+		Stage:       stage,
+		DueDate:     format.DayFirst(input.DueDate),
+		Sizes:       sizeOptions,
+		Stages:      stages,
+		People:      options,
+		Weekly:      input.Weekly,
+		Repeat:      repeatChoice(input),
+		NoticeWeeks: noticeWeeksTyped(r, input),
 	}
 	if data.InWindow {
 		h.srv.RenderPartial(w, status, "tasks-new-form", data)
 		return
 	}
 	h.srv.RenderFrame(w, r, status, "tasks-new.html", "Add task", data)
+}
+
+// repeatChoice is the Repeats choice a form comes back with.
+func repeatChoice(input CreateInput) string {
+	switch {
+	case input.Repeat == repeatYearly || input.Repeat == repeatWeekly:
+		return input.Repeat
+	case input.Weekly:
+		return repeatWeekly
+	}
+	return repeatNone
+}
+
+// noticeWeeksTyped is the weeks box as typed, or the default.
+func noticeWeeksTyped(r *http.Request, input CreateInput) string {
+	if v := strings.TrimSpace(r.PostFormValue("notice_weeks")); v != "" {
+		return v
+	}
+	if input.NoticeWeeks > 0 {
+		return strconv.Itoa(input.NoticeWeeks)
+	}
+	return strconv.Itoa(defaultNoticeWeeks)
 }

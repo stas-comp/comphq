@@ -91,6 +91,7 @@ type LaneTask struct {
 	// Weekly shows the WEEKLY stamp (gate 7.30); Waiting is the WAITING text
 	// ("Waiting on: Order toner", gate 7.42), filled in by ApplyWaiting.
 	Weekly  bool
+	Yearly  bool // the YEARLY stamp (gate 8.49)
 	Waiting string
 	// CardSteps are the job's steps under the card on My jobs (gates 8.35-8.38).
 	CardSteps
@@ -268,7 +269,7 @@ func laneTask(t Task, personID int64) LaneTask {
 	}
 	return LaneTask{
 		ID: t.ID, Title: t.Title, SizeLabel: sizeLabels[t.Size], DueDate: t.DueDate, AlsoOn: strings.Join(others, ", "),
-		StepsTotal: t.StepsTotal, StepsDone: t.StepsDone, Assignees: views, Weekly: t.Weekly,
+		StepsTotal: t.StepsTotal, StepsDone: t.StepsDone, Assignees: views, Weekly: t.Weekly, Yearly: t.Yearly,
 	}
 }
 

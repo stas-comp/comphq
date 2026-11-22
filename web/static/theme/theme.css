@@ -600,6 +600,16 @@ body.has-datepicker .field-date {
   border-color: var(--color-ink-navy);
 }
 
+/* YEARLY (gate 8.49): a job that comes back every year. Words, never an icon,
+   and the same quiet label as WEEKLY with a dashed edge so the two can be told
+   apart at a glance. */
+.stamp-yearly,
+.stamp.yearly {
+  color: var(--color-ink-navy);
+  background: var(--color-paper-muted);
+  border: 1px dashed var(--color-ink-navy);
+}
+
 /* WAITING (gate 7.42): a job with an unfinished "do first" job. A label, never a
    lock (D-96): words, in the accent's soft field with navy ink. */
 .stamp-waiting,

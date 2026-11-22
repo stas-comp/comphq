@@ -18,6 +18,8 @@ type BriefingTask struct {
 	// Weekly marks a job that repeats every week (gate 7.30): its card shows
 	// a WEEKLY stamp.
 	Weekly bool
+	// Yearly shows the YEARLY stamp (gate 8.49).
+	Yearly bool
 }
 
 // BriefingTasks returns every unfinished, unremoved task with a due
@@ -29,7 +31,7 @@ type BriefingTask struct {
 // date of that moment.
 func (s *Store) BriefingTasks(ctx context.Context, dueOnOrBefore, today time.Time) ([]BriefingTask, error) {
 	rows, err := s.DB.QueryContext(ctx, `
-		SELECT id, title, notes, due_date, position, repeat = 'weekly'
+		SELECT id, title, notes, due_date, position, repeat = 'weekly', repeat = 'yearly'
 		FROM tasks
 		WHERE removed_at IS NULL
 		  AND stage != ?
@@ -48,7 +50,7 @@ func (s *Store) BriefingTasks(ctx context.Context, dueOnOrBefore, today time.Tim
 	var ids []int64
 	for rows.Next() {
 		var t BriefingTask
-		if err := rows.Scan(&t.ID, &t.Title, &t.Notes, &t.DueDate, &t.Position, &t.Weekly); err != nil {
+		if err := rows.Scan(&t.ID, &t.Title, &t.Notes, &t.DueDate, &t.Position, &t.Weekly, &t.Yearly); err != nil {
 			rows.Close()
 			return nil, err
 		}

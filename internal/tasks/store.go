@@ -41,6 +41,10 @@ type Task struct {
 	// Weekly marks a job that repeats every week (gate 7.30): it shows a
 	// WEEKLY stamp and goes back to To do each Saturday (weekly.go).
 	Weekly bool
+	// Yearly marks a job that repeats every year (gate 8.40): it shows a YEARLY stamp.
+	Yearly bool
+	// NoticeWeeks is a yearly job's notice in weeks (set by Get only).
+	NoticeWeeks int
 	// StepsTotal and StepsDone count the job's live steps, for the small
 	// 3/7 on a card (gate 5.10). Set by ListBoard only.
 	StepsTotal int
@@ -296,8 +300,8 @@ func (s *Store) Get(ctx context.Context, id int64, today time.Time) (Task, error
 	var t Task
 	var dueDate, doneAt sql.NullString
 	err := s.DB.QueryRowContext(ctx,
-		`SELECT id, title, notes, size, stage, position, due_date, done_at FROM tasks WHERE id = ?`, id,
-	).Scan(&t.ID, &t.Title, &t.Notes, &t.Size, &t.Stage, &t.Position, &dueDate, &doneAt)
+		`SELECT id, title, notes, size, stage, position, due_date, done_at, COALESCE(notice_days, 0) / 7 FROM tasks WHERE id = ?`, id,
+	).Scan(&t.ID, &t.Title, &t.Notes, &t.Size, &t.Stage, &t.Position, &dueDate, &doneAt, &t.NoticeWeeks)
 	if err != nil {
 		return Task{}, err
 	}
@@ -314,6 +318,11 @@ func (s *Store) Get(ctx context.Context, id int64, today time.Time) (Task, error
 		return Task{}, err
 	}
 	t.Weekly = weekly[id]
+	yearly, err := s.yearlyIDs(ctx, []int64{id})
+	if err != nil {
+		return Task{}, err
+	}
+	t.Yearly = yearly[id]
 	return t, nil
 }
 
@@ -566,10 +575,15 @@ func (s *Store) ListBoard(ctx context.Context, today time.Time, filter BoardFilt
 	if err != nil {
 		return nil, err
 	}
+	yearly, err := s.yearlyIDs(ctx, ids)
+	if err != nil {
+		return nil, err
+	}
 	for i := range tasks {
 		tasks[i].Assignees = assigneesByTask[tasks[i].ID]
 		tasks[i].StepsDone, tasks[i].StepsTotal = stepCounts[tasks[i].ID].done, stepCounts[tasks[i].ID].total
 		tasks[i].Weekly = weekly[tasks[i].ID]
+		tasks[i].Yearly = yearly[tasks[i].ID]
 	}
 	return tasks, nil
 }

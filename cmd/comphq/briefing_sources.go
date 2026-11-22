@@ -52,7 +52,7 @@ func (a briefingTasks) Tasks(ctx context.Context, dueOnOrBefore time.Time) ([]br
 		for j, p := range r.Assignees {
 			people[j] = briefing.Person{ID: p.PersonID, Name: p.Name, Removed: p.Removed}
 		}
-		out[i] = briefing.Task{ID: r.ID, Title: r.Title, Notes: r.Notes, DueDate: r.DueDate, Position: r.Position, People: people, Weekly: r.Weekly}
+		out[i] = briefing.Task{ID: r.ID, Title: r.Title, Notes: r.Notes, DueDate: r.DueDate, Position: r.Position, People: people, Weekly: r.Weekly, Yearly: r.Yearly}
 	}
 	return out, nil
 }

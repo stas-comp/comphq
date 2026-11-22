@@ -91,6 +91,7 @@ type cardView struct {
 	// Weekly shows the WEEKLY stamp (gate 7.30). Waiting, when set, is what the
 	// WAITING stamp says on hover and aloud: "Waiting on: Order toner" (7.42).
 	Weekly  bool
+	Yearly  bool // the YEARLY stamp (gate 8.49)
 	Waiting string
 	Done    bool
 	Rank      int // 1-based priority number; only To do cards have one (gate 4.16)
@@ -157,7 +158,7 @@ func newCardView(t Task, meID int64, today time.Time) cardView {
 	}
 	return cardView{
 		ID: t.ID, Title: t.Title, Size: t.Size, SizeLabel: sizeLabels[t.Size], Stage: t.Stage,
-		DueDate: t.DueDate, DueLabel: dueLabel, Overdue: t.Overdue, Weekly: t.Weekly, Done: t.Stage == StageDone,
+		DueDate: t.DueDate, DueLabel: dueLabel, Overdue: t.Overdue, Weekly: t.Weekly, Yearly: t.Yearly, Done: t.Stage == StageDone,
 		Assignees: views, PeopleRedirect: "board", OnIt: meID != 0 && onJob[meID], MeID: meID,
 		OtherStages: otherStages,
 		StepsTotal:  t.StepsTotal, StepsDone: t.StepsDone,
@@ -341,8 +342,10 @@ func (h *Handlers) handleCreateTask(w http.ResponseWriter, r *http.Request) {
 		Stage:     r.FormValue("stage"),
 		DueDate:   format.NormaliseDate(r.FormValue("due_date"), today),
 		PersonIDs: personIDs,
-		Weekly:    r.FormValue("repeat") == repeatWeekly,
+		Repeat:    r.FormValue("repeat"),
 	}
+	var noticeErr error
+	input.NoticeWeeks, noticeErr = noticeWeeksFromForm(r)
 	extras, err := newJobExtrasFromForm(r)
 	if err != nil {
 		http.Error(w, "invalid form", http.StatusBadRequest)
@@ -350,7 +353,12 @@ func (h *Handlers) handleCreateTask(w http.ResponseWriter, r *http.Request) {
 	}
 	input.Steps, input.ArticleIDs, input.Places = extras.steps, extras.articleIDs, extras.places
 
-	_, err = h.tasks.Create(r.Context(), input, person.ID, app.Now(h.srv.TestMode))
+	var created Task
+	if noticeErr != nil {
+		err = noticeErr
+	} else {
+		created, err = h.tasks.Create(r.Context(), input, person.ID, app.Now(h.srv.TestMode))
+	}
 	// From the task window the form posts as a fragment: a saved task answers
 	// 204 (the window closes and the board is refreshed), a refused one
 	// answers 422 with the form again, message and typed values included.
@@ -360,11 +368,25 @@ func (h *Handlers) handleCreateTask(w http.ResponseWriter, r *http.Request) {
 	}
 	switch err {
 	case nil:
+		// A yearly job that is still waiting says when it will appear (gate 8.42):
+		// it isn't on the Board, so the Board can't be where the person looks.
+		notice, _ := h.tasks.SavedNotice(r.Context(), created.ID, app.Today(h.srv.TestMode))
 		if wantsFragment(r) {
+			if notice != "" {
+				w.Header().Set("X-Comphq-Notice", notice)
+			}
 			w.WriteHeader(http.StatusNoContent)
 			return
 		}
+		if notice != "" {
+			http.Redirect(w, r, "/tasks/yearly?saved="+strconv.FormatInt(created.ID, 10), http.StatusFound)
+			return
+		}
 		http.Redirect(w, r, "/tasks/board", http.StatusFound)
+	case ErrNoticeWeeks, ErrYearlyNeedsDue:
+		h.renderNewTask(w, r, refusedStatus, err.Error(), input, personIDs)
+	case ErrInvalidRepeat:
+		http.Error(w, err.Error(), http.StatusBadRequest)
 	case ErrEmptyTitle:
 		h.renderNewTask(w, r, refusedStatus, "Please type a title.", input, personIDs)
 	case ErrInvalidDate:

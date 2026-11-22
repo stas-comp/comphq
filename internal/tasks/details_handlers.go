@@ -63,8 +63,12 @@ type detailsPageData struct {
 	Activity   []Activity
 	Message    string
 	Steps      stepsView
-	// Weekly is whether the job repeats every week (gate 7.30).
-	Weekly bool
+	// Weekly is whether the job repeats every week (gate 7.30). Repeat is the
+	// Repeats choice (none, weekly or yearly, gate 8.40) and NoticeWeeks what the
+	// weeks box says; both come back as typed after a refused save.
+	Weekly      bool
+	Repeat      string
+	NoticeWeeks string
 	// Links is the Linked jobs section (gates 7.40, 7.41, 7.44).
 	Links linksData
 	// References is the Articles and places section (gates 8.10-8.14).
@@ -163,11 +167,25 @@ func (h *Handlers) renderDetails(w http.ResponseWriter, r *http.Request, id int6
 		Message:   message,
 		Steps:     stepsData,
 		Weekly:    task.Weekly,
+		Repeat:    repeatOf(task),
+	}
+	data.NoticeWeeks = strconv.Itoa(defaultNoticeWeeks)
+	if task.NoticeWeeks > 0 {
+		data.NoticeWeeks = strconv.Itoa(task.NoticeWeeks)
 	}
 	if typed != nil {
 		data.Title, data.Notes, data.Size, data.Stage, data.DueDate = typed.Title, typed.Notes, typed.Size, typed.Stage, format.DayFirst(typed.DueDate)
 		if typed.Weekly != nil {
 			data.Weekly = *typed.Weekly
+		}
+		if typed.Repeat != nil {
+			data.Repeat = *typed.Repeat
+			if data.Repeat == "" {
+				data.Repeat = repeatNone
+			}
+		}
+		if v := r.PostFormValue("notice_weeks"); v != "" {
+			data.NoticeWeeks = v
 		}
 		chosen := make(map[int64]bool, len(typedPeople))
 		for _, id := range typedPeople {
@@ -213,17 +231,22 @@ func (h *Handlers) handleUpdateTask(w http.ResponseWriter, r *http.Request) {
 	}
 
 	today := app.Today(h.srv.TestMode)
-	// The tick-box is part of the form, so a form without it means "off"
-	// (gate 7.37); an unticked box sends nothing at all.
-	weekly := r.FormValue("repeat") == repeatWeekly
+	// The Repeats choice is part of the form, so a form without it means "off"
+	// (gate 7.37, as the old tick-box did: an unticked box sent nothing at all).
+	repeat := r.FormValue("repeat")
+	if repeat == "" {
+		repeat = repeatNone
+	}
+	noticeWeeks, noticeErr := noticeWeeksFromForm(r)
 	input := UpdateInput{
-		Title:     r.FormValue("title"),
-		Notes:     r.FormValue("notes"),
-		Size:      r.FormValue("size"),
-		Stage:     r.FormValue("stage"),
-		DueDate:   format.NormaliseDate(r.FormValue("due_date"), today),
-		PersonIDs: personIDs,
-		Weekly:    &weekly,
+		Title:       r.FormValue("title"),
+		Notes:       r.FormValue("notes"),
+		Size:        r.FormValue("size"),
+		Stage:       r.FormValue("stage"),
+		DueDate:     format.NormaliseDate(r.FormValue("due_date"), today),
+		PersonIDs:   personIDs,
+		Repeat:      &repeat,
+		NoticeWeeks: noticeWeeks,
 	}
 
 	// From the task window the form posts as a fragment: a saved edit answers
@@ -232,13 +255,30 @@ func (h *Handlers) handleUpdateTask(w http.ResponseWriter, r *http.Request) {
 	if wantsFragment(r) {
 		refusedStatus = http.StatusUnprocessableEntity
 	}
-	switch err := h.tasks.Update(r.Context(), id, input, person.ID, today); err {
+	var updateErr error
+	if noticeErr != nil {
+		updateErr = noticeErr
+	} else {
+		updateErr = h.tasks.Update(r.Context(), id, input, person.ID, today)
+	}
+	switch err := updateErr; err {
 	case nil:
+		// Saving a yearly job that is still waiting says when it will appear (gate 8.42).
+		notice, _ := h.tasks.SavedNotice(r.Context(), id, today)
 		if wantsFragment(r) {
+			if notice != "" {
+				w.Header().Set("X-Comphq-Notice", notice)
+			}
 			w.WriteHeader(http.StatusNoContent)
 			return
 		}
+		if notice != "" {
+			http.Redirect(w, r, "/tasks/yearly?saved="+strconv.FormatInt(id, 10), http.StatusFound)
+			return
+		}
 		http.Redirect(w, r, "/tasks/"+strconv.FormatInt(id, 10), http.StatusFound)
+	case ErrNoticeWeeks, ErrYearlyNeedsDue:
+		h.renderDetails(w, r, id, refusedStatus, err.Error(), &input, personIDs, nil)
 	case ErrEmptyTitle:
 		h.renderDetails(w, r, id, refusedStatus, "Please type a title.", &input, personIDs, nil)
 	case ErrInvalidDate:

@@ -1,5 +1,9 @@
 # Comp HQ — Changes
 
+## 1.6.0
+
+*(Draft. P8-13 writes the final entry.)* **Going back to 1.5.0:** you can go back to `1.5.0` at any time, and your jobs, articles, places, questions and answers will all still be there when you update again. The one thing to know is that **1.5.0 has never heard of yearly jobs**, so a yearly job that is waiting out of sight shows up in To do there as an ordinary job, with its due date in the future. Leave it alone and it is a waiting yearly job again as soon as you update; saving it in 1.5.0 doesn't change that either. Articles and COSMOS places on jobs, and Questions, are simply not shown in 1.5.0.
+
 ## 1.5.0
 
 **MC HQ.** The MC Department can now have its own copy of Comp HQ, called **MC HQ**, in crimson and gold with its own **MC / HQ** icon. It runs beside Comp HQ on the same NAS, on port 8081, with its own data, and it is the same app, so every future update reaches both. The README's new section **Setting up MC HQ** shows how to install it. **Comp HQ itself looks and works exactly as before.** To update Comp HQ, change the version number in TrueNAS to `1.5.0`; you can go back to `1.4.0` at any time.

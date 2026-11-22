@@ -35,7 +35,7 @@ test('@weekly-seed two weekly jobs made under the new build', async ({ page, ser
     await page.fill('#new-task-title', title);
     await page.selectOption('#new-task-stage', 'todo');
     await page.selectOption('#new-task-people', { label: me });
-    await page.check('#new-task-repeat');
+    await page.selectOption('#new-task-repeat', 'weekly'); // the Repeats choice replaced the tick-box in 1.6.0 (gate 8.40)
     await page.click('.add-task-form button[type="submit"]');
     await ready(page);
   }
@@ -89,6 +89,6 @@ test('@weekly-verify-upgraded both jobs are still weekly after the upgrade', asy
     await expect(page.locator('.task-card', { hasText: title }).locator('.stamp.weekly')).toHaveText('WEEKLY');
     await page.goto(server.baseURL + href);
     await ready(page);
-    await expect(page.locator('#details-repeat')).toBeChecked();
+    await expect(page.locator('#details-repeat')).toHaveValue('weekly');
   }
 });

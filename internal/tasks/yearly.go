@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"net/http"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -343,4 +345,104 @@ func (s *Store) yearlyIDs(ctx context.Context, taskIDs []int64) (map[int64]bool,
 		out[id] = true
 	}
 	return out, rows.Err()
+}
+
+// YearlyJob is one line of the Yearly jobs page (gate 8.43).
+type YearlyJob struct {
+	ID          int64
+	Title       string
+	DueDate     string // ISO, "" never for a yearly job
+	NoticeWeeks int
+	ShowsFrom   string // ISO
+	Stage       string
+	Waiting     bool
+	Assignees   []Assignee
+}
+
+// ListYearly returns every yearly job, waiting or not, in order of due date
+// (gate 8.43). Removed jobs are left out: a removed yearly job is nowhere until
+// it is restored (gate 8.50).
+func (s *Store) ListYearly(ctx context.Context, today time.Time) ([]YearlyJob, error) {
+	day := dateOf(today)
+	rows, err := s.DB.QueryContext(ctx, `
+		SELECT id, title, COALESCE(due_date, ''), COALESCE(notice_days, 0) / 7, COALESCE(shows_from, ''), stage
+		FROM tasks
+		WHERE removed_at IS NULL AND repeat = 'yearly'
+		ORDER BY COALESCE(due_date, '9999-12-31'), id`)
+	if err != nil {
+		return nil, err
+	}
+	var out []YearlyJob
+	var ids []int64
+	for rows.Next() {
+		var j YearlyJob
+		if err := rows.Scan(&j.ID, &j.Title, &j.DueDate, &j.NoticeWeeks, &j.ShowsFrom, &j.Stage); err != nil {
+			rows.Close()
+			return nil, err
+		}
+		j.Waiting = j.ShowsFrom > day
+		out = append(out, j)
+		ids = append(ids, j.ID)
+	}
+	rows.Close()
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	assignees, err := s.assigneesFor(ctx, ids)
+	if err != nil {
+		return nil, err
+	}
+	for i := range out {
+		out[i].Assignees = assignees[out[i].ID]
+	}
+	return out, nil
+}
+
+// SavedNotice is what saving a job says when it is a yearly job that is still
+// waiting: when it will appear in To do (gate 8.42), as "Saved. It will appear in
+// To do on Sat 24 Oct 2026." It is empty for any job that is showing.
+func (s *Store) SavedNotice(ctx context.Context, taskID int64, today time.Time) (string, error) {
+	var shows string
+	err := s.DB.QueryRowContext(ctx,
+		`SELECT COALESCE(shows_from, '') FROM tasks WHERE id = ? AND repeat = 'yearly' AND removed_at IS NULL`, taskID).Scan(&shows)
+	if err == sql.ErrNoRows {
+		return "", nil
+	}
+	if err != nil {
+		return "", err
+	}
+	if shows == "" || shows <= dateOf(today) {
+		return "", nil
+	}
+	d, err := time.Parse(dateLayout, shows)
+	if err != nil {
+		return "", err
+	}
+	return "Saved. It will appear in To do on " + d.Format("Mon 2 Jan 2006") + ".", nil
+}
+
+// repeatOf is a task's Repeats choice as the forms name it.
+func repeatOf(t Task) string {
+	switch {
+	case t.Yearly:
+		return repeatYearly
+	case t.Weekly:
+		return repeatWeekly
+	}
+	return repeatNone
+}
+
+// noticeWeeksFromForm reads the "Show it in To do __ weeks before it's due" box:
+// empty means "not given" (the default for a new yearly job, the job's own notice
+// when editing), and anything but a whole number is refused in the box's words.
+func noticeWeeksFromForm(r *http.Request) (int, error) {
+	v := strings.TrimSpace(r.FormValue("notice_weeks"))
+	if v == "" {
+		return 0, nil
+	}
+	n, err := strconv.Atoi(v)
+	if err != nil {
+		return 0, ErrNoticeWeeks
+	}
+	return n, nil
 }

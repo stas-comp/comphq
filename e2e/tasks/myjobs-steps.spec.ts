@@ -188,7 +188,7 @@ test('gate 8.36: a blocked store only means the defaults', async ({ page, server
   });
   await signInAsNewPerson(page, server.baseURL, '/tasks');
   const open = uniqueName('Blocked open');
-  const closed = uniqueName('Blocked closed');
+  const closed = uniqueName('Blocked folded');
   await makeJob(page, server.baseURL, open, 'doing', ['One']);
   await makeJob(page, server.baseURL, closed, 'todo', ['Two']);
   await openMyJobs(page, server.baseURL);
@@ -218,7 +218,7 @@ test('gate 8.38: without JavaScript the boxes are forms that tick and come back,
   const normal = await browser.newContext();
   const p = await normal.newPage();
   await signInAsNewPerson(p, server.baseURL, '/tasks');
-  const closedTitle = uniqueName('NoJS closed');
+  const closedTitle = uniqueName('NoJS folded');
   const openTitle = uniqueName('NoJS open');
   await makeJob(p, server.baseURL, closedTitle, 'todo', ['Alpha', 'Beta']);
   await makeJob(p, server.baseURL, openTitle, 'doing', ['Gamma']);
@@ -248,7 +248,7 @@ test('gate 8.38: without JavaScript the boxes are forms that tick and come back,
 test('standard checks: axe and no sideways scroll with steps open and closed, at both window sizes', async ({ page, server }) => {
   await signInAsNewPerson(page, server.baseURL, '/tasks');
   await makeJob(page, server.baseURL, uniqueName('Axe open'), 'doing', ['One', 'Two']);
-  await makeJob(page, server.baseURL, uniqueName('Axe closed'), 'todo', ['Three']);
+  await makeJob(page, server.baseURL, uniqueName('Axe folded'), 'todo', ['Three']);
   await openMyJobs(page, server.baseURL);
   await axeCheck(page);
   await expectNoSideScroll(page);

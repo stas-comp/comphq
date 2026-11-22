@@ -22,7 +22,7 @@ async function makeWeekly(page: Page, base: string, title: string, meName: strin
   await page.selectOption('#new-task-stage', 'todo');
   await page.selectOption('#new-task-people', { label: meName });
   if (opts.due) await page.fill('#new-task-due-date', opts.due);
-  await page.check('#new-task-repeat');
+  await page.selectOption('#new-task-repeat', 'weekly'); // Repeats: Every week (gates 7.30, 8.40, D-108)
   await page.click('.add-task-form button[type="submit"]');
   await ready(page);
 }
@@ -43,14 +43,14 @@ test('@fresh gates 7.30, 7.31: the tick-box is in the form, sets This Saturday, 
     const title = uniqueName('Clean the kitchen');
 
     await openNewTask(page);
-    await expect(page.getByLabel('Repeats every week (back in To do each Saturday)')).not.toBeChecked();
+    await expect(page.getByLabel('Repeats')).toHaveValue('none'); // was the unticked box (gate 8.40)
     await makeWeekly(page, server.baseURL, title, me);
 
     // The job's own page: ticked, and the empty due date became This Saturday.
     const href = await jobHref(page, server.baseURL, title);
     await page.goto(server.baseURL + href);
     await ready(page);
-    await expect(page.locator('#details-repeat')).toBeChecked();
+    await expect(page.locator('#details-repeat')).toHaveValue('weekly'); // was the ticked box
     await expect(page.locator('#details-due-date')).toHaveValue('10/10/2026');
 
     // WEEKLY on the Board, My jobs, Team and the Briefing.
@@ -177,7 +177,7 @@ test('@fresh gates 7.33, 7.34, 7.37: unfinished stays and reads OVERDUE; a weekl
     // Untick the box on the finished one (7.37).
     await page.goto(server.baseURL + ordinaryHref);
     await ready(page);
-    await page.uncheck('#details-repeat');
+    await page.selectOption('#details-repeat', 'none'); // was unticking the box
     await page.click('.task-details-form button[type="submit"]');
     await ready(page);
 

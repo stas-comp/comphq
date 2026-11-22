@@ -47,7 +47,7 @@ test('gate 7.20: the box reads Search jobs on every Tasks page, and Search artic
   await ready(page);
   const href = await page.locator('.task-card-title a').first().getAttribute('href');
 
-  for (const path of ['/tasks', '/tasks/board', '/tasks/team', href!, '/tasks/finished', '/tasks/removed', '/tasks/search?q=zz']) {
+  for (const path of ['/tasks', '/tasks/board', '/tasks/team', href!, '/tasks/finished', '/tasks/removed', '/tasks/yearly', '/tasks/search?q=zz']) { // /tasks/yearly added by D-108 (gate 8.43): the planned correction to this list
     await page.goto(server.baseURL + path);
     await ready(page);
     await expect(box(page), path).toHaveAttribute('placeholder', 'Search jobs');

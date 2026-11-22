@@ -53,7 +53,7 @@ toast.js takes it away after 10 seconds. */}}
 </div>
 <div class="task-card-row">
 {{if .DueLabel}}<span class="date task-card-due{{if .Overdue}} overdue{{end}}">{{.DueLabel}}</span>{{if .Overdue}}<span class="stamp stamp-overdue task-overdue-stamp">OVERDUE</span>{{end}}{{end}}
-{{if .Weekly}}<span class="stamp weekly">WEEKLY</span>{{end}}
+{{if .Weekly}}<span class="stamp weekly">WEEKLY</span>{{end}}{{if .Yearly}}<span class="stamp yearly">YEARLY</span>{{end}}
 {{template "tasks-waiting" .}}
 <span class="people-menu">{{template "tasks-people-trigger" .}}</span>
 </div>
@@ -99,7 +99,7 @@ toast.js takes it away after 10 seconds. */}}
 </li>
 {{end}}
 </ul>
-{{if eq .Stage "done"}}<p class="task-board-links"><a href="/tasks/finished">Finished tasks</a> · <a href="/tasks/removed">Removed tasks</a></p>{{end}}
+{{if eq .Stage "done"}}<p class="task-board-links"><a href="/tasks/finished">Finished tasks</a> · <a href="/tasks/removed">Removed tasks</a> · <a href="/tasks/yearly">Yearly jobs</a></p>{{end}}
 </div>
 {{end}}
 </div>
@@ -114,5 +114,6 @@ toast.js takes it away after 10 seconds. */}}
 <script src="/static/app/copy.js"></script>
 <script src="/static/tasks/references.js"></script>
 <script src="/static/tasks/new-task.js"></script>
+<script src="/static/tasks/repeat.js"></script>
 <script src="/static/tasks/window.js"></script>
 {{end}}

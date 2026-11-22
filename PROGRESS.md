@@ -132,8 +132,8 @@ Status values: `todo` · `in-progress` · `blocked` · `done`.
 | P8-03 | Articles and places, part 2: on screen | todo |  |  | job-references. Gates 8.10-8.14, 8.18, 8.19. |
 | P8-04 | Steps, articles and places in the Add task window | todo |  |  | steps-everywhere. Gates 8.30-8.34. D-106. |
 | P8-05 | Steps on My jobs | todo |  |  | steps-everywhere. Gates 8.35-8.39. D-107. [speed] |
-| P8-06 | Yearly jobs, part 1: storage, waiting, and the yearly pass | todo |  |  | yearly-jobs. Gates 8.44-8.47, 8.51, 8.53 (pass half). D-108. |
-| P8-07 | Yearly jobs, part 2: the Repeats choice, the page, the stamp and the export | todo |  |  | yearly-jobs. Gates 8.40-8.43, 8.48-8.50, 8.52, 8.53 (survival half). |
+| P8-06 | Yearly jobs, part 1: storage, waiting, and the yearly pass | in-progress | 7d21cb5 | (next push, [container]) |
+| P8-07 | Yearly jobs, part 2: the Repeats choice, the page, the stamp and the export | in-progress | (this push, [container]) | (pending). Rollback to the real 1.5.0 binary was also run locally with the smoke tests: refs, yearly, weekly and links all pass through seed, rollback, upgrade |
 | P8-08 | Holidays, part 1: the rules | todo |  |  | public-holidays. Gates 8.66, 8.67. D-109. |
 | P8-09 | Holidays, part 2: the Calendar and the Briefing | todo |  |  | public-holidays. Gates 8.60-8.65. |
 | P8-10 | Questions, part 1: the section, asking, answering and marking answered | todo |  |  | questions. Gates 8.70-8.74, 8.82, 8.80 (these screens). D-110. |

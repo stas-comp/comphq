@@ -24,6 +24,7 @@ func TestEveryQueryThatListsJobsKnowsAboutWaiting(t *testing.T) {
 		"references.go":        "Jobs using this article lists real jobs, waiting or not",
 		"references_export.go": "Export everything lists every article and place link",
 		"links.go":             "a job's own Linked jobs and the link export list jobs the people linked on purpose",
+		"yearly.go":            "the Yearly jobs page lists every yearly job, waiting or not (gate 8.43)",
 	}
 	listQuery := regexp.MustCompile("(?s)`(\\s*SELECT\\s+(?:DISTINCT\\s+)?(?:t\\.|a\\.|o\\.)?id,\\s*(?:t\\.|a\\.|o\\.)?title[^`]*?(?:FROM|JOIN)\\s+tasks[^`]*)`(\\s*\\+\\s*waitingClause)?")
 	files, err := filepath.Glob("*.go")

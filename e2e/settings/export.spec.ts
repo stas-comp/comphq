@@ -143,8 +143,8 @@ test('exported zip includes tasks.csv and events.csv with clear headers and read
   const tasksCSV = read('tasks.csv');
   expect(tasksCSV.subarray(0, 3).equals(bom)).toBe(true);
   const tasksText = tasksCSV.subarray(3).toString('utf8');
-  // (Gate 7.38 adds a Repeats column at the end: a planned change of this header.)
-  expect(tasksText.startsWith('Title,Column,Size,People,Due date,Created by,Created,Finished,Removed,Repeats\r\n')).toBe(true);
+  // (Gate 7.38 added a Repeats column at the end, and gate 8.52 (D-108) adds Notice (weeks): both planned changes of this header.)
+  expect(tasksText.startsWith('Title,Column,Size,People,Due date,Created by,Created,Finished,Removed,Repeats,Notice (weeks)\r\n')).toBe(true);
   const taskRow = tasksText.split('\r\n').find((l) => l.includes(taskTitle));
   expect(taskRow, 'the new task is a row in tasks.csv').toBeTruthy();
   expect(taskRow).toContain(',To do,Medium,,Sat 19 Sep 2026,');

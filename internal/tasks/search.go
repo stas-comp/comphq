@@ -67,7 +67,7 @@ func (s *Store) SearchJobs(ctx context.Context, query string, excludeID int64, t
 	}
 
 	rows, err := s.DB.QueryContext(ctx,
-		`SELECT id, title, notes, stage, position, due_date FROM tasks WHERE removed_at IS NULL AND id != ?`, excludeID)
+		`SELECT id, title, notes, stage, position, due_date, repeat, COALESCE(shows_from, '') FROM tasks WHERE removed_at IS NULL AND id != ?`, excludeID)
 	if err != nil {
 		return nil, err
 	}
@@ -84,7 +84,8 @@ func (s *Store) SearchJobs(ctx context.Context, query string, excludeID int64, t
 		var title, notes, stage string
 		var position int
 		var due *string
-		if err := rows.Scan(&id, &title, &notes, &stage, &position, &due); err != nil {
+		var repeat, showsFrom string
+		if err := rows.Scan(&id, &title, &notes, &stage, &position, &due, &repeat, &showsFrom); err != nil {
 			return nil, err
 		}
 		titleLow, notesLow := lowerRunes(title), lowerRunes(notes)
@@ -103,8 +104,16 @@ func (s *Store) SearchJobs(ctx context.Context, query string, excludeID int64, t
 			continue
 		}
 		f := found{notes: notes}
+		column := stageLabels[stage]
+		// A waiting yearly job is found, marked with when it will appear (gate 8.50):
+		// it is in no column people can see yet.
+		if repeat == repeatYearly && showsFrom > dateOf(today) {
+			if d, err := time.Parse(dateLayout, showsFrom); err == nil {
+				column = "Yearly · appears " + d.Format("Mon 2 Jan")
+			}
+		}
 		f.hit = JobHit{
-			ID: id, URL: "/tasks/" + strconv.FormatInt(id, 10), Column: stageLabels[stage], Finished: stage == StageDone,
+			ID: id, URL: "/tasks/" + strconv.FormatInt(id, 10), Column: column, Finished: stage == StageDone,
 			stage: stage, position: position, titleMatch: inTitle,
 			Title: highlight(title, lowered),
 		}

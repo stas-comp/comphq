@@ -47,6 +47,7 @@ func Section(srv *app.Server, opts ...SectionOption) app.Section {
 			mux.HandleFunc("GET /tasks/team", h.withRepeats(h.handleTeam))
 			mux.HandleFunc("GET /tasks/finished", h.handleFinished)
 			mux.HandleFunc("GET /tasks/removed", h.handleRemoved)
+			mux.HandleFunc("GET /tasks/yearly", h.withRepeats(h.handleYearly))
 			mux.HandleFunc("GET /tasks/search", h.handleSearchPage)
 			mux.HandleFunc("GET /tasks/search.json", h.handleSearchJSON)
 			mux.HandleFunc("GET /tasks/articles.json", h.handleArticlesJSON)

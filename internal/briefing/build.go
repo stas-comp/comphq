@@ -37,6 +37,7 @@ type Task struct {
 	Position int
 	People   []Person
 	Weekly   bool // a job that repeats every week: its card shows WEEKLY
+	Yearly   bool // a job that repeats every year: its card shows YEARLY (gate 8.49)
 }
 
 // Occurrence is one concrete event date, as the Briefing's own shape.
@@ -80,8 +81,10 @@ type TaskCard struct {
 	Overdue  bool
 	Yours    bool
 	People   []Person
-	// Weekly shows the WEEKLY stamp beside the date stamp (gate 7.30).
+	// Weekly shows the WEEKLY stamp beside the date stamp (gate 7.30), and Yearly
+	// the YEARLY one (gate 8.49).
 	Weekly bool
+	Yearly bool
 }
 
 // EventCard is one "This week" or "Coming up" card.
@@ -150,7 +153,7 @@ func Build(in Input) Briefing {
 		return tasks[i].Position < tasks[j].Position
 	})
 	for _, t := range tasks {
-		card := TaskCard{ID: t.ID, Title: t.Title, Notes: t.Notes, People: t.People, Weekly: t.Weekly, Overdue: t.DueDate < todayStr, DueLabel: dueLabel(t.DueDate, todayStr)}
+		card := TaskCard{ID: t.ID, Title: t.Title, Notes: t.Notes, People: t.People, Weekly: t.Weekly, Yearly: t.Yearly, Overdue: t.DueDate < todayStr, DueLabel: dueLabel(t.DueDate, todayStr)}
 		for _, p := range t.People {
 			if p.ID == in.PersonID {
 				card.Yours = true
