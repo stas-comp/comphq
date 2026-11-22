@@ -134,7 +134,7 @@ Status values: `todo` · `in-progress` · `blocked` · `done`.
 | P8-05 | Steps on My jobs | todo |  |  | steps-everywhere. Gates 8.35-8.39. D-107. [speed] |
 | P8-06 | Yearly jobs, part 1: storage, waiting, and the yearly pass | in-progress | 7d21cb5 | (next push, [container]) |
 | P8-07 | Yearly jobs, part 2: the Repeats choice, the page, the stamp and the export | in-progress | (this push, [container]) | (pending). Rollback to the real 1.5.0 binary was also run locally with the smoke tests: refs, yearly, weekly and links all pass through seed, rollback, upgrade |
-| P8-08 | Holidays, part 1: the rules | todo |  |  | public-holidays. Gates 8.66, 8.67. D-109. |
+| P8-08 | Holidays, part 1: the rules | in-progress | (next push) | (pending). Checked against OPM's published list online: nothing differs |
 | P8-09 | Holidays, part 2: the Calendar and the Briefing | todo |  |  | public-holidays. Gates 8.60-8.65. |
 | P8-10 | Questions, part 1: the section, asking, answering and marking answered | todo |  |  | questions. Gates 8.70-8.74, 8.82, 8.80 (these screens). D-110. |
 | P8-11 | Questions, part 2: editing, removing, search and export | todo |  |  | questions. Gates 8.75, 8.76, 8.78, 8.81, 8.80 (these parts). |
