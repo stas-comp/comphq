@@ -1,0 +1,49 @@
+{{/* One question (SPEC A8a, B14.6, gates 8.73, 8.74): the question, its details, its
+answers oldest first, an Add an answer box, and Mark answered / Not answered yet.
+All plain forms. */}}
+{{define "questions-question.html"}}
+{{$q := .Question}}
+<p><a href="/questions">Back to Questions</a></p>
+<article class="q-view">
+<h1 class="q-title">{{$q.Text}}</h1>
+<p class="q-meta">Asked by {{$q.AskedBy}}, {{$q.AskedLabel}}{{if $q.Edited}} · edited by {{$q.EditedBy}}, {{$q.EditedLabel}}{{end}}</p>
+{{if $q.Details}}<div class="q-details">{{$q.Details}}</div>{{end}}
+
+{{if $q.Removed}}
+<p class="message" role="status">This question has been removed.</p>
+{{else}}
+{{if .Message}}<p class="message" role="alert">{{.Message}}</p>{{end}}
+<div class="q-state">
+{{if $q.Answered}}
+<p class="q-answered-line"><span class="stamp stamp-date">{{$q.AnsweredText}}</span></p>
+<form method="post" action="/questions/{{$q.ID}}/unanswered" class="inline-form"><button class="btn" type="submit">Not answered yet</button></form>
+{{else}}
+<p class="q-answered-line">Waiting for an answer</p>
+<form method="post" action="/questions/{{$q.ID}}/answered" class="inline-form"><button class="btn primary" type="submit">Mark answered</button></form>
+{{end}}
+</div>
+
+<section class="q-answers" aria-labelledby="q-answers-heading">
+<h2 id="q-answers-heading">Answers{{if $q.Answers}} <span class="count">{{len $q.Answers}}</span>{{end}}</h2>
+{{if $q.Answers}}
+<ol class="q-answer-list">
+{{range $q.Answers}}
+<li class="q-answer card" id="answer-{{.ID}}">
+<div class="q-answer-text">{{.Text}}</div>
+<p class="q-meta">{{.By}}, {{.Label}}{{if .Edited}} · edited by {{.EditedBy}}, {{.EditedLabel}}{{end}}</p>
+</li>
+{{end}}
+</ol>
+{{else}}
+<p class="q-empty">No answers yet.</p>
+{{end}}
+
+<form method="post" action="/questions/{{$q.ID}}/answers" class="q-answer-form">
+<label for="q-answer-text">Add an answer</label>
+<textarea class="field" id="q-answer-text" name="text" rows="4" maxlength="2000" required>{{.TypedAnswer}}</textarea>
+<div class="q-actions"><button class="btn primary" type="submit">Add answer</button></div>
+</form>
+</section>
+{{end}}
+</article>
+{{end}}

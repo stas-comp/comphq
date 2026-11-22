@@ -21,6 +21,7 @@ import (
 	"github.com/stas-comp/comphq/internal/calendar"
 	"github.com/stas-comp/comphq/internal/db"
 	"github.com/stas-comp/comphq/internal/kb"
+	"github.com/stas-comp/comphq/internal/questions"
 	"github.com/stas-comp/comphq/internal/settings"
 	"github.com/stas-comp/comphq/internal/tasks"
 )
@@ -131,6 +132,7 @@ func run() error {
 	srv.Registry().Add(kb.Section(srv, kb.WithJobsUsing(jobsUsingArticle{store: jobStore})))
 	srv.Registry().Add(tasks.Section(srv, tasks.WithArticleFinder(articleFinder{store: articleStore})))
 	srv.Registry().Add(calendar.Section(srv, taskDeadlines{store: &tasks.Store{DB: srv.DB}}))
+	srv.Registry().Add(questions.Section(srv)) // between Calendar and Settings (gate 8.70)
 	srv.Registry().Add(settings.Section(srv, &tasks.Store{DB: srv.DB}, &calendar.Store{DB: srv.DB}, &tasks.StepsCSV{DB: srv.DB}, &tasks.LinksCSV{DB: srv.DB},
 		settings.ExportFile{Name: "job-articles.csv", Source: &tasks.ArticlesCSV{DB: srv.DB, Articles: articleFinder{store: articleStore}}},
 		settings.ExportFile{Name: "job-places.csv", Source: &tasks.PlacesCSV{DB: srv.DB}}))

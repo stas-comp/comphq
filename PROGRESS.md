@@ -136,7 +136,7 @@ Status values: `todo` · `in-progress` · `blocked` · `done`.
 | P8-07 | Yearly jobs, part 2: the Repeats choice, the page, the stamp and the export | in-progress | (this push, [container]) | (pending). Rollback to the real 1.5.0 binary was also run locally with the smoke tests: refs, yearly, weekly and links all pass through seed, rollback, upgrade |
 | P8-08 | Holidays, part 1: the rules | in-progress | (next push) | (pending). Checked against OPM's published list online: nothing differs |
 | P8-09 | Holidays, part 2: the Calendar and the Briefing | in-progress | (next push) | (pending) |
-| P8-10 | Questions, part 1: the section, asking, answering and marking answered | todo |  |  | questions. Gates 8.70-8.74, 8.82, 8.80 (these screens). D-110. |
+| P8-10 | Questions, part 1: the section, asking, answering and marking answered | in-progress | (next push, [container]) | (pending). Rollback to the real 1.5.0 binary run locally: Questions, links, weekly, references and yearly smoke tests all pass |
 | P8-11 | Questions, part 2: editing, removing, search and export | todo |  |  | questions. Gates 8.75, 8.76, 8.78, 8.81, 8.80 (these parts). |
 | P8-12 | Questions, part 3: the Briefing, refresh and speed | todo |  |  | questions. Gates 8.77, 8.79, 8.83. [speed] |
 | P8-13 | Full sweep: every gate, both brands, README, CHANGES, screenshots | todo |  |  | Gates 8.90, 8.91. |

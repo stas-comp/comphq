@@ -800,6 +800,7 @@ body.has-datepicker .field-date {
 .icon-briefing { --icon: url("/static/theme/icons/briefing.svg"); }
 .icon-kb { --icon: url("/static/theme/icons/kb.svg"); }
 .icon-tasks { --icon: url("/static/theme/icons/tasks.svg"); }
+.icon-questions { --icon: url("/static/theme/icons/questions.svg"); }
 .icon-calendar { --icon: url("/static/theme/icons/calendar.svg"); }
 .icon-settings { --icon: url("/static/theme/icons/settings.svg"); }
 .icon-arrow-up { --icon: url("/static/theme/icons/arrow-up.svg"); }

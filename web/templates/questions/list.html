@@ -1,0 +1,57 @@
+{{/* The Questions page (SPEC A8a, B14.6, gates 8.71, 8.72): Ask a question at the top,
+then Waiting for an answer (newest first) and Answered (most recently answered
+first, the 50 newest, then Show all). Everything is an ordinary form: it works with
+no script. The text is plain, so it is escaped, and line breaks are kept by CSS. */}}
+{{define "questions-list.html"}}
+<div class="tools">
+<h1>Questions</h1>
+<span class="how">Anyone can ask, and anyone can answer.</span>
+</div>
+
+{{if .Message}}<p class="message" role="alert">{{.Message}}</p>{{end}}
+
+<section class="panel q-ask" aria-labelledby="q-ask-heading">
+<div class="panel-head"><h2 id="q-ask-heading">Ask a question</h2></div>
+<form method="post" action="/questions" class="q-ask-form">
+<label for="q-text">Your question</label>
+<input class="field" type="text" id="q-text" name="text" value="{{.TypedText}}" maxlength="300" autocomplete="off" required>
+<label for="q-details">More details <span class="q-optional">(optional)</span></label>
+<textarea class="field" id="q-details" name="details" rows="3" maxlength="2000">{{.TypedDetails}}</textarea>
+<div class="q-actions"><button class="btn primary" type="submit">Ask</button></div>
+</form>
+</section>
+
+<div class="q-page" data-refresh-version-url="/questions/version" data-refresh-fragment-selector=".q-page">
+<section class="panel q-section" aria-labelledby="q-waiting-heading">
+<div class="panel-head"><h2 id="q-waiting-heading">Waiting for an answer</h2>{{$w := len .List.Waiting}}<span class="count">{{$w}}</span></div>
+{{if .List.Waiting}}
+<ul class="q-list">
+{{range .List.Waiting}}{{template "questions-row" .}}{{end}}
+</ul>
+{{else}}
+<p class="q-empty">No questions are waiting for an answer.</p>
+{{end}}
+</section>
+
+<section class="panel q-section" aria-labelledby="q-answered-heading">
+<div class="panel-head"><h2 id="q-answered-heading">Answered</h2><span class="count">{{.List.AnsweredTotal}}</span></div>
+{{if .List.Answered}}
+<ul class="q-list">
+{{range .List.Answered}}{{template "questions-row" .}}{{end}}
+</ul>
+{{if .List.MoreAnswered}}<p class="q-more"><a href="/questions?all=1">Show all {{.List.AnsweredTotal}}</a></p>{{end}}
+{{if .ShowAll}}<p class="q-more"><a href="/questions">Show only the newest</a></p>{{end}}
+{{else}}
+<p class="q-empty">Nothing has been answered yet.</p>
+{{end}}
+</section>
+</div>
+{{end}}
+
+{{/* One line: the question (which opens it), who asked and when, how many answers. */}}
+{{define "questions-row"}}
+<li class="q-row">
+<h3 class="q-row-title"><a href="/questions/{{.ID}}">{{.Text}}</a></h3>
+<p class="q-row-meta">Asked by {{.AskedBy}}, {{.AskedLabel}} · {{.AnswerCount}} {{if eq .AnswerCount 1}}answer{{else}}answers{{end}}{{if .AnsweredBy}} · Answered · marked by {{.AnsweredBy}}, {{.AnsweredLabel}}{{end}}</p>
+</li>
+{{end}}

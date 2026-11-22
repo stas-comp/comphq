@@ -16,7 +16,7 @@ export function newDataDir(label: string): string {
   return fs.mkdtempSync(path.join(os.tmpdir(), `comphq-e2e-${label}-`));
 }
 
-export async function startServerAt(dataDir: string, today: string): Promise<RunningServer> {
+export async function startServerAt(dataDir: string, today: string, extraEnv: Record<string, string> = {}): Promise<RunningServer> {
   if (process.env.BASE_URL) {
     throw new Error('startServerAt needs its own process; it cannot run in BASE_URL mode');
   }
@@ -32,6 +32,7 @@ export async function startServerAt(dataDir: string, today: string): Promise<Run
       COMPHQ_ADDR: addr,
       COMPHQ_TEST_MODE: '1',
       COMPHQ_TEST_TODAY: today,
+      ...extraEnv,
     },
   });
   child.stderr?.on('data', (chunk) => process.stderr.write(`[comphq today=${today}] ${chunk}`));

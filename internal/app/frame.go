@@ -60,6 +60,7 @@ func (s *Server) RenderPartial(w http.ResponseWriter, status int, name string, d
 func (s *Server) RenderFrame(w http.ResponseWriter, r *http.Request, status int, contentTemplate, title string, pageData any) {
 	var body bytes.Buffer
 	if err := s.tmpl.ExecuteTemplate(&body, contentTemplate, pageData); err != nil {
+		log.Printf("app: drawing %s: %v", contentTemplate, err)
 		http.Error(w, "internal error", http.StatusInternalServerError)
 		return
 	}

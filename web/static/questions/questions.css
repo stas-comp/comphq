@@ -1,0 +1,114 @@
+/* Questions (SPEC A8a, B14.6): existing tokens only. The text of a question and of an
+   answer is plain, so its line breaks are kept here, by pre-line, not by markup. */
+.q-ask {
+  margin: var(--space-4) 0;
+}
+
+.q-ask-form {
+  display: grid;
+  gap: var(--space-2);
+  max-width: 44rem;
+}
+
+.q-ask-form label,
+.q-answer-form label {
+  font-weight: 700;
+}
+
+.q-optional {
+  font-weight: 400;
+  color: var(--color-text-muted);
+}
+
+.q-actions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.q-section {
+  margin: var(--space-4) 0;
+}
+
+.q-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+}
+
+.q-row {
+  padding: var(--space-3) 0;
+  border-top: 1px solid var(--color-border);
+}
+
+.q-row:first-child {
+  border-top: 0;
+}
+
+.q-row-title {
+  margin: 0;
+  font-size: 1.05rem;
+  overflow-wrap: anywhere;
+}
+
+.q-row-meta,
+.q-meta {
+  margin: var(--space-1) 0 0;
+  font: 500 12px var(--font-mono);
+  letter-spacing: 0.04em;
+  color: var(--color-text-muted);
+}
+
+.q-empty {
+  margin: var(--space-2) 0;
+  color: var(--color-text-muted);
+}
+
+.q-more {
+  margin: var(--space-3) 0 0;
+}
+
+.q-view {
+  max-width: 48rem;
+}
+
+.q-title {
+  overflow-wrap: anywhere;
+}
+
+.q-details,
+.q-answer-text {
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+.q-state {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  margin: var(--space-3) 0;
+}
+
+.q-answered-line {
+  margin: 0;
+  font-weight: 700;
+}
+
+.q-answer-list {
+  list-style: none;
+  margin: var(--space-3) 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-3);
+}
+
+.q-answer {
+  padding: var(--space-3) var(--space-4);
+}
+
+.q-answer-form {
+  display: grid;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
+}
