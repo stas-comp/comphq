@@ -46,6 +46,15 @@ window.ComphqMessages = {
     span.textContent = query
     return 'No jobs match <em>' + span.innerHTML + '</em>.'
   },
+  // SPEC gate 8.78: the same, for the question search.
+  noQuestionsMatch(query) {
+    const span = document.createElement('span')
+    span.textContent = query
+    return 'No questions match <em>' + span.innerHTML + '</em>.'
+  },
+  questionsFoot(count) {
+    return count + (count === 1 ? ' question' : ' questions') + ' · press Enter to see all results'
+  },
   // SPEC gate 4.42's foot, for jobs.
   jobsFoot(count) {
     return count + (count === 1 ? ' job' : ' jobs') + ' · press Enter to see all results'

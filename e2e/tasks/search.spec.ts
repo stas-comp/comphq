@@ -114,8 +114,10 @@ test('gate 7.23 and 7.24: a result opens the job window; Enter shows the full pa
   await box(page).fill(tok);
   await expect(rows(page)).toHaveCount(3);
   // The other search is offered at the foot, with the same words.
-  await expect(page.locator('.search-panel .search-instead-link')).toHaveText('Search articles instead');
-  await expect(page.locator('.search-panel .search-instead-link')).toHaveAttribute('href', `/kb/search?q=${tok}`);
+  // v1.6 planned correction (D-110, gate 8.78): two links now, articles and questions.
+  await expect(page.locator('.search-panel .search-instead-link')).toHaveText(['Search articles instead', 'Search questions instead']);
+  await expect(page.locator('.search-panel .search-instead-link').first()).toHaveAttribute('href', `/kb/search?q=${tok}`);
+  await expect(page.locator('.search-panel .search-instead-link').nth(1)).toHaveAttribute('href', `/questions/search?q=${tok}`);
 
   await rows(page).nth(1).click();
   await expect(page.locator('#task-window[open]')).toBeVisible();

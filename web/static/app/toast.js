@@ -17,8 +17,10 @@
     // Reaching the page by removing a job put ?removed= in the address;
     // a reload shouldn't offer the Undo again.
     var url = new URL(location.href)
-    if (url.searchParams.has('removed')) {
+    // (Questions does the same after removing an answer.)
+    if (url.searchParams.has('removed') || url.searchParams.has('removed_answer')) {
       url.searchParams.delete('removed')
+      url.searchParams.delete('removed_answer')
       history.replaceState(null, '', url.pathname + url.search + url.hash)
     }
   }

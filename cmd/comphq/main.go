@@ -135,7 +135,9 @@ func run() error {
 	srv.Registry().Add(questions.Section(srv)) // between Calendar and Settings (gate 8.70)
 	srv.Registry().Add(settings.Section(srv, &tasks.Store{DB: srv.DB}, &calendar.Store{DB: srv.DB}, &tasks.StepsCSV{DB: srv.DB}, &tasks.LinksCSV{DB: srv.DB},
 		settings.ExportFile{Name: "job-articles.csv", Source: &tasks.ArticlesCSV{DB: srv.DB, Articles: articleFinder{store: articleStore}}},
-		settings.ExportFile{Name: "job-places.csv", Source: &tasks.PlacesCSV{DB: srv.DB}}))
+		settings.ExportFile{Name: "job-places.csv", Source: &tasks.PlacesCSV{DB: srv.DB}},
+		settings.ExportFile{Name: "questions.csv", Source: &questions.QuestionsCSV{DB: srv.DB}},
+		settings.ExportFile{Name: "answers.csv", Source: &questions.AnswersCSV{DB: srv.DB}}))
 
 	sectionMigrations := make(map[string][]db.Migration)
 	pending := false

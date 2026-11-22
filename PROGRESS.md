@@ -137,7 +137,7 @@ Status values: `todo` · `in-progress` · `blocked` · `done`.
 | P8-08 | Holidays, part 1: the rules | in-progress | (next push) | (pending). Checked against OPM's published list online: nothing differs |
 | P8-09 | Holidays, part 2: the Calendar and the Briefing | in-progress | (next push) | (pending) |
 | P8-10 | Questions, part 1: the section, asking, answering and marking answered | in-progress | (next push, [container]) | (pending). Rollback to the real 1.5.0 binary run locally: Questions, links, weekly, references and yearly smoke tests all pass |
-| P8-11 | Questions, part 2: editing, removing, search and export | todo |  |  | questions. Gates 8.75, 8.76, 8.78, 8.81, 8.80 (these parts). |
+| P8-11 | Questions, part 2: editing, removing, search and export | in-progress | (next push, [container]) | (pending). Run 44967998801 (P8-08 to P8-10) had go and browser green; its container job failed on one test-only fault (the MC HQ sidebar test starts its own server, so it is now tagged @fresh), fixed in this push |
 | P8-12 | Questions, part 3: the Briefing, refresh and speed | todo |  |  | questions. Gates 8.77, 8.79, 8.83. [speed] |
 | P8-13 | Full sweep: every gate, both brands, README, CHANGES, screenshots | todo |  |  | Gates 8.90, 8.91. |
 | P8-14 | Release v1.6.0 and the Phase 8 report (no stop) | todo |  |  | O8.1-O8.6 listed for the owner, not waited for. |

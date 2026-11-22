@@ -16,4 +16,5 @@
 {{else}}
 <p>No articles match <em>{{.Query}}</em>.</p>
 {{end}}
+<p class="search-instead"><a href="/questions/search?q={{.Query | urlquery}}">Search questions instead</a></p>
 {{end}}

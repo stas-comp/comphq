@@ -1,18 +1,38 @@
-{{/* One question (SPEC A8a, B14.6, gates 8.73, 8.74): the question, its details, its
+{{/* One question (SPEC A8a, B14.6, gates 8.73-8.76): the question, its details, its
 answers oldest first, an Add an answer box, and Mark answered / Not answered yet.
-All plain forms. */}}
+Editing opens from a plain Edit link (?edit=question or ?edit_answer=ID), removing an
+answer uses the one remove icon and brings back an Undo message for 10 seconds, and a
+removed question offers Restore. All plain forms, so it works with no script. */}}
 {{define "questions-question.html"}}
 {{$q := .Question}}
 <p><a href="/questions">Back to Questions</a></p>
 <article class="q-view">
+{{if .EditingQuestion}}
+<form method="post" action="/questions/{{$q.ID}}" class="q-ask-form q-edit-form">
+{{if .Message}}<p class="message" role="alert">{{.Message}}</p>{{end}}
+<label for="q-edit-text">Your question</label>
+<input class="field" type="text" id="q-edit-text" name="text" value="{{.TypedText}}" maxlength="300" autocomplete="off" required>
+<label for="q-edit-details">More details <span class="q-optional">(optional)</span></label>
+<textarea class="field" id="q-edit-details" name="details" rows="4" maxlength="2000">{{.TypedDetails}}</textarea>
+<div class="q-actions"><button class="btn primary" type="submit">Save</button> <a class="btn" href="/questions/{{$q.ID}}">Cancel</a></div>
+</form>
+{{else}}
+<div class="q-head">
 <h1 class="q-title">{{$q.Text}}</h1>
+{{if not $q.Removed}}<div class="q-head-actions">
+<a class="q-edit-link" href="/questions/{{$q.ID}}?edit=question">Edit question</a>
+<form method="post" action="/questions/{{$q.ID}}/remove" class="inline-form">{{template "part-icon-button" .RemoveQuestion}}</form>
+</div>{{end}}
+</div>
 <p class="q-meta">Asked by {{$q.AskedBy}}, {{$q.AskedLabel}}{{if $q.Edited}} · edited by {{$q.EditedBy}}, {{$q.EditedLabel}}{{end}}</p>
 {{if $q.Details}}<div class="q-details">{{$q.Details}}</div>{{end}}
+{{end}}
 
 {{if $q.Removed}}
 <p class="message" role="status">This question has been removed.</p>
+<form method="post" action="/questions/{{$q.ID}}/restore" class="inline-form"><button class="btn primary" type="submit">Restore question</button></form>
 {{else}}
-{{if .Message}}<p class="message" role="alert">{{.Message}}</p>{{end}}
+{{if and .Message (not .EditingQuestion)}}<p class="message" role="alert">{{.Message}}</p>{{end}}
 <div class="q-state">
 {{if $q.Answered}}
 <p class="q-answered-line"><span class="stamp stamp-date">{{$q.AnsweredText}}</span></p>
@@ -25,12 +45,28 @@ All plain forms. */}}
 
 <section class="q-answers" aria-labelledby="q-answers-heading">
 <h2 id="q-answers-heading">Answers{{if $q.Answers}} <span class="count">{{len $q.Answers}}</span>{{end}}</h2>
-{{if $q.Answers}}
+{{if .Answers}}
 <ol class="q-answer-list">
-{{range $q.Answers}}
+{{$editing := .EditingAnswer}}
+{{range .Answers}}
 <li class="q-answer card" id="answer-{{.ID}}">
+{{if eq .ID $editing}}
+<form method="post" action="/questions/{{.QuestionID}}/answers/{{.ID}}" class="q-answer-form q-edit-form">
+{{if $.Message}}<p class="message" role="alert">{{$.Message}}</p>{{end}}
+<label for="q-edit-answer-{{.ID}}">Edit this answer</label>
+<textarea class="field" id="q-edit-answer-{{.ID}}" name="text" rows="4" maxlength="2000" required>{{$.TypedEdit}}</textarea>
+<div class="q-actions"><button class="btn primary" type="submit">Save</button> <a class="btn" href="/questions/{{.QuestionID}}">Cancel</a></div>
+</form>
+{{else}}
 <div class="q-answer-text">{{.Text}}</div>
+<div class="q-answer-foot">
 <p class="q-meta">{{.By}}, {{.Label}}{{if .Edited}} · edited by {{.EditedBy}}, {{.EditedLabel}}{{end}}</p>
+<span class="q-answer-actions">
+<a class="q-edit-link" href="/questions/{{.QuestionID}}?edit_answer={{.ID}}#answer-{{.ID}}">Edit<span class="visually-hidden"> answer by {{.By}}</span></a>
+<form method="post" action="/questions/{{.QuestionID}}/answers/{{.ID}}/remove" class="inline-form">{{template "part-icon-button" .Remove}}</form>
+</span>
+</div>
+{{end}}
 </li>
 {{end}}
 </ol>
@@ -46,4 +82,11 @@ All plain forms. */}}
 </section>
 {{end}}
 </article>
+<div class="toast-region" id="toast-region" role="status" aria-live="polite">{{with .Toast}}<div class="toast" data-toast>
+<span class="toast-text">Answer removed</span>
+<form method="post" action="/questions/{{.QuestionID}}/answers/{{.AnswerID}}/restore" class="q-undo">
+<button class="mini go" type="submit">Undo</button>
+</form>
+</div>{{end}}</div>
+<script src="/static/app/toast.js"></script>
 {{end}}

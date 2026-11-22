@@ -1,0 +1,21 @@
+{{/* Removed questions (SPEC A8a, gate 8.75): every removed question, most recently
+removed first, each with a Restore button. Plain forms. */}}
+{{define "questions-removed.html"}}
+<p><a href="/questions">Back to Questions</a></p>
+<div class="tools">
+<h1>Removed questions</h1>
+</div>
+{{if .Questions}}
+<ul class="q-list">
+{{range .Questions}}
+<li class="q-row">
+<h3 class="q-row-title"><a href="/questions/{{.ID}}">{{.Text}}</a></h3>
+<p class="q-row-meta">Asked by {{.AskedBy}}, {{.AskedLabel}} · removed by {{.RemovedBy}}, {{.RemovedLabel}}</p>
+<form method="post" action="/questions/{{.ID}}/restore" class="inline-form"><button class="btn" type="submit">Restore question</button></form>
+</li>
+{{end}}
+</ul>
+{{else}}
+<p class="q-empty">No questions have been removed.</p>
+{{end}}
+{{end}}

@@ -16,7 +16,7 @@
 {{else}}
 <p>No jobs match <em>{{.Query}}</em>.</p>
 {{end}}
-<p class="search-instead"><a href="/kb/search?q={{.Query | urlquery}}">Search articles instead</a></p>
+<p class="search-instead"><a href="/kb/search?q={{.Query | urlquery}}">Search articles instead</a> · <a href="/questions/search?q={{.Query | urlquery}}">Search questions instead</a></p>
 {{template "tasks-window" .}}
 <script src="/static/tasks/window.js"></script>
 {{end}}

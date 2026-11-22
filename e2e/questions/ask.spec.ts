@@ -47,7 +47,7 @@ test('gate 8.70: Questions is in the sidebar between Calendar and Settings, with
   expect(await icon.evaluate((el) => getComputedStyle(el).maskImage || getComputedStyle(el).webkitMaskImage)).toContain('questions.svg');
 });
 
-test('gate 8.70: MC HQ has the same entry and icon in its own colours', async ({ page }) => {
+test('@fresh gate 8.70: MC HQ has the same entry and icon in its own colours', async ({ page }) => {
   const dataDir = newDataDir('questions-mc');
   const server = await startServerAt(dataDir, '2026-11-21', { COMPHQ_BRAND: 'mc' });
   try {

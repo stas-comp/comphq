@@ -10,6 +10,14 @@ document.addEventListener('DOMContentLoaded', () => {
   const form = input.closest('form')
   const jsonURL = form.dataset.searchJson || '/kb/search.json'
   const jobs = form.dataset.searchKind === 'jobs'
+  const questions = form.dataset.searchKind === 'questions'
+  // The other searches, offered under the results (gates 7.24, 8.78).
+  let insteads = []
+  try {
+    insteads = form.dataset.insteads ? JSON.parse(form.dataset.insteads) : []
+  } catch (err) {
+    insteads = []
+  }
 
   // The "/" hint in the box is a real shortcut (SPEC gate 4.14): pressing
   // it anywhere outside a text field puts the keyboard in the search box.
@@ -40,14 +48,23 @@ document.addEventListener('DOMContentLoaded', () => {
     return span.innerHTML
   }
 
-  // The other kind of search, offered under the results (gate 7.24).
-  function insteadLink(query) {
-    if (!form.dataset.insteadHref) return null
-    const a = document.createElement('a')
-    a.className = 'search-instead-link'
-    a.href = form.dataset.insteadHref + '?q=' + encodeURIComponent(query)
-    a.textContent = form.dataset.insteadLabel
-    return a
+  // The other kinds of search, offered under the results (gates 7.24, 8.78).
+  function insteadLinks(query) {
+    return insteads.map((link) => {
+      const a = document.createElement('a')
+      a.className = 'search-instead-link'
+      a.href = link.href + '?q=' + encodeURIComponent(query)
+      a.textContent = link.label
+      return a
+    })
+  }
+
+  // Puts the links at the end of a foot, each after a dot.
+  function appendInsteads(foot, query, needsLeadingDot) {
+    insteadLinks(query).forEach((a, i) => {
+      if (i > 0 || needsLeadingDot) foot.appendChild(document.createTextNode(' · '))
+      foot.appendChild(a)
+    })
   }
 
   // A job result (gate 7.21): the title with the matching words marked, its
@@ -91,8 +108,7 @@ document.addEventListener('DOMContentLoaded', () => {
       foot.appendChild(text)
       foot.appendChild(document.createTextNode(' · '))
     }
-    const instead = insteadLink(query)
-    if (instead) foot.appendChild(instead)
+    appendInsteads(foot, query, false)
     panel.appendChild(foot)
     form.appendChild(panel)
     // A job opens in the task window over this page (window.js); the panel
@@ -102,13 +118,54 @@ document.addEventListener('DOMContentLoaded', () => {
     })
   }
 
-  function renderResults(query, results) {
-    if (jobs) return renderJobs(query, results)
+  // A question result (gate 8.78): the question with the matching words marked,
+  // who asked and when, how many answers, and a passage when the words are in the
+  // details or an answer. title and passage arrive escaped, with <mark>.
+  function renderQuestions(query, results) {
     closePanel()
     panel = document.createElement('div')
     panel.className = 'search-panel'
-    panel.setAttribute('role', 'listbox')
-    panel.setAttribute('aria-label', 'Search results')
+    if (results.length === 0) {
+      const empty = document.createElement('p')
+      empty.className = 'search-panel-empty'
+      empty.innerHTML = window.ComphqMessages.noQuestionsMatch(query)
+      panel.appendChild(empty)
+    }
+    const list = document.createElement('div')
+    list.setAttribute('role', 'listbox')
+    list.setAttribute('aria-label', 'Search results')
+    for (const r of results) {
+      const a = document.createElement('a')
+      a.href = r.url
+      a.className = 'search-result'
+      a.setAttribute('role', 'option')
+      const meta = ['Asked by ' + r.asked_by + ', ' + r.asked, r.answers + (r.answers === 1 ? ' answer' : ' answers')]
+      a.innerHTML =
+        '<span class="search-result-title">' + r.title +
+        (r.answered ? ' <span class="stamp stamp-date">Answered</span>' : '') + '</span>' +
+        '<span class="search-job-meta">' + escapeHTML(meta.join(' · ')) + '</span>' +
+        (r.passage ? '<div class="search-snippet">' + r.passage + '</div>' : '')
+      list.appendChild(a)
+    }
+    if (results.length > 0) panel.appendChild(list)
+    const foot = document.createElement('div')
+    foot.className = 'search-panel-foot'
+    if (results.length > 0) {
+      const text = document.createElement('span')
+      text.textContent = window.ComphqMessages.questionsFoot(results.length)
+      foot.appendChild(text)
+    }
+    appendInsteads(foot, query, results.length > 0)
+    panel.appendChild(foot)
+    form.appendChild(panel)
+  }
+
+  function renderResults(query, results) {
+    if (jobs) return renderJobs(query, results)
+    if (questions) return renderQuestions(query, results)
+    closePanel()
+    panel = document.createElement('div')
+    panel.className = 'search-panel'
 
     if (results.length === 0) {
       const empty = document.createElement('p')
@@ -116,6 +173,10 @@ document.addEventListener('DOMContentLoaded', () => {
       empty.innerHTML = window.ComphqMessages.noArticlesMatch(query)
       panel.appendChild(empty)
     } else {
+      // Only the list is a listbox: the foot's links are not options (gate 8.78).
+      const list = document.createElement('div')
+      list.setAttribute('role', 'listbox')
+      list.setAttribute('aria-label', 'Search results')
       for (const result of results) {
         const a = document.createElement('a')
         a.href = result.url
@@ -125,15 +186,21 @@ document.addEventListener('DOMContentLoaded', () => {
           '<span class="search-result-title">' + escapeHTML(result.title) + '</span> ' +
           '<span class="search-result-category">' + escapeHTML(result.category) + '</span>' +
           '<div class="search-snippet">' + result.snippet + '</div>'
-        panel.appendChild(a)
+        list.appendChild(a)
       }
+      panel.appendChild(list)
     }
+    // The foot: how many, and the other searches (gate 8.78, "Search questions
+    // instead" on article results).
+    const foot = document.createElement('div')
+    foot.className = 'search-panel-foot'
     if (results.length > 0) {
-      const foot = document.createElement('div')
-      foot.className = 'search-panel-foot'
-      foot.textContent = window.ComphqMessages.searchFoot(results.length)
-      panel.appendChild(foot)
+      const text = document.createElement('span')
+      text.textContent = window.ComphqMessages.searchFoot(results.length)
+      foot.appendChild(text)
     }
+    appendInsteads(foot, query, results.length > 0)
+    if (foot.childNodes.length > 0) panel.appendChild(foot)
     form.appendChild(panel)
   }
 

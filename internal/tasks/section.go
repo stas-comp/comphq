@@ -36,7 +36,7 @@ func Section(srv *app.Server, opts ...SectionOption) app.Section {
 		MigrationName: "tasks",
 		Nav: &app.NavItem{Label: "Tasks", Path: "/tasks", Icon: "tasks", Search: &app.SearchSetting{
 			Kind: "jobs", Action: "/tasks/search", JSONURL: "/tasks/search.json", Label: "Search jobs",
-			InsteadLabel: "Search articles instead", InsteadHref: "/kb/search",
+			Insteads: []app.SearchLink{app.SearchArticlesInstead, app.SearchQuestionsInstead},
 		}},
 		RegisterRoutes: func(mux *http.ServeMux) {
 			mux.HandleFunc("GET /tasks", h.withRepeats(h.handleMyJobs))

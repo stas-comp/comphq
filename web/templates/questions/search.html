@@ -1,0 +1,27 @@
+{{/* Question search results (SPEC A8a, gate 8.78): the full page Enter goes to, ending
+with the other two searches. The title and passage are already escaped with the
+matching words in <mark>. */}}
+{{define "questions-search.html"}}
+<div class="tools">
+<h1>Search questions</h1>
+</div>
+{{if not .Query}}
+<p>Type a word or two in the search box at the top.</p>
+{{else}}
+{{if .Results}}
+<p class="how">{{len .Results}} {{if eq (len .Results) 1}}question{{else}}questions{{end}} match <em>{{.Query}}</em>.</p>
+<ul class="q-list">
+{{range .Results}}
+<li class="q-row">
+<h3 class="q-row-title"><a href="{{.URL}}">{{.Title}}</a>{{if .Answered}} <span class="stamp stamp-date">Answered</span>{{end}}</h3>
+<p class="q-row-meta">Asked by {{.AskedBy}}, {{.AskedLabel}} · {{.AnswerCount}} {{if eq .AnswerCount 1}}answer{{else}}answers{{end}}</p>
+{{if .Passage}}<div class="search-snippet">{{.Passage}}</div>{{end}}
+</li>
+{{end}}
+</ul>
+{{else}}
+<p>No questions match <em>{{.Query}}</em>.</p>
+{{end}}
+<p class="search-instead"><a href="/kb/search?q={{.Query | urlquery}}">Search articles instead</a> · <a href="/tasks/search?q={{.Query | urlquery}}">Search jobs instead</a></p>
+{{end}}
+{{end}}

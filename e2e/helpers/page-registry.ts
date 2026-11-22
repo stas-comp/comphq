@@ -23,6 +23,8 @@ export const pages: RegisteredPage[] = [
   { name: 'tasks-removed', path: '/tasks/removed', needsPerson: true },
   { name: 'tasks-yearly', path: '/tasks/yearly', needsPerson: true },
   { name: 'questions', path: '/questions', needsPerson: true },
+  { name: 'questions-removed', path: '/questions/removed', needsPerson: true },
+  { name: 'questions-search', path: '/questions/search?q=paper', needsPerson: true },
   { name: 'calendar', path: '/calendar', needsPerson: true },
   { name: 'calendar-list', path: '/calendar/list', needsPerson: true },
   { name: 'calendar-new', path: '/calendar/new', needsPerson: true },
