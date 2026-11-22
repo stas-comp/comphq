@@ -129,11 +129,11 @@ Status values: `todo` · `in-progress` · `blocked` · `done`.
 | P8-00 | Spec and plan for v1.6 (SPEC A11 Phase 8 and B14, PLAN-v1.6.md, D-104 to D-111) | done | this commit |  | Planning files committed by name; D-104 to D-111 copied into docs/decisions.md; inbox created. Written 2026-11-21. |
 | P8-01 | Done in finishing order | todo |  |  | done-order. Gates 8.01-8.05. D-104. |
 | P8-02 | Articles and places, part 1: storage, rules, wiring and export | todo |  |  | job-references. Gates 8.15-8.17, 8.20, 8.21. D-105. |
-| P8-03 | Articles and places, part 2: on screen | todo |  |  | job-references. Gates 8.10-8.14, 8.18, 8.19. |
-| P8-04 | Steps, articles and places in the Add task window | todo |  |  | steps-everywhere. Gates 8.30-8.34. D-106. |
-| P8-05 | Steps on My jobs | todo |  |  | steps-everywhere. Gates 8.35-8.39. D-107. [speed] |
-| P8-06 | Yearly jobs, part 1: storage, waiting, and the yearly pass | in-progress | 7d21cb5 | (next push, [container]) |
-| P8-07 | Yearly jobs, part 2: the Repeats choice, the page, the stamp and the export | in-progress | (this push, [container]) | (pending). Rollback to the real 1.5.0 binary was also run locally with the smoke tests: refs, yearly, weekly and links all pass through seed, rollback, upgrade |
+| P8-03 | Articles and places, part 2: on screen | done | 9d36efb | https://github.com/stas-comp/comphq/actions/runs/44965352301 (all of go, browser and container green; the container job's offline run, which runs the whole suite over plain HTTP, and its upgrade, rollback and upgrade steps passed here for the first time. Earlier runs 44958874967 and 44961655701 failed only in that container job, on test problems fixed since: a clipboard assertion, and job titles a looser older locator matched) | job-references. Gates 8.10-8.14, 8.18, 8.19. |
+| P8-04 | Steps, articles and places in the Add task window | done | d367d3a | https://github.com/stas-comp/comphq/actions/runs/44965352301 | steps-everywhere. Gates 8.30-8.34. D-106. |
+| P8-05 | Steps on My jobs | done | 3b80391 | https://github.com/stas-comp/comphq/actions/runs/44965352301 (speed job green on run 44961655701) | steps-everywhere. Gates 8.35-8.39. D-107. [speed] |
+| P8-06 | Yearly jobs, part 1: storage, waiting, and the yearly pass | done | 7d21cb5 | https://github.com/stas-comp/comphq/actions/runs/44965352301 |
+| P8-07 | Yearly jobs, part 2: the Repeats choice, the page, the stamp and the export | done | 4d54fa6 | https://github.com/stas-comp/comphq/actions/runs/44965352301 |
 | P8-08 | Holidays, part 1: the rules | in-progress | (next push) | (pending). Checked against OPM's published list online: nothing differs |
 | P8-09 | Holidays, part 2: the Calendar and the Briefing | in-progress | (next push) | (pending) |
 | P8-10 | Questions, part 1: the section, asking, answering and marking answered | in-progress | (next push, [container]) | (pending). Rollback to the real 1.5.0 binary run locally: Questions, links, weekly, references and yearly smoke tests all pass |
