@@ -166,3 +166,8 @@
   margin: var(--space-2) 0 0;
   font-weight: 700;
 }
+
+/* "2 waiting" stays on one line beside the long heading, which wraps instead. */
+#briefing-questions ~ .count {
+  white-space: nowrap;
+}
